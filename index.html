@@ -157,9 +157,9 @@
         async function cargarDatos() {
             try {
                 const [resLotto, resGua, resMini] = await Promise.all([
-                    fetch('./data/mapeo_lotto.json').then(r => r.json()),
-                    fetch('./data/mapeo_gua.json').then(r => r.json()),
-                    fetch('./data/mapeo_mini.json').then(r => r.json())
+                    fetch('mapeo_lotto.json').then(r => r.json()),
+                    fetch('mapeo_gua.json').then(r => r.json()),
+                    fetch('mapeo_mini.json').then(r => r.json())
                 ]);
                 
                 datosLotto = resLotto;
