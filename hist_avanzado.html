@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Historial Avanzado</title>
+    <!-- Importamos Chart.js para el gráfico -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #2b2b2b; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
+        }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 15px; }
+        h1 { color: #00aaff; margin: 0; font-size: 1.5rem; text-shadow: 0 0 10px rgba(0,170,255,0.5); }
+        .btn-regresar {
+            background-color: #006633; color: white; border: none; padding: 10px 20px; font-weight: bold;
+            border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s;
+        }
+        .btn-regresar:hover { background-color: #008844; box-shadow: 0 0 15px rgba(0,255,100,0.4); }
+        
+        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #1e1e1e; padding: 15px; border-radius: 8px; border: 1px solid #333; flex-wrap: wrap; }
+        .controles label { font-weight: bold; color: #ccc; }
+        .controles select, .controles input { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; }
+        .controles input { width: 80px; text-align: center; }
+        .btn-proyectar { background-color: #003366; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        .btn-proyectar:hover { background-color: #0055aa; }
+        .btn-aut { background-color: #006633; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        .btn-aut:hover { background-color: #009944; }
+        
+        .contenedor-principal { display: flex; flex-direction: column; gap: 15px; flex-grow: 1; overflow: hidden; }
+        
+        .canvas-container { background-color: #1e1e1e; border: 1px solid #444; border-radius: 8px; padding: 10px; height: 35%; position: relative; }
+        
+        .resultados { background-color: #1e1e1e; color: #00ffcc; font-family: Consolas, monospace; font-size: 14px; border: 1px solid #444; border-radius: 8px; padding: 20px; flex-grow: 1; overflow-y: auto; line-height: 1.6; }
+        
+        /* Estilos internos del texto generado */
+        .box { background-color: #222; padding: 10px; border-left: 4px solid #00ffcc; margin-bottom: 10px; border-radius: 4px; }
+        .box-vector { background-color: #112233; border-left-color: #ff00cc; }
+        .box-franja { background-color: #1a1a1a; border-left-color: #00aaff; }
+        .box-atrayentes { background-color: #1a1a2e; border-left-color: #ffcc00; }
+        .box-cadenas { background-color: #2a1133; border-left-color: #ff00cc; }
+        .box-alerta { background-color: #331111; border: 1px solid #ff5555; }
+        .texto-resaltado { font-size: 14pt; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>MAPA CARTESIANO DE DESPLAZAMIENTO Y FLANCOS CÍCLICOS</h1>
+        <a href="index.html" class="btn-regresar">⬅ Regresar a Ventana Anterior</a>
+    </div>
+
+    <div class="controles">
+        <label>Lotería:</label>
+        <select id="combo-loteria">
+            <option value="mapeo_lotto.json">Lotto Activo</option>
+            <option value="mapeo_gua.json">Guacharo</option>
+            <option value="mapeo_mini.json">Guacharito Millonario</option>
+        </select>
+        
+        <input type="number" id="input-numero" placeholder="Núm" min="0" max="99">
+        <button class="btn-proyectar" onclick="ejecutarAnalisisManual()">Proyectar</button>
+        <button class="btn-aut" onclick="ejecutarModoAutomatico()">MODO AUT</button>
+    </div>
+
+    <div class="contenedor-principal">
+        <div class="canvas-container">
+            <canvas id="graficoLineas"></canvas>
+        </div>
+        <div class="resultados" id="texto-resultados">
+            <p style="color:#888;">Selecciona una lotería e ingresa un número para iniciar el análisis, o presiona "MODO AUT".</p>
+        </div>
+    </div>
+
+    <script>
+        let chartInstance = null;
+        let datosGlobales = [];
+
+        // --- LÓGICA MATEMÁTICA (Traducida de Python) ---
+        function voltearNumero(num) {
+            let s = num.toString();
+            if (s.length === 1) return num;
+            return parseInt(s.split('').reverse().join('')) || 0;
+        }
+
+        // Función para calcular el ciclo en días entre dos fechas
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaStr = registro.hora;
+                
+                // Convertir "07:00 PM" a decimal (19.0)
+                let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let minuto = parseInt(horaParts[2]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (minuto / 60);
+
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
+            });
+
+            if (historialNumeros.length === 0) return null;
+
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+
+            if (indicesApariciones.length === 0) {
+                return { num: numeroObjetivo, subidas: 0, bajadas: 0, ciclo: 0, ultima: "No registrado", prediccion: "Sin datos", fecha_estimada: "N/A", dias_retraso: 0, dias_desde_ultima: 999, top_atrayentes: [], franjas: {}, zona_equilibrio: null, tendencia_hora: [], vector_info: {} };
+            }
+
+            let subidas = 0, bajadas = 0;
+            indicesApariciones.forEach(idx => {
+                if (idx > 0) {
+                    if (historialNumeros[idx] > historialNumeros[idx-1]) subidas++;
+                    else if (historialNumeros[idx] < historialNumeros[idx-1]) bajadas++;
+                }
+            });
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let f1 = fechasHoras[indicesApariciones[i-1]].fecha;
+                let f2 = fechasHoras[indicesApariciones[i]].fecha;
+                let dias = calcularDiferenciaDias(f1, f2);
+                if (dias > 0) ciclos.push(dias);
+            }
+
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            let ultimaFechaStr = `${ultimaAparicion.fecha} (${ultimaAparicion.horaStr})`;
+
+            let prediccion = "Neutro";
+            if (subidas > bajadas) prediccion = "MAÑANA (Flanco de Bajada)";
+            else if (bajadas > subidas) prediccion = "TARDE (Flanco de Subida)";
+
+            let fechaEst = "N/A", diasRetraso = 0, diasDesdeUltima = 999;
+            let hoy = new Date();
+            
+            if (promedioCiclo > 0 && ultimaFechaStr !== "No registrado") {
+                let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
+                let hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+                diasDesdeUltima = Math.round((hoySinHora - fechaBase) / (1000 * 60 * 60 * 24));
+                
+                let fechaEstimadaDate = new Date(fechaBase);
+                fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
+                fechaEst = fechaEstimadaDate.toISOString().split('T')[0];
+                diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
+            }
+
+            // Atrayentes
+            let numerosVecinos = [];
+            indicesApariciones.forEach(idx => {
+                if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
+                if (idx + 1 < historialNumeros.length) numerosVecinos.push(historialNumeros[idx + 1]);
+            });
+            
+            let conteo = {};
+            numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
+            let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => [parseInt(e[0]), e[1]]);
+
+            // Franjas
+            let franjas = { "08:00 AM - 11:00 AM": 0, "11:00 AM - 02:00 PM": 0, "02:00 PM - 05:00 PM": 0, "05:00 PM - 08:00 PM": 0 };
+            indicesApariciones.forEach(idx => {
+                let h = fechasHoras[idx].decimal;
+                if (h >= 8 && h < 11) franjas["08:00 AM - 11:00 AM"]++;
+                else if (h >= 11 && h < 14) franjas["11:00 AM - 02:00 PM"]++;
+                else if (h >= 14 && h < 17) franjas["02:00 PM - 05:00 PM"]++;
+                else if (h >= 17 && h <= 20) franjas["05:00 PM - 08:00 PM"]++;
+            });
+
+            let tendenciaHora = indicesApariciones.map(i => fechasHoras[i].decimal);
+            let vectorInfo = {}, zonaEquilibrio = {};
+
+            if (tendenciaHora.length >= 3) {
+                // Regresión lineal simple (m, b)
+                let n = tendenciaHora.length;
+                let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+                for(let i=0; i<n; i++) {
+                    let x = i + 1;
+                    let y = tendenciaHora[i];
+                    sumX += x; sumY += y; sumXY += x*y; sumX2 += x*x;
+                }
+                let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX) || 0;
+                let b = (sumY - m * sumX) / n;
+
+                let proxHora = m * (n + 1) + b;
+                proxHora = Math.max(8, Math.min(20, proxHora));
+
+                let dir = "ESTABLE ⏸️", color = "#ffffff";
+                if (m < -0.1) { dir = "DESCENDENTE (Mañana) 🌅"; color = "#00ffcc"; }
+                else if (m > 0.1) { dir = "ASCENDENTE (Tarde) 🌇"; color = "#ffcc00"; }
+
+                vectorInfo = {
+                    pendiente: m.toFixed(3), direccion: dir, color: color,
+                    proxima_hora_decimal: proxHora,
+                    proxima_hora_str: `${Math.floor(proxHora).toString().padStart(2,'0')}:${Math.floor((proxHora % 1) * 60).toString().padStart(2,'0')}`
+                };
+
+                // División del vector
+                let puntosDebajo = 0, puntosEncima = 0;
+                for(let i=0; i<n; i++) {
+                    let horaLinea = m * (i + 1) + b;
+                    if (tendenciaHora[i] < horaLinea) puntosDebajo++;
+                    else if (tendenciaHora[i] > horaLinea) puntosEncima++;
+                }
+
+                if (puntosDebajo < puntosEncima) zonaEquilibrio = { tipo: "deba", mensaje: "Mitad Inferior (Mañana)", detalle: `${puntosDebajo} abajo vs ${puntosEncima} arriba`, color: "#00ffcc", rango: "08:00 AM - 02:00 PM" };
+                else if (puntosEncima < puntosDebajo) zonaEquilibrio = { tipo: "encima", mensaje: "Mitad Superior (Tarde)", detalle: `${puntosEncima} arriba vs ${puntosDebajo} abajo`, color: "#ffcc00", rango: "02:00 PM - 08:00 PM" };
+                else zonaEquilibrio = { tipo: "equilibrado", mensaje: "Equilibrio Perfecto", detalle: `${puntosDebajo} abajo y ${puntosEncima} arriba`, color: "#ffffff", rango: "Sin sesgo" };
+            }
+
+            return {
+                num: numeroObjetivo, subidas, bajadas, ciclo: promedioCiclo.toFixed(1), ultima: ultimaFechaStr,
+                prediccion, fecha_estimada: fechaEst, dias_retraso: diasRetraso, dias_desde_ultima: diasDesdeUltima,
+                top_atrayentes: topAtrayentes, franjas, zona_equilibrio: zonaEquilibrio,
+                tendencia_hora: tendenciaHora, vector_info: vectorInfo
+            };
+        }
+
+        function generarMultiplesSecuencias(datosLoteria, numeroInicial, cantidadCadenas = 3) {
+            let cadenas = [];
+            let resInicial = analizarNumeroIndividual(datosLoteria, numeroInicial);
+            if (!resInicial || resInicial.top_atrayentes.length === 0) return [[numeroInicial]];
+
+            let opcionesIniciales = resInicial.top_atrayentes.slice(0, cantidadCadenas).map(at => at[0]);
+            
+            opcionesIniciales.forEach(opcion => {
+                let secuencia = [numeroInicial, opcion];
+                let actual = opcion;
+                while (secuencia.length < 4) {
+                    let res = analizarNumeroIndividual(datosLoteria, actual);
+                    if (!res || res.top_atrayentes.length === 0) break;
+                    let siguiente = null;
+                    for (let [numAt, _] of res.top_atrayentes) {
+                        if (!secuencia.includes(numAt)) { siguiente = numAt; break; }
+                    }
+                    if (siguiente === null) break;
+                    secuencia.push(siguiente);
+                    actual = siguiente;
+                }
+                cadenas.push(secuencia);
+            });
+            if (cadenas.length === 0) cadenas.push([numeroInicial]);
+            return cadenas;
+        }
+
+        // --- RENDERIZADO EN PANTALLA ---
+        
+        async function obtenerDatos() {
+            let loteria = document.getElementById('combo-loteria').value;
+            let res = await fetch(loteria);
+            return await res.json();
+        }
+
+        function actualizarGrafico(tendencias, vectorInfo, proximaHora) {
+            let ctx = document.getElementById('graficoLineas').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            let labels = tendencias.map((_, i) => `Ap. ${i+1}`);
+            let dataPoints = tendencias.map(v => ({ x: labels.length, y: v })); // Solo para formateo simple
+
+            // Si hay proyección, agregamos el punto extra
+            if (vectorInfo && vectorInfo.proxima_hora_decimal) {
+                labels.push("Próx.");
+                tendencias.push(vectorInfo.proxima_hora_decimal);
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Hora de Aparición (Decimal)',
+                        data: tendencias,
+                        borderColor: '#00ffcc',
+                        backgroundColor: 'rgba(0, 255, 204, 0.2)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#2b2b2b',
+                        pointBorderColor: '#00ffcc',
+                        pointRadius: 5,
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 8, max: 20,
+                            ticks: {
+                                color: 'white',
+                                callback: function(value) {
+                                    let h = Math.floor(value);
+                                    let ampm = h >= 12 ? 'PM' : 'AM';
+                                    if (h > 12) h -= 12;
+                                    if (h === 0) h = 12;
+                                    return `${h.toString().padStart(2, '0')}:00 ${ampm}`;
+                                }
+                            },
+                            grid: { color: '#444' }
+                        },
+                        x: { ticks: { color: 'white' }, grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: 'white' } }
+                    }
+                }
+            });
+        }
+
+        async function ejecutarAnalisisManual() {
+            let numStr = document.getElementById('input-numero').value.trim();
+            if (isNaN(numStr) || numStr === '') return alert("Ingresa un número válido.");
+            
+            let datos = await obtenerDatos();
+            let numOrig = parseInt(numStr);
+            let numVolt = voltearNumero(numOrig);
+
+            let resOrig = analizarNumeroIndividual(datos, numOrig);
+            if (!resOrig || resOrig.ultima === "No registrado") {
+                document.getElementById('texto-resultados').innerHTML = "<p style='color:#ff5555;'>No hay datos válidos para este número.</p>";
+                return;
+            }
+
+            actualizarGrafico([...resOrig.tendencia_hora], resOrig.vector_info, resOrig.vector_info.proxima_hora_decimal);
+
+            let html = `<h3>Análisis de Flancos para [${numOrig}]:</h3>`;
+            
+            // Caja Principal
+            html += `<div class="box">
+                <b>Número Solicitado [${numOrig}]:</b><br>
+                • Flancos: Subidas (${resOrig.subidas}) | Bajadas (${resOrig.bajadas})<br>
+                • Ciclo Promedio: ${resOrig.ciclo} días<br>
+                • Última Aparición: ${resOrig.ultima}<br>`;
+            
+            let colorOrig = resOrig.prediccion.includes("MAÑANA") ? "#00ffcc" : (resOrig.prediccion.includes("TARDE") ? "#ffcc00" : "#fff");
+            html += `• Proyección: <span style="color:${colorOrig}; font-weight:bold;">${resOrig.prediccion}</span><br>`;
+            if (resOrig.fecha_estimada !== "N/A") {
+                html += `• Fecha Estimada: ${resOrig.fecha_estimada}`;
+                if (resOrig.dias_retraso > 0) html += ` <span style="color:#ff5555;">(Retrasado ${resOrig.dias_retraso} días)</span>`;
+                else if (resOrig.dias_retraso === 0) html += ` <span style="color:#ffff00;">(Para hoy)</span>`;
+            }
+            html += `</div>`;
+
+            // Cadenas
+            let cadenas = generarMultiplesSecuencias(datos, numOrig, 3);
+            html += `<div class="box-cadenas">
+                <b style="color:#ff00cc;">🔗 TRIPLE CADENA DE ATRACCIÓN:</b><br>`;
+            let coloresSec = ["#00ffcc", "#ffcc00", "#ff6600", "#ff00cc"];
+            cadenas.forEach((sec, i) => {
+                html += `<b>Ruta ${i+1}:</b> `;
+                sec.forEach((n, j) => {
+                    html += `<span class="texto-resaltado" style="color:${coloresSec[j%4]};">[${n}]</span>`;
+                    if (j < sec.length - 1) html += ` ➔ `;
+                });
+                html += `<br>`;
+            });
+            html += `</div>`;
+
+            // Franjas y Atrayentes (resumido para no hacer tan largo el código aquí)
+            if (resOrig.vector_info.direccion) {
+                 html += `<div class="box-vector"><b style="color:${resOrig.vector_info.color};">🧭 VECTOR:</b> ${resOrig.vector_info.direccion} (Próx. Hora: ${resOrig.vector_info.proxima_hora_str})</div>`;
+            }
+            
+            document.getElementById('texto-resultados').innerHTML = html;
+        }
+
+        async function ejecutarModoAutomatico() {
+            document.getElementById('texto-resultados').innerHTML = "<p style='color:#ffcc00;'>Iniciando barrido matemático... Esto puede tardar unos segundos.</p>";
+            let datos = await obtenerDatos();
+            // Lógica simplificada para el ejemplo visual:
+            document.getElementById('texto-resultados').innerHTML += "<p style='color:#00ffcc;'>MODO AUT CARGADO. (La lógica de escaneo masivo se puede programar aquí).</p>";
+        }
+    </script>
+</body>
+</html>
