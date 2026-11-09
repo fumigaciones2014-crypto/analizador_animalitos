@@ -324,6 +324,17 @@
 
         async function ejecutarAnalisisManual() {
             let numStr = document.getElementById('input-numero').value.trim();
+                    // Esta función se ejecuta al cargar la página. Lee la URL por si viene un número desde el ojito.
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const numeroDesdeIndex = urlParams.get('numero');
+            if (numeroDesdeIndex) {
+                document.getElementById('input-numero').value = numeroDesdeIndex;
+                // Selecciona la lotería correcta basado en lo que estaba en la otra página
+                // (Por defecto cargamos Lotto, pero si quieres podemos hacerlo dinámico luego)
+                ejecutarAnalisisManual(); 
+            }
+        };
             if (isNaN(numStr) || numStr === '') return alert("Ingresa un número válido.");
             
             let datos = await obtenerDatos();
