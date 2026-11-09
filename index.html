@@ -50,6 +50,18 @@
         footer { background-color: var(--bg-header); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-top: 2px solid #333; }
         footer a { color: var(--btn-azul-claro); text-decoration: none; font-weight: bold; }
         footer a:hover { text-decoration: underline; }
+
+        /* ESTILOS DEL MODAL (OJITO) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+        .modal-content { background-color: #1e1e1e; padding: 20px; border: 2px solid var(--btn-azul-claro); border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; position: relative; }
+        .close-btn { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover { color: white; }
+        
+        .box-modal { background-color: #222; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #00ffcc; }
+        .box-cadena { background-color: #2a1133; border-left: 4px solid #ff00cc; }
+        .texto-cadena { font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+        .btn-ir-historial { display: block; text-align: center; background-color: #006633; color: white; text-decoration: none; padding: 12px; border-radius: 5px; font-weight: bold; margin-top: 15px; border: none; width: 100%; cursor: pointer; }
+        .btn-ir-historial:hover { background-color: #008844; }
     </style>
 </head>
 <body>
@@ -57,7 +69,6 @@
     <header>
         <div></div>
         <div class="header-title">JARVIS - MULTIANALIZADOR v1.0</div>
-        <!-- Botón modificado para ir al historial avanzado -->
         <button id="btn-descargas" class="btn-menu bg-azul" style="padding: 10px 20px;" onclick="window.location.href='hist_avanzado.html'">HIST_AVANZADO</button>
     </header>
 
@@ -114,8 +125,19 @@
         <a href="https://loteriadehoy.com/animalitos/resultados" target="_blank">RESULTADOS</a>
     </footer>
 
+    <!-- MODAL DEL OJITO -->
+    <div id="modal-ojo" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="cerrarModalOjo()">&times;</span>
+            <h2 id="modal-ojo-titulo" style="color: #ffcc00; margin-bottom: 15px;">Análisis...</h2>
+            <div id="modal-ojo-cuerpo"></div>
+            <button id="btn-ir-analisis" class="btn-ir-historial" onclick="irAHistorialAvanzado()">📈 Ver Gráfico Completo en Historial</button>
+        </div>
+    </div>
+
     <script>
         let datosLotto = [], datosGuacharo = [], datosMini = [], loteriaActual = 'lotto';
+        let numParaHistorial = "";
 
         // Reloj
         setInterval(() => {
@@ -168,10 +190,190 @@
             else if (loteria === 'mini') renderizarTabla(datosMini);
         }
 
-        // Abrir Modal (Ojito)
+        // ==========================================
+        // LÓGICA MATEMÁTICA (OJO)
+        // ==========================================
+        function voltearNumero(num) {
+            let s = num.toString();
+            if (s.length === 1) return num;
+            return parseInt(s.split('').reverse().join('')) || 0;
+        }
+
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaStr = registro.hora;
+                
+                let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let minuto = parseInt(horaParts[2]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (minuto / 60);
+
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
+            });
+
+            if (historialNumeros.length === 0) return null;
+
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+
+            if (indicesApariciones.length === 0) {
+                return { num: numeroObjetivo, subidas: 0, bajadas: 0, ciclo: 0, ultima: "No registrado", prediccion: "Sin datos", fecha_estimada: "N/A", dias_retraso: 0, top_atrayentes: [] };
+            }
+
+            let subidas = 0, bajadas = 0;
+            indicesApariciones.forEach(idx => {
+                if (idx > 0) {
+                    if (historialNumeros[idx] > historialNumeros[idx-1]) subidas++;
+                    else if (historialNumeros[idx] < historialNumeros[idx-1]) bajadas++;
+                }
+            });
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let f1 = fechasHoras[indicesApariciones[i-1]].fecha;
+                let f2 = fechasHoras[indicesApariciones[i]].fecha;
+                let dias = calcularDiferenciaDias(f1, f2);
+                if (dias > 0) ciclos.push(dias);
+            }
+
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            let ultimaFechaStr = `${ultimaAparicion.fecha} (${ultimaAparicion.horaStr})`;
+
+            let prediccion = "Neutro";
+            if (subidas > bajadas) prediccion = "MAÑANA";
+            else if (bajadas > subidas) prediccion = "TARDE";
+
+            let fechaEst = "N/A", diasRetraso = 0;
+            let hoy = new Date();
+            let hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+            if (promedioCiclo > 0 && ultimaFechaStr !== "No registrado") {
+                let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
+                let fechaEstimadaDate = new Date(fechaBase);
+                fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
+                fechaEst = fechaEstimadaDate.toISOString().split('T')[0];
+                diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
+            }
+
+            let numerosVecinos = [];
+            indicesApariciones.forEach(idx => {
+                if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
+                if (idx + 1 < historialNumeros.length) numerosVecinos.push(historialNumeros[idx + 1]);
+            });
+            
+            let conteo = {};
+            numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
+            let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => [parseInt(e[0]), e[1]]);
+
+            return {
+                num: numeroObjetivo, subidas, bajadas, ciclo: promedioCiclo.toFixed(1), ultima: ultimaFechaStr,
+                prediccion, fecha_estimada: fechaEst, dias_retraso: diasRetraso, top_atrayentes: topAtrayentes
+            };
+        }
+
+        function generarMultiplesSecuencias(datosLoteria, numeroInicial, cantidadCadenas = 3) {
+            let cadenas = [];
+            let resInicial = analizarNumeroIndividual(datosLoteria, numeroInicial);
+            if (!resInicial || resInicial.top_atrayentes.length === 0) return [[numeroInicial]];
+
+            let opcionesIniciales = resInicial.top_atrayentes.slice(0, cantidadCadenas).map(at => at[0]);
+            
+            opcionesIniciales.forEach(opcion => {
+                let secuencia = [numeroInicial, opcion];
+                let actual = opcion;
+                while (secuencia.length < 4) {
+                    let res = analizarNumeroIndividual(datosLoteria, actual);
+                    if (!res || res.top_atrayentes.length === 0) break;
+                    let siguiente = null;
+                    for (let [numAt, _] of res.top_atrayentes) {
+                        if (!secuencia.includes(numAt)) { siguiente = numAt; break; }
+                    }
+                    if (siguiente === null) break;
+                    secuencia.push(siguiente);
+                    actual = siguiente;
+                }
+                cadenas.push(secuencia);
+            });
+            if (cadenas.length === 0) cadenas.push([numeroInicial]);
+            return cadenas;
+        }
+
+        // ==========================================
+        // FUNCIÓN DEL OJITO (MODAL)
+        // ==========================================
         function abrirAnalisis(numero, hora) {
-            if (numero === '??') return alert("Sorteo sin número.");
-            alert(`Análisis del número [${numero}] a las ${hora}.\n\n(En la Fase 3 conectaremos este botón con la nueva ventana de historial avanzado).`);
+            if (numero === '??') return alert("Sorteo sin número registrado.");
+            
+            let datos = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
+            let numOrig = parseInt(numero);
+            
+            // Guardamos el número para el botón de ir al gráfico
+            numParaHistorial = numero;
+
+            let resOrig = analizarNumeroIndividual(datos, numOrig);
+            
+            document.getElementById('modal-ojo-titulo').innerText = `Análisis Rápido para [${numOrig}] - ${hora}`;
+            
+            let html = `<div class="box-modal">
+                <b>Número [${numOrig}]:</b><br>
+                • Flancos: Subidas (${resOrig.subidas}) | Bajadas (${resOrig.bajadas})<br>
+                • Ciclo Promedio: ${resOrig.ciclo} días<br>
+                • Última Salida: ${resOrig.ultima}<br>`;
+
+            let colorPred = resOrig.prediccion === "MAÑANA" ? "#00ffcc" : (resOrig.prediccion === "TARDE" ? "#ffcc00" : "#ffffff");
+            html += `• Proyección: <span style="color:${colorPred}; font-weight:bold;">${resOrig.prediccion}</span><br>`;
+            
+            if (resOrig.fecha_estimada !== "N/A") {
+                html += `• Estimado para: ${resOrig.fecha_estimada}`;
+                if (resOrig.dias_retraso > 0) html += ` <span style="color:#ff5555;">(Retrasado ${resOrig.dias_retraso} días)</span>`;
+                else if (resOrig.dias_retraso === 0) html += ` <span style="color:#ffff00;">(Para hoy)</span>`;
+            }
+            html += `</div>`;
+
+            // Cadena de atracción
+            let cadenas = generarMultiplesSecuencias(datos, numOrig, 3);
+            html += `<div class="box-modal box-cadena">
+                <b style="color:#ff00cc; font-size: 16px;">🔗 TRIPLE CADENA DE ATRACCIÓN:</b><br><br>`;
+            
+            let colores = ["#00ffcc", "#ffcc00", "#ff6600", "#ff00cc"];
+            cadenas.forEach((sec, i) => {
+                html += `<b>Ruta ${i+1}:</b> `;
+                sec.forEach((n, j) => {
+                    html += `<span class="texto-cadena" style="color:${colores[j%4]};">[${n}]</span>`;
+                    if (j < sec.length - 1) html += ` <span style="color:#888;">➔</span> `;
+                });
+                html += `<br>`;
+            });
+            html += `</div>`;
+
+            document.getElementById('modal-ojo-cuerpo').innerHTML = html;
+            document.getElementById('modal-ojo').style.display = 'flex';
+        }
+
+        function cerrarModalOjo() {
+            document.getElementById('modal-ojo').style.display = 'none';
+        }
+
+        function irAHistorialAvanzado() {
+            // Redirige a la ventana de historial, pasando el número por la URL
+            window.location.href = `hist_avanzado.html?numero=${numParaHistorial}`;
         }
 
         window.onload = cargarDatos;
