@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ANALIZADOR_JARVIS</title>
     <style>
-        /* [AQUÍ VA TU CSS ANTERIOR, LO MANTENGO INTACTO PARA NO ROMPER EL DISEÑO] */
         :root {
             --bg-principal: #1a1a1a; --bg-header: #0f0f0f; --bg-panel: #2a2a2a;
             --bg-tabla: #222222; --text-blanco: #ffffff; --text-amarillo: #ffc107;
@@ -51,19 +50,6 @@
         footer { background-color: var(--bg-header); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-top: 2px solid #333; }
         footer a { color: var(--btn-azul-claro); text-decoration: none; font-weight: bold; }
         footer a:hover { text-decoration: underline; }
-
-        /* ESTILOS PARA EL MODAL (La ventanita emergente) */
-        .modal {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background-color: #1e1e1e; padding: 20px; border: 2px solid var(--btn-azul-claro);
-            border-radius: 8px; width: 80%; max-width: 600px; color: #00ffcc; font-family: Consolas, monospace;
-            max-height: 80vh; overflow-y: auto;
-        }
-        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close-btn:hover { color: white; }
     </style>
 </head>
 <body>
@@ -71,7 +57,8 @@
     <header>
         <div></div>
         <div class="header-title">JARVIS - MULTIANALIZADOR v1.0</div>
-        <button id="btn-descargas" class="btn-menu bg-azul" style="padding: 10px 20px;">DESCARGAS WEB</button>
+        <!-- Botón modificado para ir al historial avanzado -->
+        <button id="btn-descargas" class="btn-menu bg-azul" style="padding: 10px 20px;" onclick="window.location.href='hist_avanzado.html'">HIST_AVANZADO</button>
     </header>
 
     <div class="layout-container">
@@ -103,9 +90,7 @@
                             <th>Ver</th>
                         </tr>
                     </thead>
-                    <tbody id="tabla-cuerpo">
-                        <!-- Aquí JavaScript inyectará las filas -->
-                    </tbody>
+                    <tbody id="tabla-cuerpo"></tbody>
                 </table>
             </div>
             <button id="btn-agregar-manual" class="btn-add-manual">+ Agregar Sorteo Manual</button>
@@ -129,31 +114,16 @@
         <a href="https://loteriadehoy.com/animalitos/resultados" target="_blank">RESULTADOS</a>
     </footer>
 
-    <!-- MODAL PARA EL ANÁLISIS (VENTANA EMERGENTE) -->
-    <div id="modal-analisis" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="cerrarModal()">&times;</span>
-            <h3 id="modal-titulo" style="color: #ffcc00; margin-bottom: 10px;">Análisis</h3>
-            <div id="modal-cuerpo">Cargando datos...</div>
-        </div>
-    </div>
-
     <script>
-        // Variables globales para guardar los datos cargados
-        let datosLotto = [];
-        let datosGuacharo = [];
-        let datosMini = [];
-        let loteriaActual = 'lotto';
+        let datosLotto = [], datosGuacharo = [], datosMini = [], loteriaActual = 'lotto';
 
-        // 1. RELOJ DEL FOOTER
-        function actualizarReloj() {
+        // Reloj
+        setInterval(() => {
             const ahora = new Date();
             document.getElementById('footer-reloj').innerText = `📅 ${ahora.toLocaleDateString()} | ⏰ ${ahora.toLocaleTimeString()}`;
-        }
-        setInterval(actualizarReloj, 1000);
-        actualizarReloj();
+        }, 1000);
 
-        // 2. CARGAR DATOS JSON (Fetch)
+        // Cargar Datos
         async function cargarDatos() {
             try {
                 const [resLotto, resGua, resMini] = await Promise.all([
@@ -161,35 +131,22 @@
                     fetch('mapeo_gua.json').then(r => r.json()),
                     fetch('mapeo_mini.json').then(r => r.json())
                 ]);
-                
-                datosLotto = resLotto;
-                datosGuacharo = resGua;
-                datosMini = resMini;
-
-                // Renderizar la tabla con los datos de Lotto por defecto
+                datosLotto = resLotto; datosGuacharo = resGua; datosMini = resMini;
                 renderizarTabla(datosLotto);
             } catch (error) {
                 console.error("Error cargando los JSON:", error);
-                alert("Asegúrate de haber subido los archivos JSON a la carpeta 'data' en GitHub.");
             }
         }
 
-        // 3. RENDERIZAR TABLA (Toma los últimos 50 registros para no saturar)
+        // Renderizar Tabla
         function renderizarTabla(datos) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
-            
-            // Tomamos los últimos 50 registros (los más recientes) y los invertimos para ver el más nuevo primero
-            const datosRecientes = datos.slice(-50).reverse();
-
-            datosRecientes.forEach(registro => {
+            datos.slice(-50).reverse().forEach(registro => {
                 const tr = document.createElement('tr');
-                // Formatear fecha (YYYY-MM-DD a DD-MM)
                 const fechaParts = registro.fecha.split('-');
-                const fechaFormateada = `${fechaParts[2]}-${fechaParts[1]}`;
-                
                 tr.innerHTML = `
-                    <td>${fechaFormateada}</td>
+                    <td>${fechaParts[2]}-${fechaParts[1]}</td>
                     <td>${registro.hora}</td>
                     <td>${registro.animal || '---'}</td>
                     <td class="num-verde">${registro.numero}</td>
@@ -199,54 +156,25 @@
             });
         }
 
-        // 4. CAMBIAR DE LOTERÍA (Tabs)
+        // Cambiar Lotería
         function cambiarLoteria(loteria) {
             loteriaActual = loteria;
-            
-            // Cambiar colores de los botones
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('tab-active');
-                btn.classList.add('tab-inactive');
-            });
+            document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('tab-active'); btn.classList.add('tab-inactive'); });
             document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.remove('tab-inactive');
             document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.add('tab-active');
-
-            // Cargar datos según pestaña
+            
             if (loteria === 'lotto') renderizarTabla(datosLotto);
             else if (loteria === 'gua') renderizarTabla(datosGuacharo);
             else if (loteria === 'mini') renderizarTabla(datosMini);
         }
 
-        // 5. ABRIR MODAL DE ANÁLISIS (El botón "Ver")
+        // Abrir Modal (Ojito)
         function abrirAnalisis(numero, hora) {
-            if (numero === '??') {
-                alert("Este sorteo no tiene número registrado.");
-                return;
-            }
-
-            const modal = document.getElementById('modal-analisis');
-            const titulo = document.getElementById('modal-titulo');
-            const cuerpo = document.getElementById('modal-cuerpo');
-
-            titulo.innerText = `Análisis de Flancos para [${numero}] - ${hora}`;
-            
-            // AQUÍ CONECTAREMOS LA LÓGICA MATEMÁTICA LUEGO
-            cuerpo.innerHTML = `
-                <p style="color: #fff;">Calculando trayectoria y flancos...</p>
-                <p>Número seleccionado: <b>${numero}</b></p>
-                <p style="color: #888; font-size: 12px;">(En el siguiente paso, aquí se mostrará la proyección de fecha, ciclo, y la triple cadena de atracción).</p>
-            `;
-
-            modal.style.display = 'flex';
+            if (numero === '??') return alert("Sorteo sin número.");
+            alert(`Análisis del número [${numero}] a las ${hora}.\n\n(En la Fase 3 conectaremos este botón con la nueva ventana de historial avanzado).`);
         }
 
-        function cerrarModal() {
-            document.getElementById('modal-analisis').style.display = 'none';
-        }
-
-        // Iniciar la carga al abrir la página
         window.onload = cargarDatos;
-
     </script>
 </body>
 </html>
