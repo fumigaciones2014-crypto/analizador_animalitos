@@ -72,7 +72,8 @@
             <p style="color:#888;">Selecciona una lotería e ingresa un número para iniciar el análisis, o presiona "MODO AUT".</p>
         </div>
     </div>
-                  <!-- BARRA DE PROGRESO REAL -->
+
+    <!-- BARRA DE PROGRESO REAL -->
     <div id="contenedor-progreso" style="display: none; margin-top: 10px;">
         <div style="background-color: #333; border-radius: 5px; height: 20px; overflow: hidden; border: 1px solid #555;">
             <div id="barra-progreso" style="width: 0%; height: 100%; background-color: #00ff00; transition: width 0.1s;"></div>
@@ -82,7 +83,6 @@
 
     <script>
         let chartInstance = null;
-        let datosGlobales = [];
 
         // --- LÓGICA MATEMÁTICA (Traducida de Python) ---
         function voltearNumero(num) {
@@ -91,7 +91,6 @@
             return parseInt(s.split('').reverse().join('')) || 0;
         }
 
-        // Función para calcular el ciclo en días entre dos fechas
         function calcularDiferenciaDias(fecha1, fecha2) {
             const f1 = new Date(fecha1 + 'T00:00:00');
             const f2 = new Date(fecha2 + 'T00:00:00');
@@ -107,7 +106,6 @@
                 let num = parseInt(numStr);
                 let horaStr = registro.hora;
                 
-                // Convertir "07:00 PM" a decimal (19.0)
                 let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
                 if(!horaParts) return;
                 let hora = parseInt(horaParts[1]);
@@ -168,7 +166,6 @@
                 diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
             }
 
-            // Atrayentes
             let numerosVecinos = [];
             indicesApariciones.forEach(idx => {
                 if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
@@ -179,7 +176,6 @@
             numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
             let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => [parseInt(e[0]), e[1]]);
 
-            // Franjas
             let franjas = { "08:00 AM - 11:00 AM": 0, "11:00 AM - 02:00 PM": 0, "02:00 PM - 05:00 PM": 0, "05:00 PM - 08:00 PM": 0 };
             indicesApariciones.forEach(idx => {
                 let h = fechasHoras[idx].decimal;
@@ -193,7 +189,6 @@
             let vectorInfo = {}, zonaEquilibrio = {};
 
             if (tendenciaHora.length >= 3) {
-                // Regresión lineal simple (m, b)
                 let n = tendenciaHora.length;
                 let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
                 for(let i=0; i<n; i++) {
@@ -217,7 +212,6 @@
                     proxima_hora_str: `${Math.floor(proxHora).toString().padStart(2,'0')}:${Math.floor((proxHora % 1) * 60).toString().padStart(2,'0')}`
                 };
 
-                // División del vector
                 let puntosDebajo = 0, puntosEncima = 0;
                 for(let i=0; i<n; i++) {
                     let horaLinea = m * (i + 1) + b;
@@ -266,7 +260,6 @@
         }
 
         // --- RENDERIZADO EN PANTALLA ---
-        
         async function obtenerDatos() {
             let loteria = document.getElementById('combo-loteria').value;
             let res = await fetch(loteria);
@@ -278,9 +271,6 @@
             if (chartInstance) chartInstance.destroy();
 
             let labels = tendencias.map((_, i) => `Ap. ${i+1}`);
-            let dataPoints = tendencias.map(v => ({ x: labels.length, y: v })); // Solo para formateo simple
-
-            // Si hay proyección, agregamos el punto extra
             if (vectorInfo && vectorInfo.proxima_hora_decimal) {
                 labels.push("Próx.");
                 tendencias.push(vectorInfo.proxima_hora_decimal);
@@ -331,22 +321,10 @@
 
         async function ejecutarAnalisisManual() {
             let numStr = document.getElementById('input-numero').value.trim();
-                    // Esta función se ejecuta al cargar la página. Lee la URL por si viene un número desde el ojito.
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const numeroDesdeIndex = urlParams.get('numero');
-            if (numeroDesdeIndex) {
-                document.getElementById('input-numero').value = numeroDesdeIndex;
-                // Selecciona la lotería correcta basado en lo que estaba en la otra página
-                // (Por defecto cargamos Lotto, pero si quieres podemos hacerlo dinámico luego)
-                ejecutarAnalisisManual(); 
-            }
-        };
             if (isNaN(numStr) || numStr === '') return alert("Ingresa un número válido.");
             
             let datos = await obtenerDatos();
             let numOrig = parseInt(numStr);
-            let numVolt = voltearNumero(numOrig);
 
             let resOrig = analizarNumeroIndividual(datos, numOrig);
             if (!resOrig || resOrig.ultima === "No registrado") {
@@ -358,7 +336,6 @@
 
             let html = `<h3>Análisis de Flancos para [${numOrig}]:</h3>`;
             
-            // Caja Principal
             html += `<div class="box">
                 <b>Número Solicitado [${numOrig}]:</b><br>
                 • Flancos: Subidas (${resOrig.subidas}) | Bajadas (${resOrig.bajadas})<br>
@@ -374,7 +351,6 @@
             }
             html += `</div>`;
 
-            // Cadenas
             let cadenas = generarMultiplesSecuencias(datos, numOrig, 3);
             html += `<div class="box-cadenas">
                 <b style="color:#ff00cc;">🔗 TRIPLE CADENA DE ATRACCIÓN:</b><br>`;
@@ -389,7 +365,6 @@
             });
             html += `</div>`;
 
-            // Franjas y Atrayentes (resumido para no hacer tan largo el código aquí)
             if (resOrig.vector_info.direccion) {
                  html += `<div class="box-vector"><b style="color:${resOrig.vector_info.color};">🧭 VECTOR:</b> ${resOrig.vector_info.direccion} (Próx. Hora: ${resOrig.vector_info.proxima_hora_str})</div>`;
             }
@@ -398,18 +373,11 @@
         }
 
         async function ejecutarModoAutomatico() {
-            document.getElementById('texto-resultados').innerHTML = "<p style='color:#ffcc00;'>Iniciando barrido matemático... Esto puede tardar unos segundos.</p>";
-            let datos = await obtenerDatos();
-            // Lógica simplificada para el ejemplo visual:
-            document.getElementById('texto-resultados').innerHTML += "<p style='color:#00ffcc;'>MODO AUT CARGADO. 
-                        // --- LÓGICA DEL MODO AUTOMÁTICO CON BARRA DE PROGRESO ---
-        async function ejecutarModoAutomatico() {
             let resultadosDiv = document.getElementById('texto-resultados');
             let contenedorProgreso = document.getElementById('contenedor-progreso');
             let barraProgreso = document.getElementById('barra-progreso');
             let textoProgreso = document.getElementById('texto-progreso');
             
-            // Mostrar barra y limpiar
             resultadosDiv.innerHTML = "<p style='color:#ffcc00;'>Iniciando escaneo automático de números...</p>";
             contenedorProgreso.style.display = 'block';
             barraProgreso.style.width = '0%';
@@ -418,14 +386,11 @@
             let datos = await obtenerDatos();
             let loteriaNombre = document.getElementById('combo-loteria').options[document.getElementById('combo-loteria').selectedIndex].text;
             
-            // Pausa pequeña para que el navegador pinte la barra antes de empezar
             await new Promise(r => setTimeout(r, 100));
 
-            // Lógica traducida de Python: modo_automatico_aut
             let fechaHoy = new Date();
             let fechaHoyStr = fechaHoy.toISOString().split('T')[0];
             
-            // Buscar la última fecha real del JSON para no calcular sobre fechas futuras
             try {
                 let ultimaFechaData = datos[datos.length - 1].fecha;
                 if (new Date(ultimaFechaData) > fechaHoy) {
@@ -436,14 +401,11 @@
             let limiteMax = loteriaNombre.includes('Lotto') ? 36 : (loteriaNombre.includes('Guacharo') ? 99 : 75);
             let numsManana = [], numsTarde = [], numsVencidos = [];
             
-            // Iteramos sobre todos los números posibles para la lotería
             for (let num = 0; num <= limiteMax; num++) {
-                // Actualizar la barra real
                 let porcentaje = Math.round((num / limiteMax) * 100);
                 barraProgreso.style.width = porcentaje + '%';
                 textoProgreso.innerText = `Analizando número [${num}]... (${porcentaje}%)`;
 
-                // (Aquí va la lógica matemática de proyección para cada número, resumida)
                 let stats = analizarNumeroIndividual(datos, num);
                 if (stats && stats.ultima !== "No registrado" && stats.ciclo > 0) {
                     let fechaBase = new Date(stats.ultima.split(' ')[0] + 'T00:00:00');
@@ -463,16 +425,13 @@
                     }
                 }
 
-                // Pausa artificial microscópica para que la barra de progreso se pueda ver en pantalla
                 if (num % 5 === 0) await new Promise(r => setTimeout(r, 10));
             }
 
-            // Finalizar barra
             barraProgreso.style.width = '100%';
             textoProgreso.innerText = '¡Escaneo Completado!';
             setTimeout(() => { contenedorProgreso.style.display = 'none'; }, 1500);
 
-            // Construir el HTML de resultados
             let html = `<h3>🤖 ESCANEO AUTOMÁTICO: ${loteriaNombre.toUpperCase()}</h3>`;
             html += `<p>Filtro aplicado para el día de hoy (${fechaHoyStr}) y mañana.</p>`;
 
@@ -497,7 +456,7 @@
             html += `<h4 style='color: #ff5555;'>⚠️ Números Vencidos (3 a 15 días):</h4>`;
             if (numsVencidos.length > 0) {
                 html += `<ul>`;
-                numsVencidos.sort((a,b) => b.d - a.d); // Ordenar por más retrasados
+                numsVencidos.sort((a,b) => b.d - a.d); 
                 numsVencidos.forEach(n => {
                     let horaProb = n.s > n.b ? "TARDE 🌇" : (n.b > n.s ? "MAÑANA 🌅" : "INDEFINIDA");
                     let colorHora = n.s > n.b ? "#ffcc00" : (n.b > n.s ? "#00ffcc" : "#fff");
@@ -509,8 +468,17 @@
             }
 
             resultadosDiv.innerHTML = html;
-        }.</p>";
         }
+
+        // Esta función se ejecuta al cargar la página. Lee la URL por si viene un número desde el ojito.
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const numeroDesdeIndex = urlParams.get('numero');
+            if (numeroDesdeIndex) {
+                document.getElementById('input-numero').value = numeroDesdeIndex;
+                ejecutarAnalisisManual(); 
+            }
+        };
     </script>
 </body>
 </html>
