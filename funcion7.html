@@ -38,20 +38,20 @@
             box-shadow: 0 0 15px #ff00cc; transform: scale(1.1); z-index: 10;
             border: 2px solid #fff;
         }
-        .vecino-antes { 
+        .vecino-unico { 
             background-color: #00ffcc !important; color: #000 !important; 
             box-shadow: 0 0 10px #00ffcc;
         }
-        .vecino-despues { 
+        .vecino-repetido { 
             background-color: #ffcc00 !important; color: #000 !important; 
-            box-shadow: 0 0 10px #ffcc00;
+            box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff; transform: scale(1.05); z-index: 9;
         }
 
         /* Caja de Resultados de Texto */
         .resultado-texto { background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; max-width: 600px; margin: 20px auto 0; width: 100%; box-sizing: border-box; text-align: center;}
         .badge-info { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: bold; margin: 5px;}
-        .b-antes { background-color: #00ffcc; color: #000;}
-        .b-despues { background-color: #ffcc00; color: #000;}
+        .b-unico { background-color: #00ffcc; color: #000;}
+        .b-repetido { background-color: #ffcc00; color: #000;}
         .b-objetivo { background-color: #ff00cc; color: white;}
 
         .mensaje-error { color: #ff5555; text-align: center; font-size: 1.1rem; margin-top: 20px;}
@@ -151,7 +151,7 @@
             });
         }
 
-        // 2. Lógica principal
+        // 2. Lógica principal mejorada
         async function buscarVecinosRuleta() {
             const inputVal = document.getElementById('input-numero').value.trim();
             const loteriaFile = document.getElementById('combo-loteria').value;
@@ -164,7 +164,7 @@
 
             // Limpiar colores previos
             document.querySelectorAll('.casilla').forEach(c => {
-                c.classList.remove('num-objetivo', 'vecino-antes', 'vecino-despues');
+                c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido');
             });
 
             let numeroObjetivo = parseInt(inputVal);
@@ -173,37 +173,59 @@
                 const res = await fetch(loteriaFile);
                 const datos = await res.json();
 
-                // Extraer solo los números válidos en orden cronológico
+                // Extraer historial de números válidos con su fecha
                 let historial = [];
-                datos.forEach(reg => {
+                datos.forEach((reg, index) => {
                     if (reg.numero !== '??' && !isNaN(reg.numero)) {
-                        historial.push(parseInt(reg.numero));
+                        historial.push({ num: parseInt(reg.numero), fecha: reg.fecha, hora: reg.hora, originalIndex: index });
                     }
                 });
 
-                // Buscar la última aparición del número objetivo
-                let ultimoIndice = -1;
-                for (let i = historial.length - 1; i >= 0; i--) {
-                    if (historial[i] === numeroObjetivo) {
-                        ultimoIndice = i;
-                        break;
-                    }
-                }
+                // Buscar TODAS las apariciones del número objetivo
+                let indicesApariciones = [];
+                historial.forEach((h, i) => {
+                    if (h.num === numeroObjetivo) indicesApariciones.push(i);
+                });
 
-                if (ultimoIndice === -1) {
+                if (indicesApariciones.length === 0) {
                     textResult.style.display = 'block';
                     textResult.innerHTML = `<p class="mensaje-error">El número ${numeroObjetivo} no tiene apariciones registradas en esta lotería.</p>`;
                     return;
                 }
 
-                // Obtener 5 anteriores y 5 posteriores
-                let antes = [];
-                let despues = [];
+                // Tomar las últimas 3 apariciones (si hay menos, tomamos las que haya)
+                let ultimasApariciones = indicesApariciones.slice(-3).reverse(); // Más reciente primero
 
-                for (let i = 1; i <= 5; i++) {
-                    if (ultimoIndice - i >= 0) antes.unshift(historial[ultimoIndice - i]); // unshift para mantener orden
-                    if (ultimoIndice + i < historial.length) despues.push(historial[ultimoIndice + i]);
-                }
+                let vecinosAntes = [];
+                let vecinosDespues = [];
+                let contadorVecinos = {}; // Para saber cuántas veces se repite un número
+
+                // Extraer 2 vecinos antes y 2 después por cada aparición
+                ultimasApariciones.forEach(idx => {
+                    // 2 Antes
+                    if (idx - 1 >= 0) {
+                        let n = historial[idx - 1].num;
+                        vecinosAntes.push(n);
+                        contadorVecinos[n] = (contadorVecinos[n] || 0) + 1;
+                    }
+                    if (idx - 2 >= 0) {
+                        let n = historial[idx - 2].num;
+                        vecinosAntes.push(n);
+                        contadorVecinos[n] = (contadorVecinos[n] || 0) + 1;
+                    }
+                    
+                    // 2 Después
+                    if (idx + 1 < historial.length) {
+                        let n = historial[idx + 1].num;
+                        vecinosDespues.push(n);
+                        contadorVecinos[n] = (contadorVecinos[n] || 0) + 1;
+                    }
+                    if (idx + 2 < historial.length) {
+                        let n = historial[idx + 2].num;
+                        vecinosDespues.push(n);
+                        contadorVecinos[n] = (contadorVecinos[n] || 0) + 1;
+                    }
+                });
 
                 // 3. Pintar en la Ruleta
                 // Pintar el objetivo
@@ -211,41 +233,56 @@
                     document.getElementById(`casilla-${numeroObjetivo}`).classList.add('num-objetivo');
                 }
 
-                // Pintar vecinos antes (Verde)
-                antes.forEach(num => {
-                    if (document.getElementById(`casilla-${num}`)) {
-                        document.getElementById(`casilla-${num}`).classList.add('vecino-antes');
+                // Función para pintar un vecino (decide si es repetido o único)
+                let pintarVecino = (num) => {
+                    let casilla = document.getElementById(`casilla-${num}`);
+                    if (casilla) {
+                        if (contadorVecinos[num] > 1) {
+                            casilla.classList.add('vecino-repetido');
+                        } else {
+                            casilla.classList.add('vecino-unico');
+                        }
                     }
-                });
+                };
 
-                // Pintar vecinos después (Amarillo)
-                despues.forEach(num => {
-                    if (document.getElementById(`casilla-${num}`)) {
-                        document.getElementById(`casilla-${num}`).classList.add('vecino-despues');
-                    }
-                });
+                // Pintar todos los vecinos sin duplicar el pintado
+                let todosVecinosUnicos = [...new Set([...vecinosAntes, ...vecinosDespues])];
+                todosVecinosUnicos.forEach(num => pintarVecino(num));
 
                 // 4. Mostrar info en texto
                 textResult.style.display = 'block';
                 let htmlInfo = `<h3>Análisis para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
                 
-                htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Última aparición el <b>${datos[ultimoIndice] ? datos[ultimoIndice].fecha : 'N/A'}</b> a las <b>${datos[ultimoIndice] ? datos[ultimoIndice].hora : 'N/A'}</b></p>`;
+                htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Se analizaron las últimas <b>${ultimasApariciones.length}</b> apariciones en el historial.</p>`;
                 
-                htmlInfo += `<p><b>5 Números ANTERIORES (Verde):</b><br>`;
-                if (antes.length > 0) {
-                    antes.forEach(n => htmlInfo += `<span class="badge-info b-antes">${n}</span>`);
-                } else {
-                    htmlInfo += `<span style="color:#888;">No hay datos suficientes hacia atrás.</span>`;
-                }
-                htmlInfo += `</p>`;
+                // Info de las fechas analizadas
+                htmlInfo += `<div style="background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:15px; text-align:left; font-size:0.9rem;">`;
+                ultimasApariciones.forEach((idx, i) => {
+                    htmlInfo += `<b>Aparición ${i+1}:</b> ${historial[idx].fecha} (${historial[idx].hora})<br>`;
+                });
+                htmlInfo += `</div>`;
 
-                htmlInfo += `<p style="margin-top: 15px;"><b>5 Números POSTERIORES (Amarillo):</b><br>`;
-                if (despues.length > 0) {
-                    despues.forEach(n => htmlInfo += `<span class="badge-info b-despues">${n}</span>`);
-                } else {
-                    htmlInfo += `<span style="color:#888;">No hay datos suficientes hacia adelante.</span>`;
+                htmlInfo += `<p><b>Vecinos detectados:</b></p>`;
+                
+                if (vecinosAntes.length > 0) {
+                    htmlInfo += `<p style="margin-bottom: 10px;"><span style="color:#00ffcc;">ANTERIORES:</span><br>`;
+                    vecinosAntes.forEach(n => {
+                        let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico';
+                        htmlInfo += `<span class="badge-info ${clase}">${n}</span>`;
+                    });
+                    htmlInfo += `</p>`;
                 }
-                htmlInfo += `</p>`;
+
+                if (vecinosDespues.length > 0) {
+                    htmlInfo += `<p><b>POSTERIORES:</b><br>`;
+                    vecinosDespues.forEach(n => {
+                        let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico';
+                        htmlInfo += `<span class="badge-info ${clase}">${n}</span>`;
+                    });
+                    htmlInfo += `</p>`;
+                }
+
+                htmlInfo += `<p style="margin-top: 15px; font-size: 0.9rem; color: #888;"><i>* El color Amarillo indica números vecinos que se repitieron en más de una aparición.</i></p>`;
 
                 textResult.innerHTML = htmlInfo;
 
