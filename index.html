@@ -106,16 +106,19 @@
             <button id="btn-agregar-manual" class="btn-add-manual">+ Agregar Sorteo Manual</button>
         </main>
 
-        <aside class="sidebar-right">
-            <div class="sidebar-title">MENÚ DE FUNCIONES</div>
-            <button id="btn-menu-explosivos" class="btn-menu bg-purpura">Explosivos</button>
-            <button id="btn-menu-patrones" class="btn-menu bg-verde">Patrones</button>
-            <button id="btn-menu-graficos" class="btn-menu bg-azul">Gráficos</button>
-            <button id="btn-menu-proyeccion" class="btn-menu bg-azul">Proyección</button>
-            <button id="btn-menu-automatico" class="btn-menu bg-gris">Modo Auto</button>
-            <button id="btn-menu-atrasados" class="btn-menu bg-amarillo">Atrasados</button>
-            <button id="btn-menu-funcion7" class="btn-menu bg-gris">Función_7</button>
-            <button id="btn-menu-funcion8" class="btn-menu bg-gris">Función_8</button>
+        <!-- ==============================================
+             MAPEO DE RUTAS DEL SIDEBAR
+             ============================================== -->
+        <aside class="sidebar-right" id="sidebar-right">
+            <div class="sidebar-title" id="sidebar-title">MENÚ DE FUNCIONES</div>
+            <button id="btn-menu-explosivos" class="btn-menu bg-purpura" onclick="window.location.href='explosivos.html'">Explosivos</button>
+            <button id="btn-menu-patrones" class="btn-menu bg-verde" onclick="window.location.href='patrones.html'">Patrones</button>
+            <button id="btn-menu-graficos" class="btn-menu bg-azul" onclick="window.location.href='graficos.html'">Gráficos</button>
+            <button id="btn-menu-proyeccion" class="btn-menu bg-azul" onclick="window.location.href='proyeccion.html'">Proyección</button>
+            <button id="btn-menu-automatico" class="btn-menu bg-gris" onclick="window.location.href='automatico.html'">Modo Auto</button>
+            <button id="btn-menu-atrasados" class="btn-menu bg-amarillo" onclick="window.location.href='atrasados.html'">Atrasados</button>
+            <button id="btn-menu-funcion7" class="btn-menu bg-gris" onclick="window.location.href='funcion7.html'">Función_7</button>
+            <button id="btn-menu-funcion8" class="btn-menu bg-gris" onclick="window.location.href='funcion8.html'">Función_8</button>
         </aside>
     </div>
 
@@ -137,15 +140,13 @@
     <script>
         let datosLotto = [], datosGuacharo = [], datosMini = [], loteriaActual = 'lotto';
         let numParaHistorial = "";
-        let datosFiltradosActuales = []; // Para guardar lo que se está mostrando
+        let datosFiltradosActuales = [];
 
-        // Reloj
         setInterval(() => {
             const ahora = new Date();
             document.getElementById('footer-reloj').innerText = `📅 ${ahora.toLocaleDateString()} | ⏰ ${ahora.toLocaleTimeString()}`;
         }, 1000);
 
-        // Cargar Datos
         async function cargarDatos() {
             try {
                 const [resLotto, resGua, resMini] = await Promise.all([
@@ -154,17 +155,15 @@
                     fetch('mapeo_mini.json').then(r => r.json())
                 ]);
                 datosLotto = resLotto; datosGuacharo = resGua; datosMini = resMini;
-                aplicarFiltros(); // Llama a la función de filtros en lugar de renderizar directo
+                aplicarFiltros();
             } catch (error) {
                 console.error("Error cargando los JSON:", error);
             }
         }
 
-        // Renderizar Tabla
         function renderizarTabla(datos) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
-            // Tomamos los últimos 50 (por defecto) pero si el filtro trae menos, muestra lo que haya
             const registrosAMostrar = datos.slice(-50).reverse(); 
             
             if (registrosAMostrar.length === 0) {
@@ -175,7 +174,6 @@
             registrosAMostrar.forEach(registro => {
                 const tr = document.createElement('tr');
                 const fechaParts = registro.fecha.split('-');
-                // Aseguramos que el número se trate como string y no pierda ceros a la izquierda
                 let numMostrar = registro.numero.toString().padStart(2, '0');
                 if(registro.numero === '??') numMostrar = '??';
 
@@ -190,43 +188,32 @@
             });
         }
 
-        // Cambiar Lotería
         function cambiarLoteria(loteria) {
             loteriaActual = loteria;
             document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('tab-active'); btn.classList.add('tab-inactive'); });
             document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.remove('tab-inactive');
             document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.add('tab-active');
-            
-            aplicarFiltros(); // Re-aplica filtros al cambiar de lotería
+            aplicarFiltros(); 
         }
 
-        // ==========================================
-        // FUNCIONALIDAD DE FILTROS
-        // ==========================================
         function aplicarFiltros() {
             let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
             let textoBusqueda = document.getElementById('input-buscar').value.trim().toUpperCase();
             let orden = document.getElementById('select-filtro').value;
 
-            // 1. Filtrar por texto (Animal o Número)
             let filtrados = datosBase.filter(reg => {
                 let animal = (reg.animal || '').toUpperCase();
                 let numero = reg.numero.toString();
-                // Rellenamos con 0 a la izquierda si es necesario para comparar
                 let numeroConCero = numero.padStart(2, '0');
                 return animal.includes(textoBusqueda) || numero.includes(textoBusqueda) || numeroConCero.includes(textoBusqueda);
             });
 
-            // 2. Ordenar
             if (orden === 'numero') {
                 filtrados.sort((a, b) => {
                     let numA = a.numero === '??' ? 999 : parseInt(a.numero);
                     let numB = b.numero === '??' ? 999 : parseInt(b.numero);
                     return numA - numB;
                 });
-            } else {
-                // Por defecto (reciente), el JSON ya viene ordenado cronológicamente
-                // El renderizado se encarga de invertirlo
             }
 
             datosFiltradosActuales = filtrados;
@@ -239,15 +226,6 @@
             aplicarFiltros();
         }
 
-        // ==========================================
-        // LÓGICA MATEMÁTICA (OJO)
-        // ==========================================
-        function voltearNumero(num) {
-            let s = num.toString();
-            if (s.length === 1) return num;
-            return parseInt(s.split('').reverse().join('')) || 0;
-        }
-
         function calcularDiferenciaDias(fecha1, fecha2) {
             const f1 = new Date(fecha1 + 'T00:00:00');
             const f2 = new Date(fecha2 + 'T00:00:00');
@@ -256,13 +234,11 @@
 
         function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
             let historialNumeros = [], fechasHoras = [];
-            
             datosLoteria.forEach(registro => {
                 let numStr = (registro.numero || '').toString().trim();
                 if (numStr === '??' || isNaN(numStr)) return;
                 let num = parseInt(numStr);
                 let horaStr = registro.hora;
-                
                 let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
                 if(!horaParts) return;
                 let hora = parseInt(horaParts[1]);
@@ -271,16 +247,13 @@
                 if (ampm === 'PM' && hora < 12) hora += 12;
                 if (ampm === 'AM' && hora === 12) hora = 0;
                 let horaDecimal = hora + (minuto / 60);
-
                 historialNumeros.push(num);
                 fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
             });
 
             if (historialNumeros.length === 0) return null;
-
             let indicesApariciones = [];
             historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
-
             if (indicesApariciones.length === 0) {
                 return { num: numeroObjetivo, subidas: 0, bajadas: 0, ciclo: 0, ultima: "No registrado", prediccion: "Sin datos", fecha_estimada: "N/A", dias_retraso: 0, top_atrayentes: [] };
             }
@@ -304,11 +277,9 @@
             let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
             let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
             let ultimaFechaStr = `${ultimaAparicion.fecha} (${ultimaAparicion.horaStr})`;
-
             let prediccion = "Neutro";
             if (subidas > bajadas) prediccion = "MAÑANA";
             else if (bajadas > subidas) prediccion = "TARDE";
-
             let fechaEst = "N/A", diasRetraso = 0;
             let hoy = new Date();
             let hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
@@ -326,7 +297,6 @@
                 if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
                 if (idx + 1 < historialNumeros.length) numerosVecinos.push(historialNumeros[idx + 1]);
             });
-            
             let conteo = {};
             numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
             let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => [parseInt(e[0]), e[1]]);
@@ -341,7 +311,6 @@
             let cadenas = [];
             let resInicial = analizarNumeroIndividual(datosLoteria, numeroInicial);
             if (!resInicial || resInicial.top_atrayentes.length === 0) return [[numeroInicial]];
-
             let opcionesIniciales = resInicial.top_atrayentes.slice(0, cantidadCadenas).map(at => at[0]);
             
             opcionesIniciales.forEach(opcion => {
@@ -364,21 +333,13 @@
             return cadenas;
         }
 
-        // ==========================================
-        // FUNCIÓN DEL OJITO (MODAL)
-        // ==========================================
         function abrirAnalisis(numero, hora) {
             if (numero === '??') return alert("Sorteo sin número registrado.");
-            
             let datos = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
             let numOrig = parseInt(numero);
-            
-            // Guardamos el string original para evitar problemas con ceros (ej: "06")
             numParaHistorial = numero.toString(); 
-
             let resOrig = analizarNumeroIndividual(datos, numOrig);
             
-            // Si el número no tiene datos (ej: el 14 no ha salido), mostramos alerta
             if (resOrig.ultima === "No registrado") {
                 document.getElementById('modal-ojo-titulo').innerText = `Análisis para [${numOrig}]`;
                 document.getElementById('modal-ojo-cuerpo').innerHTML = `<p style="color:#ff5555;">Este número no tiene apariciones registradas en el historial actual.</p>`;
@@ -395,10 +356,8 @@
                 • Flancos: Subidas (${resOrig.subidas}) | Bajadas (${resOrig.bajadas})<br>
                 • Ciclo Promedio: ${resOrig.ciclo} días<br>
                 • Última Salida: ${resOrig.ultima}<br>`;
-
             let colorPred = resOrig.prediccion === "MAÑANA" ? "#00ffcc" : (resOrig.prediccion === "TARDE" ? "#ffcc00" : "#ffffff");
             html += `• Proyección: <span style="color:${colorPred}; font-weight:bold;">${resOrig.prediccion}</span><br>`;
-            
             if (resOrig.fecha_estimada !== "N/A") {
                 html += `• Estimado para: ${resOrig.fecha_estimada}`;
                 if (resOrig.dias_retraso > 0) html += ` <span style="color:#ff5555;">(Retrasado ${resOrig.dias_retraso} días)</span>`;
@@ -406,11 +365,9 @@
             }
             html += `</div>`;
 
-            // Cadena de atracción
             let cadenas = generarMultiplesSecuencias(datos, numOrig, 3);
             html += `<div class="box-modal box-cadena">
                 <b style="color:#ff00cc; font-size: 16px;">🔗 TRIPLE CADENA DE ATRACCIÓN:</b><br><br>`;
-            
             let colores = ["#00ffcc", "#ffcc00", "#ff6600", "#ff00cc"];
             cadenas.forEach((sec, i) => {
                 html += `<b>Ruta ${i+1}:</b> `;
@@ -431,7 +388,6 @@
         }
 
         function irAHistorialAvanzado() {
-            // Redirige a la ventana de historial, pasando el número por la URL
             window.location.href = `hist_avanzado.html?numero=${numParaHistorial}`;
         }
 
