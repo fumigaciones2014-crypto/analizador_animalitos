@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Ruleta x N°</title>
+    <title>JARVIS - Fractal de Atracción</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -18,50 +18,15 @@
         .controles input { width: 100px; text-align: center; }
         .btn-buscar { background-color: #455a64; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .btn-buscar:hover { background-color: #607d8b; box-shadow: 0 0 10px rgba(176,190,197,0.3); }
+        .btn-fractal { background-color: #8e24aa; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; margin-left: auto; }
+        .btn-fractal:hover { background-color: #ab47bc; box-shadow: 0 0 10px rgba(171, 71, 188, 0.5); }
 
         /* Contenedor de la Ruleta */
         .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
         
-        .fila { display: flex; align-items: center; gap: 10px; }
-        .fila-label { width: 80px; text-align: right; font-weight: bold; color: #888; font-size: 0.9rem;}
-        .casillas-container { display: flex; gap: 5px; flex-grow: 1;}
-        
-        .casilla { 
-            background-color: #555; color: white; flex: 1; text-align: center; 
-            padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem;
-            border: 1px solid #333; transition: all 0.3s;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .casilla:hover { background-color: #6d6d6d; transform: translateY(-2px); }
-        .casilla:active { transform: scale(0.95); background-color: #4a4a4a; }
-
-        /* Celda vacía (hueco) */
-        .casilla.vacia {
-            background-color: transparent;
-            border: 1px dashed #333;
-            color: transparent;
-            cursor: default;
-            pointer-events: none;
-        }
-        .casilla.vacia:hover { background-color: transparent; transform: none; }
-
-        /* Colores de Resaltado */
-        .num-objetivo { 
-            background-color: #ff00cc !important; color: white !important; 
-            box-shadow: 0 0 15px #ff00cc; transform: scale(1.1); z-index: 10;
-            border: 2px solid #fff;
-        }
-        .vecino-unico { 
-            background-color: #00ffcc !important; color: #000 !important; 
-            box-shadow: 0 0 10px #00ffcc;
-        }
-        .vecino-repetido { 
-            background-color: #ffcc00 !important; color: #000 !important; 
-            box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff; transform: scale(1.05); z-index: 9;
-        }
+        /* Contenedor del Canvas Fractal */
+        .canvas-container { display: flex; justify-content: center; align-items: center; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 10px; margin: 0 auto; max-width: 800px; width: 100%; }
+        canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
 
         /* Caja de Resultados de Texto */
         .resultado-texto { background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; max-width: 600px; margin: 20px auto 0; width: 100%; box-sizing: border-box; text-align: center;}
@@ -72,38 +37,33 @@
 
         .mensaje-error { color: #ff5555; text-align: center; font-size: 1.1rem; margin-top: 20px;}
 
-        /* Grid para Guacharo (11x12 con hueco central) */
-        .grid-guacharo {
-            display: grid;
-            grid-template-columns: repeat(11, 1fr);
-            gap: 3px;
-            width: 100%;
-            max-width: 560px;
-            margin: 0 auto;
-        }
-        .grid-guacharo .casilla {
-            padding: 0;
-            font-size: 0.85rem;
-            aspect-ratio: 1 / 1; /* Mantiene las casillas cuadradas */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* Estilos para las casillas Lotto */
+        .fila { display: flex; align-items: center; gap: 10px; }
+        .fila-label { width: 80px; text-align: right; font-weight: bold; color: #888; font-size: 0.9rem;}
+        .casillas-container { display: flex; gap: 5px; flex-grow: 1;}
+        .casilla { background-color: #555; color: white; flex: 1; text-align: center; padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; border: 1px solid #333; transition: all 0.3s; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .casilla:hover { background-color: #6d6d6d; transform: translateY(-2px); }
+        .casilla:active { transform: scale(0.95); background-color: #4a4a4a; }
+        .casilla.vacia { background-color: transparent !important; border: 1px dashed #333 !important; color: transparent !important; cursor: default; pointer-events: none; }
+        .num-objetivo { background-color: #ff00cc !important; color: white !important; box-shadow: 0 0 15px #ff00cc; transform: scale(1.1); z-index: 10; border: 2px solid #fff !important; }
+        .vecino-unico { background-color: #00ffcc !important; color: #000 !important; box-shadow: 0 0 10px #00ffcc; }
+        .vecino-repetido { background-color: #ffcc00 !important; color: #000 !important; box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff !important; transform: scale(1.05); z-index: 9; }
 
-        /* RESPONSIVO PARA MÓVILES */
+        /* Grid para Guacharo */
+        .grid-guacharo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; width: 100%; max-width: 560px; margin: 0 auto; }
+        .grid-guacharo .casilla { padding: 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
+
+        /* RESPONSIVO */
         @media (max-width: 768px) {
             .header-bar { flex-direction: column; text-align: center; gap: 10px; }
             h1 { font-size: 1.3rem; }
             .btn-regresar { width: 100%; }
-            
             .controles { flex-direction: column; align-items: stretch; }
-            .controles select, .controles input, .btn-buscar { width: 100%; }
-            
+            .controles select, .controles input, .btn-buscar, .btn-fractal { width: 100%; margin-left: 0; margin-top: 5px; }
             .fila-label { width: 50px; font-size: 0.7rem;}
             .casilla { padding: 10px 2px; font-size: 1rem; }
             .ruleta-container { padding: 10px; gap: 5px;}
             .casillas-container { gap: 3px;}
-
             .grid-guacharo { gap: 2px; }
             .grid-guacharo .casilla { font-size: 0.65rem; }
         }
@@ -128,11 +88,18 @@
         <input type="number" id="input-numero" placeholder="Ej: 25" min="0" max="99">
         
         <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar Vecinos</button>
+        
+        <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Mapa Fractal</button>
     </div>
 
-    <!-- La Mesa de la Ruleta -->
+    <!-- La Mesa de la Ruleta (Oculta por defecto al generar fractal) -->
     <div class="ruleta-container" id="ruleta-container">
         <!-- Se inyecta con JS -->
+    </div>
+
+    <!-- Contenedor del Canvas Fractal -->
+    <div class="canvas-container" id="canvas-container" style="display: none;">
+        <canvas id="fractal-canvas" width="800" height="800"></canvas>
     </div>
 
     <!-- Caja de Texto con Resultados -->
@@ -141,7 +108,7 @@
 
     <script>
         // ============================================================
-        // VISTA LOTTO (Ruleta Europea clásica)
+        // VISTA LOTTO
         // ============================================================
         const FILAS_RULETA_LOTTO = [
             { id: "fila_1", nums: [12, 35, 3, 26, 0, 32, 15] },
@@ -160,46 +127,32 @@
         ];
 
         // ============================================================
-        // VISTA GUACHARO (Replicando la imagen exacta con hueco central)
+        // VISTA GUACHARO (Matriz exacta de 12 columnas con hueco central)
         // ============================================================
-        // Fila por fila, tal cual la imagen. El string vacío "" es hueco.
         const MATRIZ_GUACHARO = [
-            // Fila 1 (12 cols)
             [48, 24, 7, 33, "00", 50, 4, 34, 17, 28, 9, 47], 
-            // Fila 2
             [64, 57, 38, 6, 49, 18, 56, 13, 27, 46, "", ""],
-            // Fila 3
             [44, 66, "", "", "", "", "", "", "", "", 15, 30],
-            // Fila 4
             [65, 2, "", "", "", "", "", "", "", "", 39, 21],
-            // Fila 5
             [20, 69, "", "", "", "", "", "", "", "", 41, 72],
-            // Fila 6
             [25, 52, "", "", "", "", "", "", "", "", 1, 26],
-            // Fila 7
             [70, 16, "", "", "", "", "", "", "", "", 19, 42],
-            // Fila 8
             [53, 68, "", "", "", "", "", "", "", "", 61, 51],
-            // Fila 9
             [0, 31, "", "", "", "", "", "", "", "", 12, 23],
-            // Fila 10
             [55, 11, "", "", "", "", "", "", "", "", 37, 73],
-            // Fila 11
             [60, 35, 10, 74, 43, 29, 40, 3, 58, 32, 14, 22],
-            // Fila 12
             [45, 59, 62, 71, 8, 36, 54, 67, 63, 5, "", ""]
         ];
 
-        let vistaActual = 'lotto'; // 'lotto' | 'guacharo'
+        let vistaActual = 'lotto';
+        let datosGlobales = []; // Cache de datos para no re-fetchear
 
-        // ============================================================
-        // Detectar vista según selección
-        // ============================================================
         function cambiarVista() {
             const sel = document.getElementById('combo-loteria').value;
             vistaActual = (sel === 'mapeo_lotto.json') ? 'lotto' : 'guacharo';
-
             document.getElementById('resultado-texto').style.display = 'none';
+            document.getElementById('canvas-container').style.display = 'none';
+            document.getElementById('ruleta-container').style.display = 'flex';
             dibujarVistaActual();
         }
 
@@ -211,25 +164,18 @@
             }
         }
 
-        // ============================================================
-        // DIBUJO: LOTTO
-        // ============================================================
         function dibujarRuletaLotto() {
             const container = document.getElementById('ruleta-container');
             container.innerHTML = '';
-
             FILAS_RULETA_LOTTO.forEach(fila => {
                 let rowDiv = document.createElement('div');
                 rowDiv.className = 'fila';
-
                 let labelDiv = document.createElement('div');
                 labelDiv.className = 'fila-label';
                 labelDiv.innerText = fila.id;
                 rowDiv.appendChild(labelDiv);
-
                 let casillasDiv = document.createElement('div');
                 casillasDiv.className = 'casillas-container';
-
                 fila.nums.forEach(num => {
                     let casilla = document.createElement('div');
                     casilla.className = 'casilla';
@@ -239,33 +185,23 @@
                     casilla.addEventListener('click', () => seleccionarNumeroDesdeRuleta(num));
                     casillasDiv.appendChild(casilla);
                 });
-
                 rowDiv.appendChild(casillasDiv);
                 container.appendChild(rowDiv);
             });
         }
 
-        // ============================================================
-        // DIBUJO: GUACHARO (Usando la matriz exacta)
-        // ============================================================
         function dibujarRuletaGuacharo() {
             const container = document.getElementById('ruleta-container');
             container.innerHTML = '';
-
             const grid = document.createElement('div');
             grid.className = 'grid-guacharo';
-
-            // Recorremos la matriz bidimensional
             MATRIZ_GUACHARO.forEach(fila => {
                 fila.forEach(num => {
                     const casilla = document.createElement('div');
-                    
                     if (num === "") {
-                        // Hueco (espacio vacío sin borde visible)
                         casilla.className = 'casilla vacia';
                     } else {
                         casilla.className = 'casilla';
-                        // Si es el texto "00", se mantiene como string. Si es 0, es el cero real.
                         casilla.id = `g-casilla-${num}`;
                         casilla.innerText = num;
                         casilla.dataset.numero = num;
@@ -274,36 +210,24 @@
                     grid.appendChild(casilla);
                 });
             });
-
             container.appendChild(grid);
         }
 
-        // ============================================================
-        // SELECCIÓN DESDE RULETA
-        // ============================================================
         function seleccionarNumeroDesdeRuleta(num) {
             const inputNum = document.getElementById('input-numero');
             inputNum.value = num;
-
             inputNum.style.transition = 'box-shadow 0.3s';
             inputNum.style.boxShadow = '0 0 15px #ff00cc';
             setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
-
             buscarVecinosRuleta();
         }
 
-        // ============================================================
-        // LIMPIAR RESALTADOS
-        // ============================================================
         function limpiarResaltados() {
             document.querySelectorAll('.casilla').forEach(c => {
                 c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido');
             });
         }
 
-        // ============================================================
-        // PINTAR EN LA RULETA
-        // ============================================================
         function pintarObjetivo(num) {
             const id = (vistaActual === 'lotto') ? `casilla-${num}` : `g-casilla-${num}`;
             const el = document.getElementById(id);
@@ -313,14 +237,9 @@
         function pintarVecino(num, repetido) {
             const id = (vistaActual === 'lotto') ? `casilla-${num}` : `g-casilla-${num}`;
             const el = document.getElementById(id);
-            if (el) {
-                el.classList.add(repetido ? 'vecino-repetido' : 'vecino-unico');
-            }
+            if (el) el.classList.add(repetido ? 'vecino-repetido' : 'vecino-unico');
         }
 
-        // ============================================================
-        // LÓGICA PRINCIPAL
-        // ============================================================
         async function buscarVecinosRuleta() {
             const inputVal = document.getElementById('input-numero').value.trim();
             const loteriaFile = document.getElementById('combo-loteria').value;
@@ -330,16 +249,16 @@
                 alert("Por favor, ingresa un número válido.");
                 return;
             }
-
+            document.getElementById('canvas-container').style.display = 'none';
+            document.getElementById('ruleta-container').style.display = 'flex';
             limpiarResaltados();
-
             let numeroObjetivo = parseInt(inputVal);
 
             try {
                 const res = await fetch(loteriaFile);
                 const datos = await res.json();
+                datosGlobales = datos; // Guardar en cache
 
-                // Historial de números válidos
                 let historial = [];
                 datos.forEach((reg, index) => {
                     if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
@@ -347,7 +266,6 @@
                     }
                 });
 
-                // Apariciones del objetivo
                 let indicesApariciones = [];
                 historial.forEach((h, i) => {
                     if (h.num === numeroObjetivo) indicesApariciones.push(i);
@@ -359,77 +277,40 @@
                     return;
                 }
 
-                // Últimas 5 apariciones
                 let ultimasApariciones = indicesApariciones.slice(-5).reverse();
-
                 let vecinosAntes = [];
                 let vecinosDespues = [];
                 let contadorVecinos = {};
 
                 ultimasApariciones.forEach(idx => {
-                    if (idx - 1 >= 0) {
-                        let n = historial[idx - 1].num;
-                        vecinosAntes.push(n);
-                        contadorVecinos[n] = (contadorVecinos[n] || 0) + 1;
-                    }
-                    if (idx - 2 >= 0) {
-                        let n = historial[idx - 2].num;
-                        vecinosAntes.push(n);
-                        contadorVecinos[n] = (contadorVecinos[n] || 0) + 1;
-                    }
-                    if (idx + 1 < historial.length) {
-                        let n = historial[idx + 1].num;
-                        vecinosDespues.push(n);
-                        contadorVecinos[n] = (contadorVecinos[n] || 0) + 1;
-                    }
-                    if (idx + 2 < historial.length) {
-                        let n = historial[idx + 2].num;
-                        vecinosDespues.push(n);
-                        contadorVecinos[n] = (contadorVecinos[n] || 0) + 1;
-                    }
+                    if (idx - 1 >= 0) { let n = historial[idx - 1].num; vecinosAntes.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
+                    if (idx - 2 >= 0) { let n = historial[idx - 2].num; vecinosAntes.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
+                    if (idx + 1 < historial.length) { let n = historial[idx + 1].num; vecinosDespues.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
+                    if (idx + 2 < historial.length) { let n = historial[idx + 2].num; vecinosDespues.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
                 });
 
-                // Pintar objetivo y vecinos
                 pintarObjetivo(numeroObjetivo);
-
                 let todosVecinosUnicos = [...new Set([...vecinosAntes, ...vecinosDespues])];
-                todosVecinosUnicos.forEach(num => {
-                    pintarVecino(num, contadorVecinos[num] > 1);
-                });
+                todosVecinosUnicos.forEach(num => { pintarVecino(num, contadorVecinos[num] > 1); });
 
-                // Texto informativo
                 textResult.style.display = 'block';
                 let htmlInfo = `<h3>Análisis para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
                 htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Se analizaron las últimas <b>${ultimasApariciones.length}</b> apariciones en el historial.</p>`;
-
                 htmlInfo += `<div style="background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:15px; text-align:left; font-size:0.9rem;">`;
-                ultimasApariciones.forEach((idx, i) => {
-                    htmlInfo += `<b>Aparición ${i+1}:</b> ${historial[idx].fecha} (${historial[idx].hora})<br>`;
-                });
+                ultimasApariciones.forEach((idx, i) => { htmlInfo += `<b>Aparición ${i+1}:</b> ${historial[idx].fecha} (${historial[idx].hora})<br>`; });
                 htmlInfo += `</div>`;
-
                 htmlInfo += `<p><b>Vecinos detectados:</b></p>`;
-
                 if (vecinosAntes.length > 0) {
                     htmlInfo += `<p style="margin-bottom: 10px;"><span style="color:#00ffcc;">ANTERIORES:</span><br>`;
-                    vecinosAntes.forEach(n => {
-                        let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico';
-                        htmlInfo += `<span class="badge-info ${clase}">${n}</span>`;
-                    });
+                    vecinosAntes.forEach(n => { let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico'; htmlInfo += `<span class="badge-info ${clase}">${n}</span>`; });
                     htmlInfo += `</p>`;
                 }
-
                 if (vecinosDespues.length > 0) {
                     htmlInfo += `<p><b>POSTERIORES:</b><br>`;
-                    vecinosDespues.forEach(n => {
-                        let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico';
-                        htmlInfo += `<span class="badge-info ${clase}">${n}</span>`;
-                    });
+                    vecinosDespues.forEach(n => { let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico'; htmlInfo += `<span class="badge-info ${clase}">${n}</span>`; });
                     htmlInfo += `</p>`;
                 }
-
                 htmlInfo += `<p style="margin-top: 15px; font-size: 0.9rem; color: #888;"><i>* El color Amarillo indica números vecinos que se repitieron en más de una aparición.</i></p>`;
-
                 textResult.innerHTML = htmlInfo;
 
             } catch (error) {
@@ -440,8 +321,149 @@
         }
 
         // ============================================================
-        // INICIO
+        // MAPA FRACTAL DE ATRACCIÓN
         // ============================================================
+        async function generarMapaFractal() {
+            const loteriaFile = document.getElementById('combo-loteria').value;
+            const canvasContainer = document.getElementById('canvas-container');
+            const ruletaContainer = document.getElementById('ruleta-container');
+            const textResult = document.getElementById('resultado-texto');
+            
+            // Mostrar canvas, ocultar ruleta
+            canvasContainer.style.display = 'flex';
+            ruletaContainer.style.display = 'none';
+            textResult.style.display = 'none';
+
+            const canvas = document.getElementById('fractal-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            try {
+                // Cargar datos si no están en caché
+                if (datosGlobales.length === 0) {
+                    const res = await fetch(loteriaFile);
+                    datosGlobales = await res.json();
+                }
+
+                // 1. Extraer historial válido
+                let historial = [];
+                datosGlobales.forEach(reg => {
+                    if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
+                        historial.push(parseInt(reg.numero));
+                    }
+                });
+
+                if (historial.length === 0) {
+                    alert("No hay datos válidos para generar el fractal.");
+                    return;
+                }
+
+                // 2. Calcular "Fuerza de Atracción" (Nodos y Aristas)
+                // Usaremos una ventana de tiempo (ej. 5 sorteos) para conectar números.
+                const VENTANA = 5;
+                const nodos = {}; // { num: { count, x, y } }
+                const aristas = {}; // { "num1-num2": weight }
+
+                // Inicializar nodos
+                for(let i=0; i<100; i++) {
+                    nodos[i] = { count: 0, x: 0, y: 0, id: i };
+                }
+
+                // Contar apariciones y conectar
+                historial.forEach((num, index) => {
+                    if (nodos[num]) nodos[num].count++;
+                    
+                    // Conectar con los siguientes N números en la ventana
+                    for (let i = 1; i <= VENTANA; i++) {
+                        if (index + i < historial.length) {
+                            let nextNum = historial[index + i];
+                            let key = num < nextNum ? `${num}-${nextNum}` : `${nextNum}-${num}`;
+                            aristas[key] = (aristas[key] || 0) + 1;
+                        }
+                    }
+                });
+
+                // 3. Posicionamiento Radial (Fractal)
+                // Los números más frecuentes van al centro. Los menos frecuentes a los bordes.
+                const centroX = width / 2;
+                const centroY = height / 2;
+                const radioMax = Math.min(width, height) / 2 - 40;
+
+                // Ordenar números por frecuencia (de mayor a menor)
+                const numerosOrdenados = Object.values(nodos).sort((a, b) => b.count - a.count);
+
+                // Asignar posiciones en espiral
+                numerosOrdenados.forEach((nodo, index) => {
+                    // El radio crece con el índice (los más frecuentes tienen radio más pequeño)
+                    let ratio = index / numerosOrdenados.length;
+                    let radio = ratio * radioMax;
+                    
+                    // El ángulo se distribuye uniformemente, pero añadimos un poco de ruido para que no sea un círculo perfecto
+                    let angulo = index * 137.5 * (Math.PI / 180); // Ángulo dorado para distribución natural
+                    
+                    nodo.x = centroX + Math.cos(angulo) * radio;
+                    nodo.y = centroY + Math.sin(angulo) * radio;
+                });
+
+                // 4. Dibujar el Fractal
+                ctx.clearRect(0, 0, width, height);
+                
+                // Fondo
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, width, height);
+
+                // Dibujar Aristas (Conexiones)
+                ctx.lineWidth = 0.5;
+                for (let key in aristas) {
+                    let [n1, n2] = key.split('-').map(Number);
+                    let weight = aristas[key];
+                    
+                    if (nodos[n1] && nodos[n2]) {
+                        // La opacidad depende del peso de la conexión
+                        let alpha = Math.min(weight / 10, 0.5); 
+                        ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; // Color cyan
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(nodos[n1].x, nodos[n1].y);
+                        ctx.lineTo(nodos[n2].x, nodos[n2].y);
+                        ctx.stroke();
+                    }
+                }
+
+                // Dibujar Nodos (Números)
+                numerosOrdenados.forEach(nodo => {
+                    if (nodo.count > 0) { // Solo dibujar números que han salido
+                        // Tamaño del nodo basado en frecuencia
+                        let size = 15 + (nodo.count / 5); 
+                        
+                        // Color basado en frecuencia (más frecuente = más brillante)
+                        let intensity = Math.min(nodo.count * 5, 255);
+                        
+                        // Círculo de fondo
+                        ctx.beginPath();
+                        ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
+                        ctx.fillStyle = `rgba(50, 50, 50, 0.8)`;
+                        ctx.fill();
+                        ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        // Texto del número
+                        ctx.fillStyle = '#fff';
+                        ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(nodo.id.toString().padStart(2, '0'), nodo.x, nodo.y);
+                    }
+                });
+
+            } catch (error) {
+                console.error(error);
+                alert("Error al generar el mapa fractal.");
+            }
+        }
+
         window.onload = function() {
             vistaActual = 'lotto';
             dibujarVistaActual();
