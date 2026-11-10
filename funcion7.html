@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal de Atracción</title>
+    <title>JARVIS - Fractal de Atracción (Fríos al Centro)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -25,8 +25,19 @@
         .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
         
         /* Contenedor del Canvas Fractal */
-        .canvas-container { display: flex; justify-content: center; align-items: center; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 10px; margin: 0 auto; max-width: 800px; width: 100%; }
+        .canvas-container { display: flex; justify-content: center; align-items: center; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 10px; margin: 0 auto; max-width: 800px; width: 100%; position: relative;}
         canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
+
+        /* Leyenda del Fractal */
+        .leyenda-fractal {
+            position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.85);
+            padding: 10px; border-radius: 8px; border: 1px solid #444; font-size: 0.85rem; pointer-events: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .leyenda-fractal h4 { margin: 0 0 5px 0; color: #00ffcc; }
+        .leyenda-fractal p { margin: 2px 0; color: #ccc; }
+        .leyenda-fractal .highlight-yellow { color: #ffcc00; font-weight: bold; }
+        .leyenda-fractal .highlight-magenta { color: #ff00cc; font-weight: bold; }
 
         /* Caja de Resultados de Texto */
         .resultado-texto { background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; max-width: 600px; margin: 20px auto 0; width: 100%; box-sizing: border-box; text-align: center;}
@@ -66,6 +77,7 @@
             .casillas-container { gap: 3px;}
             .grid-guacharo { gap: 2px; }
             .grid-guacharo .casilla { font-size: 0.65rem; }
+            .leyenda-fractal { position: relative; top: 0; left: 0; margin-bottom: 10px; width: 100%; box-sizing: border-box; text-align: center;}
         }
     </style>
 </head>
@@ -92,13 +104,21 @@
         <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Mapa Fractal</button>
     </div>
 
-    <!-- La Mesa de la Ruleta (Oculta por defecto al generar fractal) -->
+    <!-- La Mesa de la Ruleta -->
     <div class="ruleta-container" id="ruleta-container">
         <!-- Se inyecta con JS -->
     </div>
 
     <!-- Contenedor del Canvas Fractal -->
     <div class="canvas-container" id="canvas-container" style="display: none;">
+        <div class="leyenda-fractal">
+            <h4>Guía del Fractal (Fríos al Centro)</h4>
+            <p><span style="color:#fff; font-weight:bold;">Centro (Fríos):</span> Números cargados, no salen hace tiempo.</p>
+            <p><span style="color:#fff; font-weight:bold;">Periferia (Calientes):</span> Números que ya se gastaron de tanto salir.</p>
+            <p><span style="color:#fff; font-weight:bold;">Líneas Verdes:</span> Atracción (salen juntos).</p>
+            <p><span class="highlight-magenta">Objetivo:</span> El número que buscas.</p>
+            <p><span class="highlight-yellow">Fondo Amarillo:</span> Los 4 recomendados para cruzar.</p>
+        </div>
         <canvas id="fractal-canvas" width="800" height="800"></canvas>
     </div>
 
@@ -108,7 +128,7 @@
 
     <script>
         // ============================================================
-        // VISTA LOTTO
+        // CONFIGURACIÓN DE VISTAS
         // ============================================================
         const FILAS_RULETA_LOTTO = [
             { id: "fila_1", nums: [12, 35, 3, 26, 0, 32, 15] },
@@ -126,9 +146,6 @@
             { id: "fila_13", nums: [16, 24, 5, 10, 23, 8, 30, 11] }
         ];
 
-        // ============================================================
-        // VISTA GUACHARO (Matriz exacta de 12 columnas con hueco central)
-        // ============================================================
         const MATRIZ_GUACHARO = [
             [48, 24, 7, 33, "00", 50, 4, 34, 17, 28, 9, 47], 
             [64, 57, 38, 6, 49, 18, 56, 13, 27, 46, "", ""],
@@ -145,7 +162,7 @@
         ];
 
         let vistaActual = 'lotto';
-        let datosGlobales = []; // Cache de datos para no re-fetchear
+        let datosGlobales = []; 
 
         function cambiarVista() {
             const sel = document.getElementById('combo-loteria').value;
@@ -153,6 +170,7 @@
             document.getElementById('resultado-texto').style.display = 'none';
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
+            datosGlobales = []; 
             dibujarVistaActual();
         }
 
@@ -257,7 +275,7 @@
             try {
                 const res = await fetch(loteriaFile);
                 const datos = await res.json();
-                datosGlobales = datos; // Guardar en cache
+                datosGlobales = datos; 
 
                 let historial = [];
                 datos.forEach((reg, index) => {
@@ -321,15 +339,15 @@
         }
 
         // ============================================================
-        // MAPA FRACTAL DE ATRACCIÓN
+        // MAPA FRACTAL Y ALGORITMO DE RECOMENDACIÓN (FRÍOS AL CENTRO)
         // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
             const canvasContainer = document.getElementById('canvas-container');
             const ruletaContainer = document.getElementById('ruleta-container');
             const textResult = document.getElementById('resultado-texto');
+            const inputVal = document.getElementById('input-numero').value.trim();
             
-            // Mostrar canvas, ocultar ruleta
             canvasContainer.style.display = 'flex';
             ruletaContainer.style.display = 'none';
             textResult.style.display = 'none';
@@ -338,15 +356,14 @@
             const ctx = canvas.getContext('2d');
             const width = canvas.width;
             const height = canvas.height;
+            const numeroObjetivo = inputVal !== '' ? parseInt(inputVal) : null;
 
             try {
-                // Cargar datos si no están en caché
                 if (datosGlobales.length === 0) {
                     const res = await fetch(loteriaFile);
                     datosGlobales = await res.json();
                 }
 
-                // 1. Extraer historial válido
                 let historial = [];
                 datosGlobales.forEach(reg => {
                     if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
@@ -359,70 +376,93 @@
                     return;
                 }
 
-                // 2. Calcular "Fuerza de Atracción" (Nodos y Aristas)
-                // Usaremos una ventana de tiempo (ej. 5 sorteos) para conectar números.
+                // 1. Calcular Nodos y Aristas
                 const VENTANA = 5;
-                const nodos = {}; // { num: { count, x, y } }
-                const aristas = {}; // { "num1-num2": weight }
+                const nodos = {}; 
+                const aristas = {}; 
+                const adyacentes = {}; 
 
-                // Inicializar nodos
                 for(let i=0; i<100; i++) {
                     nodos[i] = { count: 0, x: 0, y: 0, id: i };
+                    adyacentes[i] = {}; 
                 }
 
-                // Contar apariciones y conectar
                 historial.forEach((num, index) => {
                     if (nodos[num]) nodos[num].count++;
                     
-                    // Conectar con los siguientes N números en la ventana
                     for (let i = 1; i <= VENTANA; i++) {
                         if (index + i < historial.length) {
                             let nextNum = historial[index + i];
                             let key = num < nextNum ? `${num}-${nextNum}` : `${nextNum}-${num}`;
                             aristas[key] = (aristas[key] || 0) + 1;
+                            
+                            adyacentes[num][nextNum] = (adyacentes[num][nextNum] || 0) + 1;
+                            adyacentes[nextNum][num] = (adyacentes[nextNum][num] || 0) + 1;
                         }
                     }
                 });
 
-                // 3. Posicionamiento Radial (Fractal)
-                // Los números más frecuentes van al centro. Los menos frecuentes a los bordes.
+                // 2. Encontrar los 4 Números Recomendados
+                let recomendados = [];
+                if (numeroObjetivo !== null && adyacentes[numeroObjetivo]) {
+                    let candidatos = [];
+                    for (let adj in adyacentes[numeroObjetivo]) {
+                        let numAdj = parseInt(adj);
+                        let fuerzaConexion = adyacentes[numeroObjetivo][numAdj];
+                        let frecuenciaPropia = nodos[numAdj].count;
+                        
+                        // NUEVA LÓGICA: Damos más puntos a los que tienen MENOS frecuencia (los fríos)
+                        // Pero seguimos valorando mucho la fuerza de conexión.
+                        // Usamos una base de 100 para restar la frecuencia (así los de freq 0 valen más)
+                        let puntajeFrio = 100 - frecuenciaPropia; 
+                        let puntaje = puntajeFrio + (fuerzaConexion * 5); 
+                        
+                        candidatos.push({ num: numAdj, puntaje: puntaje });
+                    }
+                    
+                    candidatos.sort((a, b) => b.puntaje - a.puntaje);
+                    recomendados = candidatos.slice(0, 4).map(c => c.num);
+                }
+
+                // 3. Posicionamiento Radial Invertido (Fríos al Centro)
                 const centroX = width / 2;
                 const centroY = height / 2;
                 const radioMax = Math.min(width, height) / 2 - 40;
 
-                // Ordenar números por frecuencia (de mayor a menor)
-                const numerosOrdenados = Object.values(nodos).sort((a, b) => b.count - a.count);
+                // ORDEN INVERTIDO: Los que tienen menos 'count' van primero (al centro)
+                const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
 
-                // Asignar posiciones en espiral
                 numerosOrdenados.forEach((nodo, index) => {
-                    // El radio crece con el índice (los más frecuentes tienen radio más pequeño)
                     let ratio = index / numerosOrdenados.length;
                     let radio = ratio * radioMax;
-                    
-                    // El ángulo se distribuye uniformemente, pero añadimos un poco de ruido para que no sea un círculo perfecto
-                    let angulo = index * 137.5 * (Math.PI / 180); // Ángulo dorado para distribución natural
+                    let angulo = index * 137.5 * (Math.PI / 180); 
                     
                     nodo.x = centroX + Math.cos(angulo) * radio;
                     nodo.y = centroY + Math.sin(angulo) * radio;
                 });
 
-                // 4. Dibujar el Fractal
+                // 4. Dibujar
                 ctx.clearRect(0, 0, width, height);
-                
-                // Fondo
                 ctx.fillStyle = '#0a0a0a';
                 ctx.fillRect(0, 0, width, height);
 
-                // Dibujar Aristas (Conexiones)
+                // Dibujar Aristas
                 ctx.lineWidth = 0.5;
                 for (let key in aristas) {
                     let [n1, n2] = key.split('-').map(Number);
                     let weight = aristas[key];
                     
                     if (nodos[n1] && nodos[n2]) {
-                        // La opacidad depende del peso de la conexión
                         let alpha = Math.min(weight / 10, 0.5); 
-                        ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; // Color cyan
+                        
+                        // Si es conexión con el objetivo, brillo magenta
+                        if (numeroObjetivo !== null && (n1 === numeroObjetivo || n2 === numeroObjetivo)) {
+                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.3})`; 
+                            ctx.lineWidth = 1.5;
+                        } else {
+                            ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; 
+                            ctx.lineWidth = 0.5;
+                        }
                         
                         ctx.beginPath();
                         ctx.moveTo(nodos[n1].x, nodos[n1].y);
@@ -431,31 +471,44 @@
                     }
                 }
 
-                // Dibujar Nodos (Números)
+                // Dibujar Nodos
                 numerosOrdenados.forEach(nodo => {
-                    if (nodo.count > 0) { // Solo dibujar números que han salido
-                        // Tamaño del nodo basado en frecuencia
-                        let size = 15 + (nodo.count / 5); 
-                        
-                        // Color basado en frecuencia (más frecuente = más brillante)
+                    // Dibujamos todos, incluso los que no han salido (freq 0), porque ahora son los "fríos" clave
+                    let size = 15 + (nodo.count / 5); 
+                    let isRecomendado = recomendados.includes(nodo.id);
+                    let isObjetivo = (nodo.id === numeroObjetivo);
+
+                    ctx.beginPath();
+                    ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
+                    
+                    if (isObjetivo) {
+                        ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; 
+                        ctx.strokeStyle = `#fff`;
+                        ctx.lineWidth = 3;
+                    } else if (isRecomendado) {
+                        ctx.fillStyle = `#ffcc00`; 
+                        ctx.strokeStyle = `#fff`;
+                        ctx.lineWidth = 2;
+                    } else {
                         let intensity = Math.min(nodo.count * 5, 255);
-                        
-                        // Círculo de fondo
-                        ctx.beginPath();
-                        ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
-                        ctx.fillStyle = `rgba(50, 50, 50, 0.8)`;
-                        ctx.fill();
+                        // Los fríos (count 0) se ven gris oscuro
+                        ctx.fillStyle = nodo.count === 0 ? 'rgba(30, 30, 30, 0.8)' : `rgba(50, 50, 50, 0.8)`;
                         ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`;
                         ctx.lineWidth = 2;
-                        ctx.stroke();
-
-                        // Texto del número
-                        ctx.fillStyle = '#fff';
-                        ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(nodo.id.toString().padStart(2, '0'), nodo.x, nodo.y);
                     }
+
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Texto del número
+                    ctx.fillStyle = (isRecomendado || isObjetivo) ? '#000' : '#fff'; 
+                    ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Formatear "00" para el cero
+                    let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
+                    ctx.fillText(textNum, nodo.x, nodo.y);
                 });
 
             } catch (error) {
