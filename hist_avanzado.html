@@ -72,6 +72,13 @@
             <p style="color:#888;">Selecciona una lotería e ingresa un número para iniciar el análisis, o presiona "MODO AUT".</p>
         </div>
     </div>
+                  <!-- BARRA DE PROGRESO REAL -->
+    <div id="contenedor-progreso" style="display: none; margin-top: 10px;">
+        <div style="background-color: #333; border-radius: 5px; height: 20px; overflow: hidden; border: 1px solid #555;">
+            <div id="barra-progreso" style="width: 0%; height: 100%; background-color: #00ff00; transition: width 0.1s;"></div>
+        </div>
+        <p style="text-align: center; color: #00ff00; font-size: 12px; margin-top: 5px; font-family: monospace;" id="texto-progreso">Procesando...</p>
+    </div>
 
     <script>
         let chartInstance = null;
@@ -394,7 +401,115 @@
             document.getElementById('texto-resultados').innerHTML = "<p style='color:#ffcc00;'>Iniciando barrido matemático... Esto puede tardar unos segundos.</p>";
             let datos = await obtenerDatos();
             // Lógica simplificada para el ejemplo visual:
-            document.getElementById('texto-resultados').innerHTML += "<p style='color:#00ffcc;'>MODO AUT CARGADO. (La lógica de escaneo masivo se puede programar aquí).</p>";
+            document.getElementById('texto-resultados').innerHTML += "<p style='color:#00ffcc;'>MODO AUT CARGADO. 
+                        // --- LÓGICA DEL MODO AUTOMÁTICO CON BARRA DE PROGRESO ---
+        async function ejecutarModoAutomatico() {
+            let resultadosDiv = document.getElementById('texto-resultados');
+            let contenedorProgreso = document.getElementById('contenedor-progreso');
+            let barraProgreso = document.getElementById('barra-progreso');
+            let textoProgreso = document.getElementById('texto-progreso');
+            
+            // Mostrar barra y limpiar
+            resultadosDiv.innerHTML = "<p style='color:#ffcc00;'>Iniciando escaneo automático de números...</p>";
+            contenedorProgreso.style.display = 'block';
+            barraProgreso.style.width = '0%';
+            textoProgreso.innerText = 'Inicializando motor...';
+
+            let datos = await obtenerDatos();
+            let loteriaNombre = document.getElementById('combo-loteria').options[document.getElementById('combo-loteria').selectedIndex].text;
+            
+            // Pausa pequeña para que el navegador pinte la barra antes de empezar
+            await new Promise(r => setTimeout(r, 100));
+
+            // Lógica traducida de Python: modo_automatico_aut
+            let fechaHoy = new Date();
+            let fechaHoyStr = fechaHoy.toISOString().split('T')[0];
+            
+            // Buscar la última fecha real del JSON para no calcular sobre fechas futuras
+            try {
+                let ultimaFechaData = datos[datos.length - 1].fecha;
+                if (new Date(ultimaFechaData) > fechaHoy) {
+                    fechaHoyStr = ultimaFechaData;
+                }
+            } catch(e) {}
+
+            let limiteMax = loteriaNombre.includes('Lotto') ? 36 : (loteriaNombre.includes('Guacharo') ? 99 : 75);
+            let numsManana = [], numsTarde = [], numsVencidos = [];
+            
+            // Iteramos sobre todos los números posibles para la lotería
+            for (let num = 0; num <= limiteMax; num++) {
+                // Actualizar la barra real
+                let porcentaje = Math.round((num / limiteMax) * 100);
+                barraProgreso.style.width = porcentaje + '%';
+                textoProgreso.innerText = `Analizando número [${num}]... (${porcentaje}%)`;
+
+                // (Aquí va la lógica matemática de proyección para cada número, resumida)
+                let stats = analizarNumeroIndividual(datos, num);
+                if (stats && stats.ultima !== "No registrado" && stats.ciclo > 0) {
+                    let fechaBase = new Date(stats.ultima.split(' ')[0] + 'T00:00:00');
+                    let fechaEst = new Date(fechaBase);
+                    fechaEst.setDate(fechaEst.getDate() + Math.round(parseFloat(stats.ciclo)));
+                    
+                    let hoy = new Date(fechaHoyStr + 'T00:00:00');
+                    let diasRetraso = Math.round((hoy - fechaEst) / (1000 * 60 * 60 * 24));
+
+                    let etiqueta = `[${num}]`;
+                    
+                    if (diasRetraso === 0 || diasRetraso === -1) {
+                        if (stats.prediccion === "MAÑANA") numsManana.push({et: etiqueta, f: fechaEst, c: stats.ciclo, s: stats.subidas, b: stats.bajadas});
+                        else if (stats.prediccion === "TARDE") numsTarde.push({et: etiqueta, f: fechaEst, c: stats.ciclo, s: stats.subidas, b: stats.bajadas});
+                    } else if (diasRetraso >= 3 && diasRetraso <= 15) {
+                        numsVencidos.push({et: etiqueta, f: fechaEst, d: diasRetraso, s: stats.subidas, b: stats.bajadas});
+                    }
+                }
+
+                // Pausa artificial microscópica para que la barra de progreso se pueda ver en pantalla
+                if (num % 5 === 0) await new Promise(r => setTimeout(r, 10));
+            }
+
+            // Finalizar barra
+            barraProgreso.style.width = '100%';
+            textoProgreso.innerText = '¡Escaneo Completado!';
+            setTimeout(() => { contenedorProgreso.style.display = 'none'; }, 1500);
+
+            // Construir el HTML de resultados
+            let html = `<h3>🤖 ESCANEO AUTOMÁTICO: ${loteriaNombre.toUpperCase()}</h3>`;
+            html += `<p>Filtro aplicado para el día de hoy (${fechaHoyStr}) y mañana.</p>`;
+
+            html += `<h4 style='color: #00ffcc;'>🌅 Proyectados para la MAÑANA:</h4>`;
+            if (numsManana.length > 0) {
+                html += `<ul>`;
+                numsManana.forEach(n => html += `<li><b>${n.et}</b> - Estimado: ${n.f.toISOString().split('T')[0]} | Ciclo: ${n.c} días | Sub: ${n.s} / Baj: ${n.b}</li>`);
+                html += `</ul>`;
+            } else {
+                html += `<p style='color:#888;'>Ningún número cumple con los filtros para la mañana.</p>`;
+            }
+
+            html += `<h4 style='color: #ffcc00;'>🌇 Proyectados para la TARDE:</h4>`;
+            if (numsTarde.length > 0) {
+                html += `<ul>`;
+                numsTarde.forEach(n => html += `<li><b>${n.et}</b> - Estimado: ${n.f.toISOString().split('T')[0]} | Ciclo: ${n.c} días | Sub: ${n.s} / Baj: ${n.b}</li>`);
+                html += `</ul>`;
+            } else {
+                html += `<p style='color:#888;'>Ningún número cumple con los filtros para la tarde.</p>`;
+            }
+
+            html += `<h4 style='color: #ff5555;'>⚠️ Números Vencidos (3 a 15 días):</h4>`;
+            if (numsVencidos.length > 0) {
+                html += `<ul>`;
+                numsVencidos.sort((a,b) => b.d - a.d); // Ordenar por más retrasados
+                numsVencidos.forEach(n => {
+                    let horaProb = n.s > n.b ? "TARDE 🌇" : (n.b > n.s ? "MAÑANA 🌅" : "INDEFINIDA");
+                    let colorHora = n.s > n.b ? "#ffcc00" : (n.b > n.s ? "#00ffcc" : "#fff");
+                    html += `<li><b>${n.et}</b> - Debía salir: ${n.f.toISOString().split('T')[0]} | Retraso: <b style="color:#ff5555;">${n.d} días</b> | <span style="color:${colorHora};">Posible: ${horaProb}</span></li>`;
+                });
+                html += `</ul>`;
+            } else {
+                html += `<p style='color:#888;'>No hay números con retraso significativo.</p>`;
+            }
+
+            resultadosDiv.innerHTML = html;
+        }.</p>";
         }
     </script>
 </body>
