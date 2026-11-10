@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Explosivos de Apertura</title>
+    <style>
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #ba68c8; margin: 0; font-size: 1.8rem; text-shadow: 0 0 10px rgba(186,104,200,0.5); }
+        .btn-regresar { background-color: #4a148c; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .btn-regresar:hover { background-color: #6a1b9a; box-shadow: 0 0 15px rgba(186,104,200,0.4); }
+        
+        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; }
+        .controles select { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
+        .btn-buscar { background-color: #4a148c; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s;}
+        .btn-buscar:hover { background-color: #6a1b9a; }
+
+        .seccion-titulo { color: #ffcc00; font-size: 1.2rem; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; width: 100%; margin-top: 10px;}
+        
+        .panel-resultados { display: flex; flex-wrap: wrap; gap: 15px; flex-grow: 1; overflow-y: auto; align-content: flex-start; }
+        .loader { display: none; text-align: center; color: #ba68c8; font-size: 1.2rem; margin-top: 50px; width: 100%;}
+        
+        /* Tarjeta Explosiva */
+        .card-explosivo { 
+            background: linear-gradient(145deg, #2a1133, #1a1a1a);
+            border: 1px solid #7b1fa2; border-left: 6px solid #ff00cc;
+            border-radius: 8px; padding: 15px; width: 230px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: transform 0.2s;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .card-explosivo:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(255, 0, 204, 0.4); }
+        
+        .num-explosivo { font-size: 2.5rem; font-weight: bold; color: #ff00cc; text-align: center; margin-bottom: 5px; text-shadow: 0 0 10px #ff00cc; }
+        .animal-explosivo { text-align: center; font-size: 1rem; color: #fff; margin-bottom: 10px; font-weight: bold;}
+        
+        .detalle { font-size: 0.85rem; color: #ccc; margin-bottom: 5px; display: flex; justify-content: space-between;}
+        .detalle span { font-weight: bold; color: #ffcc00; }
+        
+        .badge-apertura { background-color: #00ffcc; color: black; padding: 5px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-align: center; margin-top: 10px; box-shadow: 0 0 10px #00ffcc;}
+        .badge-fuego { background-color: #ff00cc; color: white; padding: 5px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-align: center; margin-top: 10px; }
+        
+        .barra-progreso-container { background-color: #333; border-radius: 5px; height: 8px; margin-top: 5px; overflow: hidden; }
+        .barra-progreso-fuego { height: 100%; background-color: #ff00cc; width: 0%; transition: width 0.5s; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>💥 RADAR DE APERTURA Y EXPLOSIVOS</h1>
+        <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
+    </div>
+
+    <div class="controles">
+        <label style="font-weight: bold; color: #ccc;">Seleccione Lotería:</label>
+        <select id="combo-loteria" onchange="detectarExplosivos()">
+            <option value="mapeo_lotto.json">Lotto Activo</option>
+            <option value="mapeo_gua.json">Guacharo</option>
+            <option value="mapeo_mini.json">Guacharito Millonario</option>
+        </select>
+        <button class="btn-buscar" onclick="detectarExplosivos()">🔥 Escanear Radar</button>
+    </div>
+
+    <div class="loader" id="loader">Analizando cierres de anoche y calculando vectores... 🧨</div>
+    
+    <div class="panel-resultados" id="panel-resultados">
+        <!-- Aquí se inyectarán las tarjetas -->
+    </div>
+
+    <script>
+        // --- LÓGICA MATEMÁTICA BASE ---
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            let mapaAnimales = {};
+            
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaParts = registro.hora.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (parseInt(horaParts[2]) / 60);
+
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: registro.hora, num: num, decimal: horaDecimal });
+                if (registro.animal) mapaAnimales[num] = registro.animal;
+            });
+
+            if (historialNumeros.length === 0) return null;
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+            if (indicesApariciones.length === 0) return null;
+
+            let subidas = 0, bajadas = 0;
+            indicesApariciones.forEach(idx => {
+                if (idx > 0) {
+                    if (historialNumeros[idx] > historialNumeros[idx-1]) subidas++;
+                    else if (historialNumeros[idx] < historialNumeros[idx-1]) bajadas++;
+                }
+            });
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let dias = calcularDiferenciaDias(fechasHoras[indicesApariciones[i-1]].fecha, fechasHoras[indicesApariciones[i]].fecha);
+                if (dias > 0) ciclos.push(dias);
+            }
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            
+            let hoySinHora = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+            let diasRetraso = 0;
+            if (promedioCiclo > 0) {
+                let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
+                let fechaEstimadaDate = new Date(fechaBase);
+                fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
+                diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
+            }
+
+            return {
+                num: numeroObjetivo, subidas, bajadas, ciclo: promedioCiclo, ultima: ultimaAparicion,
+                dias_retraso: diasRetraso, animal: mapaAnimales[numeroObjetivo] || '---'
+            };
+        }
+
+        // --- RADAR DE APERTURA ---
+        async function detectarExplosivos() {
+            const loader = document.getElementById('loader');
+            const panel = document.getElementById('panel-resultados');
+            const loteriaFile = document.getElementById('combo-loteria').value;
+            
+            loader.style.display = 'block';
+            panel.innerHTML = '';
+
+            try {
+                const res = await fetch(loteriaFile);
+                const datos = await res.json();
+
+                // 1. Obtener el último día registrado en el JSON
+                let ultimaFechaData = datos[datos.length - 1].fecha;
+                
+                // 2. Buscar qué números salieron AYER en las horas de cierre (6 PM y 7 PM)
+                let numerosDeCierre = new Set();
+                
+                datos.forEach(reg => {
+                    if (reg.fecha === ultimaFechaData) {
+                        // Convertimos la hora a formato simple para buscar "06:00 PM" o "07:00 PM"
+                        let horaStr = reg.hora.toUpperCase();
+                        if (horaStr.includes('06:00 PM') || horaStr.includes('07:00 PM')) {
+                            let num = parseInt(reg.numero);
+                            if (!isNaN(num)) numerosDeCierre.add(num);
+                        }
+                    }
+                });
+
+                // 3. Buscar números CANDIDATOS a explosivos (vencidos o a punto)
+                let limiteMax = loteriaFile.includes('lotto') ? 36 : (loteriaFile.includes('gua') ? 99 : 75);
+                let candidatos = [];
+
+                for (let num = 0; num <= limiteMax; num++) {
+                    let stats = analizarNumeroIndividual(datos, num);
+                    if (stats && stats.ciclo > 0) {
+                        let volatilidad = stats.subidas + stats.bajadas;
+                        
+                        // Filtro 1: Explosivos normales (vencidos)
+                        if (stats.dias_retraso >= 0 && volatilidad >= 3) {
+                            candidatos.push({ ...stats, tipo: "EXPLOSIVO" });
+                        }
+                        
+                        // Filtro 2: Disparo de Apertura (Salió anoche y tiene buena volatilidad)
+                        if (numerosDeCierre.has(num) && volatilidad >= 2) {
+                            candidatos.push({ ...stats, tipo: "APERTURA" });
+                        }
+                    }
+                }
+
+                // Eliminar duplicados (si un número es explosivo y de apertura a la vez, dejamos el de Apertura)
+                let mapaUnico = {};
+                candidatos.forEach(c => {
+                    if (!mapaUnico[c.num] || c.tipo === "APERTURA") {
+                        mapaUnico[c.num] = c;
+                    }
+                });
+
+                let listaFinal = Object.values(mapaUnico);
+
+                // Ordenar: Primero los de APERTURA, luego los EXPLOSIVOS, y dentro de ellos por retraso
+                listaFinal.sort((a, b) => {
+                    if (a.tipo === "APERTURA" && b.tipo !== "APERTURA") return -1;
+                    if (b.tipo === "APERTURA" && a.tipo !== "APERTURA") return 1;
+                    return b.dias_retraso - a.dias_retraso;
+                });
+
+                loader.style.display = 'none';
+
+                if (listaFinal.length === 0) {
+                    panel.innerHTML = `<p style="color:#aaa; width:100%; text-align:center; margin-top:50px;">No se detectaron patrones fuertes para hoy. Mañana será otro día.</p>`;
+                    return;
+                }
+
+                // Dibujar las tarjetas
+                listaFinal.slice(0, 20).forEach(ex => {
+                    let card = document.createElement('div');
+                    card.className = 'card-explosivo';
+                    
+                    let porcentaje = Math.min(100, (ex.dias_retraso / 10) * 100);
+                    if (porcentaje < 0) porcentaje = 0;
+
+                    // Configurar los badges según el tipo
+                    let badgeHtml = '';
+                    if (ex.tipo === "APERTURA") {
+                        badgeHtml = `<div class="badge-apertura">🎯 DISPARO DE APERTURA</div>`;
+                    } else {
+                        badgeHtml = `<div class="badge-fuego">💥 EXPLOSIVO POTENCIAL</div>`;
+                    }
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="num-explosivo">${ex.num.toString().padStart(2, '0')}</div>
+                            <div class="animal-explosivo">${ex.animal}</div>
+                            
+                            <div class="detalle">Retraso: <span>${ex.dias_retraso > 0 ? ex.dias_retraso + ' días' : 'HOY'}</span></div>
+                            <div class="detalle">Ciclo: <span>${ex.ciclo.toFixed(1)} días</span></div>
+                            <div class="detalle">Flancos: <span>Sub ${ex.subidas} / Baj ${ex.bajadas}</span></div>
+                            <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;">Volatilidad: ${ex.subidas + ex.bajadas}</div>
+                            
+                            <div class="barra-progreso-container">
+                                <div class="barra-progreso-fuego" style="width: ${porcentaje}%; background-color: ${ex.tipo === 'APERTURA' ? '#00ffcc' : '#ff00cc'};"></div>
+                            </div>
+                        </div>
+                        ${badgeHtml}
+                    `;
+                    panel.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error(error);
+                loader.style.display = 'none';
+                panel.innerHTML = `<p style="color:#ff5555; width:100%; text-align:center;">Error al cargar los datos.</p>`;
+            }
+        }
+
+        // Ejecutar al cargar
+        window.onload = detectarExplosivos;
+    </script>
+</body>
+</html>
