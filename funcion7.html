@@ -30,7 +30,14 @@
             background-color: #555; color: white; flex: 1; text-align: center; 
             padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem;
             border: 1px solid #333; transition: all 0.3s;
+            cursor: pointer; /* NUEVO: cursor tipo enlace */
+            user-select: none; /* NUEVO: evita selección de texto al tocar */
+            -webkit-tap-highlight-color: transparent; /* NUEVO: quita el flash azul en android */
         }
+
+        /* NUEVO: efecto hover/active para feedback táctil y mouse */
+        .casilla:hover { background-color: #6d6d6d; transform: translateY(-2px); }
+        .casilla:active { transform: scale(0.95); background-color: #4a4a4a; }
 
         /* Colores de Resaltado */
         .num-objetivo { 
@@ -143,12 +150,32 @@
                     casilla.className = 'casilla';
                     casilla.id = `casilla-${num}`;
                     casilla.innerText = num;
+                    casilla.dataset.numero = num; // NUEVO: guardamos el número
+
+                    // NUEVO: Evento para seleccionar el número al tocar/click
+                    casilla.addEventListener('click', () => seleccionarNumeroDesdeRuleta(num));
+
                     casillasDiv.appendChild(casilla);
                 });
 
                 rowDiv.appendChild(casillasDiv);
                 container.appendChild(rowDiv);
             });
+        }
+
+        // NUEVO: Función que se ejecuta al tocar/clickear un número de la ruleta
+        function seleccionarNumeroDesdeRuleta(num) {
+            // Colocamos el número en el input
+            const inputNum = document.getElementById('input-numero');
+            inputNum.value = num;
+
+            // Feedback visual breve en el input
+            inputNum.style.transition = 'box-shadow 0.3s';
+            inputNum.style.boxShadow = '0 0 15px #ff00cc';
+            setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
+
+            // Disparamos la búsqueda automáticamente
+            buscarVecinosRuleta();
         }
 
         // 2. Lógica principal mejorada
