@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Proyección</title>
+    <style>
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #29b6f6; margin: 0; font-size: 1.8rem; text-shadow: 0 0 10px rgba(41,182,246,0.5); }
+        .btn-regresar { background-color: #0277bd; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .btn-regresar:hover { background-color: #0288d1; box-shadow: 0 0 15px rgba(41,182,246,0.4); }
+        
+        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap;}
+        .controles label { font-weight: bold; color: #ccc; }
+        .controles select, .controles input { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
+        .controles input { width: 100px; text-align: center; }
+        .btn-buscar { background-color: #0288d1; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-buscar:hover { background-color: #03a9f4; box-shadow: 0 0 10px rgba(41,182,246,0.5); }
+
+        .panel-resultados { display: flex; flex-direction: column; gap: 20px; max-width: 800px; margin: 0 auto; width: 100%;}
+        .loader { display: none; text-align: center; color: #29b6f6; font-size: 1.2rem; margin-top: 50px; width: 100%;}
+        
+        /* Tarjeta Principal de Proyección */
+        .card-proyeccion { 
+            background: linear-gradient(145deg, #0d2a3f, #1a1a1a);
+            border: 1px solid #29b6f6; border-radius: 12px; padding: 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6); text-align: center;
+        }
+        .proy-header { font-size: 1.2rem; color: #81d4fa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px;}
+        .proy-numero { font-size: 4rem; font-weight: bold; color: #fff; text-shadow: 0 0 20px #29b6f6; line-height: 1; margin-bottom: 5px;}
+        .proy-animal { font-size: 1.5rem; color: #ffcc00; margin-bottom: 20px; font-weight: bold; text-transform: uppercase;}
+        
+        .proy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;}
+        .proy-item { font-size: 1rem; color: #ccc; }
+        .proy-item span { display: block; font-size: 1.2rem; font-weight: bold; color: #fff; margin-top: 3px;}
+        
+        .proy-prediccion { margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 1.3rem; font-weight: bold; }
+        .pred-manana { background-color: rgba(0, 255, 204, 0.15); color: #00ffcc; border: 1px solid #00ffcc; box-shadow: 0 0 15px rgba(0,255,204,0.3);}
+        .pred-tarde { background-color: rgba(255, 204, 0, 0.15); color: #ffcc00; border: 1px solid #ffcc00; box-shadow: 0 0 15px rgba(255,204,0,0.3);}
+        .pred-neutro { background-color: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid #fff;}
+
+        /* Tarjeta de Cadena */
+        .card-cadena { background: #2a1133; border-left: 6px solid #ff00cc; border-radius: 8px; padding: 20px; }
+        .cadena-titulo { color: #ff00cc; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; text-align: center;}
+        .ruta { margin-bottom: 10px; font-size: 1.2rem; text-align: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;}
+        .ruta b { color: #888; margin-right: 10px; font-size: 0.9rem; text-transform: uppercase;}
+        .num-sec { font-weight: bold; font-size: 1.4rem; margin: 0 5px;}
+
+        /* RESPONSIVO PARA MÓVILES */
+        @media (max-width: 768px) {
+            .header-bar { flex-direction: column; text-align: center; gap: 10px; }
+            h1 { font-size: 1.3rem; }
+            .btn-regresar { width: 100%; }
+            
+            .controles { flex-direction: column; align-items: stretch; }
+            .controles select, .controles input, .btn-buscar { width: 100%; }
+            
+            .proy-grid { grid-template-columns: 1fr; }
+            .proy-numero { font-size: 3rem; }
+            .num-sec { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>📈 PROYECCIÓN INDIVIDUAL</h1>
+        <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
+    </div>
+
+    <div class="controles">
+        <label>Lotería:</label>
+        <select id="combo-loteria">
+            <option value="mapeo_lotto.json">Lotto Activo</option>
+            <option value="mapeo_gua.json">Guacharo</option>
+            <option value="mapeo_mini.json">Guacharito Millonario</option>
+        </select>
+
+        <label>Ingrese el Número:</label>
+        <input type="number" id="input-numero" placeholder="Ej: 25" min="0" max="99">
+        
+        <button class="btn-buscar" onclick="ejecutarProyeccion()">🔮 Proyectar Número</button>
+    </div>
+
+    <div class="loader" id="loader">Calculando vectores y trayectorias...</div>
+    
+    <div class="panel-resultados" id="panel-resultados">
+        <p style="text-align: center; color: #666; margin-top: 50px;">Ingresa un número y presiona "Proyectar".</p>
+    </div>
+
+    <script>
+        // --- LÓGICA MATEMÁTICA BASE ---
+        function voltearNumero(num) {
+            let s = num.toString();
+            if (s.length === 1) return num;
+            return parseInt(s.split('').reverse().join('')) || 0;
+        }
+
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            let mapaAnimales = {};
+            
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaStr = registro.hora;
+                
+                let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let minuto = parseInt(horaParts[2]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (minuto / 60);
+
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
+                if (registro.animal) mapaAnimales[num] = registro.animal;
+            });
+
+            if (historialNumeros.length === 0) return null;
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+            if (indicesApariciones.length === 0) return null;
+
+            let subidas = 0, bajadas = 0;
+            indicesApariciones.forEach(idx => {
+                if (idx > 0) {
+                    if (historialNumeros[idx] > historialNumeros[idx-1]) subidas++;
+                    else if (historialNumeros[idx] < historialNumeros[idx-1]) bajadas++;
+                }
+            });
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let dias = calcularDiferenciaDias(fechasHoras[indicesApariciones[i-1]].fecha, fechasHoras[indicesApariciones[i]].fecha);
+                if (dias > 0) ciclos.push(dias);
+            }
+
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            let ultimaFechaStr = `${ultimaAparicion.fecha} (${ultimaAparicion.horaStr})`;
+
+            let prediccion = "NEUTRO";
+            if (subidas > bajadas) prediccion = "MAÑANA";
+            else if (bajadas > subidas) prediccion = "TARDE";
+
+            let fechaEst = "N/A", diasRetraso = 0;
+            let hoy = new Date();
+            let hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+            if (promedioCiclo > 0) {
+                let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
+                let fechaEstimadaDate = new Date(fechaBase);
+                fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
+                fechaEst = fechaEstimadaDate.toISOString().split('T')[0];
+                diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
+            }
+
+            // Atrayentes
+            let numerosVecinos = [];
+            indicesApariciones.forEach(idx => {
+                if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
+                if (idx + 1 < historialNumeros.length) numerosVecinos.push(historialNumeros[idx + 1]);
+            });
+            let conteo = {};
+            numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
+            let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => [parseInt(e[0]), e[1]]);
+
+            return {
+                num: numeroObjetivo, subidas, bajadas, ciclo: promedioCiclo.toFixed(1), ultima: ultimaFechaStr,
+                prediccion, fecha_estimada: fechaEst, dias_retraso: diasRetraso, top_atrayentes: topAtrayentes,
+                animal: mapaAnimales[numeroObjetivo] || '---'
+            };
+        }
+
+        function generarMultiplesSecuencias(datosLoteria, numeroInicial, cantidadCadenas = 3) {
+            let cadenas = [];
+            let resInicial = analizarNumeroIndividual(datosLoteria, numeroInicial);
+            if (!resInicial || resInicial.top_atrayentes.length === 0) return [[numeroInicial]];
+            let opcionesIniciales = resInicial.top_atrayentes.slice(0, cantidadCadenas).map(at => at[0]);
+            
+            opcionesIniciales.forEach(opcion => {
+                let secuencia = [numeroInicial, opcion];
+                let actual = opcion;
+                while (secuencia.length < 4) {
+                    let res = analizarNumeroIndividual(datosLoteria, actual);
+                    if (!res || res.top_atrayentes.length === 0) break;
+                    let siguiente = null;
+                    for (let [numAt, _] of res.top_atrayentes) {
+                        if (!secuencia.includes(numAt)) { siguiente = numAt; break; }
+                    }
+                    if (siguiente === null) break;
+                    secuencia.push(siguiente);
+                    actual = siguiente;
+                }
+                cadenas.push(secuencia);
+            });
+            if (cadenas.length === 0) cadenas.push([numeroInicial]);
+            return cadenas;
+        }
+
+        // --- LÓGICA PRINCIPAL ---
+        async function ejecutarProyeccion() {
+            const loader = document.getElementById('loader');
+            const panel = document.getElementById('panel-resultados');
+            const inputNum = document.getElementById('input-numero').value.trim();
+            const loteriaFile = document.getElementById('combo-loteria').value;
+
+            if (inputNum === '' || isNaN(inputNum)) {
+                alert("Por favor, ingresa un número válido.");
+                return;
+            }
+
+            loader.style.display = 'block';
+            panel.innerHTML = '';
+
+            try {
+                const res = await fetch(loteriaFile);
+                const datos = await res.json();
+                
+                let numOrig = parseInt(inputNum);
+                let resOrig = analizarNumeroIndividual(datos, numOrig);
+
+                loader.style.display = 'none';
+
+                if (!resOrig || resOrig.ultima === "No registrado") {
+                    panel.innerHTML = `<div style="text-align: center; color: #ff5555; margin-top: 30px; font-size: 1.2rem;">El número ${numOrig} no tiene apariciones registradas en esta lotería.</div>`;
+                    return;
+                }
+
+                // 1. Tarjeta Principal
+                let clasePred = resOrig.prediccion === "MAÑANA" ? "pred-manana" : (resOrig.prediccion === "TARDE" ? "pred-tarde" : "pred-neutro");
+                let emojiPred = resOrig.prediccion === "MAÑANA" ? "🌅" : (resOrig.prediccion === "TARDE" ? "🌇" : "⏸️");
+
+                let html = `
+                    <div class="card-proyeccion">
+                        <div class="proy-header">Proyección para el número</div>
+                        <div class="proy-numero">${numOrig.toString().padStart(2, '0')}</div>
+                        <div class="proy-animal">${resOrig.animal}</div>
+                        
+                        <div class="proy-grid">
+                            <div class="proy-item">Última Salida <span>${resOrig.ultima}</span></div>
+                            <div class="proy-item">Ciclo Promedio <span>${resOrig.ciclo} días</span></div>
+                            <div class="proy-item">Flancos (Sub/Baj) <span><span style="color:#00ffcc">${resOrig.subidas}</span> / <span style="color:#ff5555">${resOrig.bajadas}</span></span></div>
+                            <div class="proy-item">Fecha Estimada <span>${resOrig.fecha_estimada}</span></div>
+                        </div>
+
+                        <div class="proy-prediccion ${clasePred}">
+                            ${emojiPred} PREDICCIÓN: ${resOrig.prediccion}
+                        </div>
+                    </div>
+                `;
+
+                // 2. Tarjeta de Cadena
+                let cadenas = generarMultiplesSecuencias(datos, numOrig, 3);
+                html += `
+                    <div class="card-cadena">
+                        <div class="cadena-titulo">🔗 TRIPLE CADENA DE ATRACCIÓN</div>
+                `;
+                
+                let colores = ["#00ffcc", "#ffcc00", "#ff6600", "#ff00cc"];
+                cadenas.forEach((sec, i) => {
+                    html += `<div class="ruta"><b>Ruta ${i+1}</b> `;
+                    sec.forEach((n, j) => {
+                        html += `<span class="num-sec" style="color:${colores[j%4]};">[${n.toString().padStart(2,'0')}]</span>`;
+                        if (j < sec.length - 1) html += ` <span style="color:#888; font-size:1rem;">➔</span> `;
+                    });
+                    html += `</div>`;
+                });
+                html += `</div>`;
+
+                panel.innerHTML = html;
+
+            } catch (error) {
+                console.error(error);
+                loader.style.display = 'none';
+                panel.innerHTML = `<p style="color:#ff5555; text-align:center;">Error al cargar los datos.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
