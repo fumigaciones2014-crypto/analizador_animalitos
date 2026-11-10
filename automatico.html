@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Modo Automático</title>
+    <style>
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #b0bec5; margin: 0; font-size: 1.8rem; text-shadow: 0 0 10px rgba(176,190,197,0.5); }
+        .btn-regresar { background-color: #546e7a; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .btn-regresar:hover { background-color: #78909c; box-shadow: 0 0 15px rgba(176,190,197,0.4); }
+        
+        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; }
+        .controles select { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
+        .btn-buscar { background-color: #455a64; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; display: flex; align-items: center; gap: 8px;}
+        .btn-buscar:hover { background-color: #607d8b; box-shadow: 0 0 10px rgba(176,190,197,0.3); }
+
+        /* Barra de Progreso */
+        #contenedor-progreso { display: none; margin-bottom: 20px; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; }
+        .barra-fondo { background-color: #333; border-radius: 5px; height: 20px; overflow: hidden; border: 1px solid #555; }
+        #barra-progreso { width: 0%; height: 100%; background-color: #00ffcc; transition: width 0.1s; }
+        #texto-progreso { text-align: center; color: #00ffcc; font-size: 12px; margin-top: 5px; font-family: monospace; }
+
+        /* Contenedor de Columnas */
+        .panel-resultados { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; flex-grow: 1; overflow-y: auto; align-content: start;}
+        
+        .columna { background: #222; border-radius: 8px; border: 1px solid #444; padding: 15px; display: flex; flex-direction: column;}
+        .columna-header { font-size: 1.2rem; font-weight: bold; text-align: center; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 2px solid #333; }
+        
+        .col-manana .columna-header { color: #00ffcc; border-bottom-color: #00ffcc;}
+        .col-tarde .columna-header { color: #ffcc00; border-bottom-color: #ffcc00;}
+        .col-vencidos .columna-header { color: #ff5555; border-bottom-color: #ff5555;}
+
+        /* Tarjetas Internas */
+        .item-num { background: #1e1e1e; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid #555;}
+        .col-manana .item-num { border-left-color: #00ffcc; }
+        .col-tarde .item-num { border-left-color: #ffcc00; }
+        .col-vencidos .item-num { border-left-color: #ff5555; }
+
+        .item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;}
+        .item-numero { font-size: 1.5rem; font-weight: bold; color: #fff; }
+        .item-etiqueta { font-size: 0.8rem; background: #333; padding: 3px 8px; border-radius: 12px; color: #ccc;}
+        .item-detalle { font-size: 0.85rem; color: #aaa; line-height: 1.4; }
+        .item-detalle span { color: #ddd; font-weight: bold; }
+        
+        .mensaje-vacio { color: #666; text-align: center; font-size: 0.9rem; font-style: italic; margin-top: 20px;}
+
+        /* RESPONSIVO PARA MÓVILES */
+        @media (max-width: 768px) {
+            .header-bar { flex-direction: column; text-align: center; gap: 10px; }
+            h1 { font-size: 1.2rem; }
+            .btn-regresar { width: 100%; }
+            
+            .controles { flex-direction: column; align-items: stretch; }
+            .controles select, .btn-buscar { width: 100%; justify-content: center;}
+            
+            /* Pasar de 3 columnas a 1 sola columna en el celular */
+            .panel-resultados { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>🤖 ESCANEO AUTOMÁTICO</h1>
+        <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
+    </div>
+
+    <div class="controles">
+        <label style="font-weight: bold; color: #ccc;">Lotería a escanear:</label>
+        <select id="combo-loteria">
+            <option value="mapeo_lotto.json">Lotto Activo</option>
+            <option value="mapeo_gua.json">Guacharo</option>
+            <option value="mapeo_mini.json">Guacharito Millonario</option>
+        </select>
+        <button class="btn-buscar" onclick="ejecutarModoAutomatico()">🚀 Iniciar Escaneo</button>
+    </div>
+
+    <div id="contenedor-progreso">
+        <div class="barra-fondo">
+            <div id="barra-progreso"></div>
+        </div>
+        <p id="texto-progreso">Inicializando motor...</p>
+    </div>
+
+    <div class="panel-resultados" id="panel-resultados">
+        <!-- Aquí van las columnas -->
+    </div>
+
+    <script>
+        // --- LÓGICA MATEMÁTICA BASE ---
+        function voltearNumero(num) {
+            let s = num.toString();
+            if (s.length === 1) return num;
+            return parseInt(s.split('').reverse().join('')) || 0;
+        }
+
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            let mapaAnimales = {};
+            
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaStr = registro.hora;
+                
+                let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let minuto = parseInt(horaParts[2]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (minuto / 60);
+
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
+                if (registro.animal) mapaAnimales[num] = registro.animal;
+            });
+
+            if (historialNumeros.length === 0) return null;
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+            if (indicesApariciones.length === 0) return null;
+
+            let subidas = 0, bajadas = 0;
+            indicesApariciones.forEach(idx => {
+                if (idx > 0) {
+                    if (historialNumeros[idx] > historialNumeros[idx-1]) subidas++;
+                    else if (historialNumeros[idx] < historialNumeros[idx-1]) bajadas++;
+                }
+            });
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let dias = calcularDiferenciaDias(fechasHoras[indicesApariciones[i-1]].fecha, fechasHoras[indicesApariciones[i]].fecha);
+                if (dias > 0) ciclos.push(dias);
+            }
+
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            
+            let diasRetraso = 0, diasDesdeUltima = 999;
+            let hoySinHora = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+            if (promedioCiclo > 0) {
+                let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
+                diasDesdeUltima = Math.round((hoySinHora - fechaBase) / (1000 * 60 * 60 * 24));
+                let fechaEstimadaDate = new Date(fechaBase);
+                fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
+                diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
+            }
+
+            return {
+                num: numeroObjetivo, subidas, bajadas, ciclo: promedioCiclo, ultima: ultimaAparicion,
+                dias_retraso: diasRetraso, dias_desde_ultima: diasDesdeUltima, animal: mapaAnimales[numeroObjetivo] || '---'
+            };
+        }
+
+        // --- LÓGICA DEL MODO AUTOMÁTICO ---
+        async function ejecutarModoAutomatico() {
+            const btn = document.querySelector('.btn-buscar');
+            const loaderBox = document.getElementById('contenedor-progreso');
+            const barra = document.getElementById('barra-progreso');
+            const textoProg = document.getElementById('texto-progreso');
+            const panel = document.getElementById('panel-resultados');
+            
+            btn.disabled = true;
+            btn.innerHTML = "⏳ Escaneando...";
+            loaderBox.style.display = 'block';
+            barra.style.width = '0%';
+            panel.innerHTML = '';
+
+            const loteriaFile = document.getElementById('combo-loteria').value;
+            
+            try {
+                const res = await fetch(loteriaFile);
+                const datos = await res.json();
+                
+                // Fecha de hoy (o la última del JSON si es futura)
+                let fechaHoyStr = new Date().toISOString().split('T')[0];
+                try {
+                    let ultimaFechaData = datos[datos.length - 1].fecha;
+                    if (new Date(ultimaFechaData) > new Date()) fechaHoyStr = ultimaFechaData;
+                } catch(e) {}
+                
+                let hoyObj = new Date(fechaHoyStr + 'T00:00:00');
+                let mananaObj = new Date(hoyObj);
+                mananaObj.setDate(mananaObj.getDate() + 1);
+
+                let limiteMax = loteriaFile.includes('lotto') ? 36 : (loteriaFile.includes('gua') ? 99 : 75);
+                let numsManana = [], numsTarde = [], numsVencidos = [];
+                let paresProcesados = new Set();
+
+                for (let num = 0; num <= limiteMax; num++) {
+                    // Actualizar barra
+                    let pct = Math.round((num / limiteMax) * 100);
+                    barra.style.width = pct + '%';
+                    textoProg.innerText = `Analizando número [${num.toString().padStart(2,'0')}]... (${pct}%)`;
+                    
+                    // Pequeña pausa para que se vea la animación
+                    if (num % 3 === 0) await new Promise(r => setTimeout(r, 5));
+
+                    // Evitar procesar pares volteados dos veces (ej. 12 y 21)
+                    let numVolteado = voltearNumero(num);
+                    let parId = [num, numVolteado].sort((a,b)=>a-b).join('-');
+                    if (paresProcesados.has(parId)) continue;
+                    paresProcesados.add(parId);
+
+                    let stats1 = analizarNumeroIndividual(datos, num);
+                    let stats2 = (num !== numVolteado) ? analizarNumeroIndividual(datos, numVolteado) : null;
+
+                    if (!stats1) continue; // Si no tiene historia, saltar
+
+                    let totalSub = stats1.subidas + (stats2 ? stats2.subidas : 0);
+                    let totalBaj = stats1.bajadas + (stats2 ? stats2.bajadas : 0);
+                    
+                    let ciclosValidos = [];
+                    if (stats1.ciclo > 0) ciclosValidos.push(stats1.ciclo);
+                    if (stats2 && stats2.ciclo > 0) ciclosValidos.push(stats2.ciclo);
+                    
+                    let cicloComb = ciclosValidos.length > 0 ? (ciclosValidos.reduce((a,b)=>a+b,0) / ciclosValidos.length) : 0;
+                    
+                    // Usar la fecha más reciente de los dos
+                    let fechas = [];
+                    if (stats1.ultima) fechas.push(stats1.ultima.fecha);
+                    if (stats2 && stats2.ultima) fechas.push(stats2.ultima.fecha);
+                    if (fechas.length === 0 || cicloComb === 0) continue;
+
+                    let fechaMasReciente = fechas.sort().reverse()[0];
+                    let fechaBase = new Date(fechaMasReciente + 'T00:00:00');
+                    let fechaEst = new Date(fechaBase);
+                    fechaEst.setDate(fechaEst.getDate() + Math.round(cicloComb));
+                    let diasRetraso = Math.round((hoyObj - fechaEst) / (1000 * 60 * 60 * 24));
+
+                    let etiqueta = num !== numVolteado ? `${num.toString().padStart(2,'0')}/${numVolteado.toString().padStart(2,'0')}` : num.toString().padStart(2,'0');
+                    let animalMostrar = stats1.animal !== '---' ? stats1.animal : (stats2 ? stats2.animal : '---');
+
+                    let item = {
+                        et: etiqueta, animal: animalMostrar, f: fechaEst.toISOString().split('T')[0], 
+                        c: cicloComb.toFixed(1), s: totalSub, b: totalBaj
+                    };
+
+                    // Clasificar
+                    if (fechaEst.getTime() === hoyObj.getTime() || fechaEst.getTime() === mananaObj.getTime()) {
+                        if (totalSub > totalBaj) numsManana.push(item);
+                        else if (totalBaj > totalSub) numsTarde.push(item);
+                    } else if (diasRetraso >= 3 && diasRetraso <= 15) {
+                        item.d = diasRetraso;
+                        numsVencidos.push(item);
+                    }
+                }
+
+                barra.style.width = '100%';
+                textoProg.innerText = '¡Escaneo Completado!';
+                setTimeout(() => { loaderBox.style.display = 'none'; }, 1000);
+                btn.disabled = false;
+                btn.innerHTML = "🚀 Iniciar Escaneo";
+
+                // Construir HTML
+                let html = '';
+
+                // Columna Mañana
+                html += `<div class="columna col-manana">
+                    <div class="columna-header">🌅 Mañana (${numsManana.length})</div>`;
+                if (numsManana.length === 0) html += `<p class="mensaje-vacio">No hay números proyectados.</p>`;
+                numsManana.sort((a,b) => a.et.localeCompare(b.et)).forEach(n => {
+                    html += `<div class="item-num">
+                        <div class="item-top"><span class="item-numero">${n.et}</span> <span class="item-etiqueta">${n.animal}</span></div>
+                        <div class="item-detalle">Est: <span>${n.f}</span> | Ciclo: <span>${n.c}d</span><br>Flancos: Sub <span style="color:#00ffcc">${n.s}</span> / Baj <span style="color:#ff5555">${n.b}</span></div>
+                    </div>`;
+                });
+                html += `</div>`;
+
+                // Columna Tarde
+                html += `<div class="columna col-tarde">
+                    <div class="columna-header">🌇 Tarde (${numsTarde.length})</div>`;
+                if (numsTarde.length === 0) html += `<p class="mensaje-vacio">No hay números proyectados.</p>`;
+                numsTarde.sort((a,b) => a.et.localeCompare(b.et)).forEach(n => {
+                    html += `<div class="item-num">
+                        <div class="item-top"><span class="item-numero">${n.et}</span> <span class="item-etiqueta">${n.animal}</span></div>
+                        <div class="item-detalle">Est: <span>${n.f}</span> | Ciclo: <span>${n.c}d</span><br>Flancos: Sub <span style="color:#00ffcc">${n.s}</span> / Baj <span style="color:#ff5555">${n.b}</span></div>
+                    </div>`;
+                });
+                html += `</div>`;
+
+                // Columna Vencidos
+                html += `<div class="columna col-vencidos">
+                    <div class="columna-header">⚠️ Vencidos (${numsVencidos.length})</div>`;
+                if (numsVencidos.length === 0) html += `<p class="mensaje-vacio">No hay números vencidos.</p>`;
+                numsVencidos.sort((a,b) => b.d - a.d).slice(0, 20).forEach(n => { // Mostrar solo los 20 más vencidos
+                    let probHora = n.s > n.b ? "TARDE" : (n.b > n.s ? "MAÑANA" : "CUALQUIERA");
+                    let colorHora = n.s > n.b ? "#ffcc00" : (n.b > n.s ? "#00ffcc" : "#fff");
+                    html += `<div class="item-num">
+                        <div class="item-top"><span class="item-numero">${n.et}</span> <span class="item-etiqueta">${n.animal}</span></div>
+                        <div class="item-detalle">Debía salir: <span>${n.f}</span><br>Retraso: <span style="color:#ff5555; font-weight:bold;">${n.d} días</span><br>Probable en: <span style="color:${colorHora}; font-weight:bold;">${probHora}</span></div>
+                    </div>`;
+                });
+                if(numsVencidos.length > 20) html += `<p class="mensaje-vacio">... y ${numsVencidos.length - 20} más.</p>`;
+                html += `</div>`;
+
+                panel.innerHTML = html;
+
+            } catch (error) {
+                console.error(error);
+                textoProg.innerText = 'Error al cargar los datos.';
+                btn.disabled = false;
+                btn.innerHTML = "🚀 Reintentar";
+            }
+        }
+
+        // No ejecutar automáticamente, esperar al botón
+    </script>
+</body>
+</html>
