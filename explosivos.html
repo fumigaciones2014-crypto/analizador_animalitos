@@ -32,6 +32,15 @@
         }
         .card-explosivo:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(255, 0, 204, 0.4); }
         
+        /* Tarjeta de Apertura Destacada */
+        .card-apertura {
+            background: linear-gradient(145deg, #0d2a3f, #1a1a1a);
+            border: 1px solid #00ffcc; border-left: 6px solid #00ffcc;
+            box-shadow: 0 0 20px rgba(0,255,204,0.2);
+        }
+        .card-apertura:hover { box-shadow: 0 0 25px rgba(0,255,204,0.5); }
+        .card-apertura .num-explosivo { color: #00ffcc; text-shadow: 0 0 10px #00ffcc; }
+
         .num-explosivo { font-size: 2.5rem; font-weight: bold; color: #ff00cc; text-align: center; margin-bottom: 5px; text-shadow: 0 0 10px #ff00cc; }
         .animal-explosivo { text-align: center; font-size: 1rem; color: #fff; margin-bottom: 10px; font-weight: bold;}
         
@@ -43,24 +52,6 @@
         
         .barra-progreso-container { background-color: #333; border-radius: 5px; height: 8px; margin-top: 5px; overflow: hidden; }
         .barra-progreso-fuego { height: 100%; background-color: #ff00cc; width: 0%; transition: width 0.5s; }
-
-        /* ==========================================
-        DISEÑO RESPONSIVO PARA MÓVILES (EXPLOSIVOS/ATRASADOS)
-        ========================================== */
-        @media (max-width: 768px) {
-            /* Ajustar la barra superior */
-            .header-bar { flex-direction: column; text-align: center; gap: 10px; }
-            h1 { font-size: 1.2rem; }
-            .btn-regresar { width: 100%; }
-            
-            /* Ajustar los controles (selects y botones) */
-            .controles { flex-direction: column; align-items: stretch; }
-            .controles select, .btn-buscar { width: 100%; }
-            
-            /* Hacer que las tarjetas ocupen el 100% del ancho del celular */
-            .panel-resultados { justify-content: center; }
-            .card-explosivo, .card-atrasado { width: 100%; max-width: 350px; }
-        }
     </style>
 </head>
 <body>
@@ -80,7 +71,7 @@
         <button class="btn-buscar" onclick="detectarExplosivos()">🔥 Escanear Radar</button>
     </div>
 
-    <div class="loader" id="loader">Analizando cierres de anoche y calculando vectores... 🧨</div>
+    <div class="loader" id="loader">Analizando volatilidad y cierres de anoche... 🧨</div>
     
     <div class="panel-resultados" id="panel-resultados">
         <!-- Aquí se inyectarán las tarjetas -->
@@ -151,7 +142,7 @@
             };
         }
 
-        // --- RADAR DE APERTURA ---
+        // --- RADAR DE APERTURA (LÓGICA MEJORADA) ---
         async function detectarExplosivos() {
             const loader = document.getElementById('loader');
             const panel = document.getElementById('panel-resultados');
@@ -169,10 +160,8 @@
                 
                 // 2. Buscar qué números salieron AYER en las horas de cierre (6 PM y 7 PM)
                 let numerosDeCierre = new Set();
-                
                 datos.forEach(reg => {
                     if (reg.fecha === ultimaFechaData) {
-                        // Convertimos la hora a formato simple para buscar "06:00 PM" o "07:00 PM"
                         let horaStr = reg.hora.toUpperCase();
                         if (horaStr.includes('06:00 PM') || horaStr.includes('07:00 PM')) {
                             let num = parseInt(reg.numero);
@@ -181,85 +170,106 @@
                     }
                 });
 
-                // 3. Buscar números CANDIDATOS a explosivos (vencidos o a punto)
+                // 3. Escanear TODOS los números para calcular su volatilidad
                 let limiteMax = loteriaFile.includes('lotto') ? 36 : (loteriaFile.includes('gua') ? 99 : 75);
-                let candidatos = [];
+                let todosLosStats = [];
 
                 for (let num = 0; num <= limiteMax; num++) {
                     let stats = analizarNumeroIndividual(datos, num);
                     if (stats && stats.ciclo > 0) {
                         let volatilidad = stats.subidas + stats.bajadas;
-                        
-                        // Filtro 1: Explosivos normales (vencidos)
-                        if (stats.dias_retraso >= 0 && volatilidad >= 3) {
-                            candidatos.push({ ...stats, tipo: "EXPLOSIVO" });
-                        }
-                        
-                        // Filtro 2: Disparo de Apertura (Salió anoche y tiene buena volatilidad)
-                        if (numerosDeCierre.has(num) && volatilidad >= 2) {
-                            candidatos.push({ ...stats, tipo: "APERTURA" });
-                        }
+                        stats.volatilidad = volatilidad;
+                        todosLosStats.push(stats);
                     }
                 }
 
-                // Eliminar duplicados (si un número es explosivo y de apertura a la vez, dejamos el de Apertura)
-                let mapaUnico = {};
-                candidatos.forEach(c => {
-                    if (!mapaUnico[c.num] || c.tipo === "APERTURA") {
-                        mapaUnico[c.num] = c;
+                // 4. Encontrar la volatilidad MÍNIMA y MÁXIMA para la barra visual
+                let volMin = Math.min(...todosLosStats.map(s => s.volatilidad));
+                let volMax = Math.max(...todosLosStats.map(s => s.volatilidad));
+                let rangoVol = volMax - volMin;
+                if (rangoVol === 0) rangoVol = 1; // Evitar división por cero
+
+                // 5. Filtrar y clasificar
+                let explosivosNormales = [];
+                let candidatosApertura = [];
+
+                todosLosStats.forEach(ex => {
+                    // Es un explosivo si está vencido o a punto
+                    if (ex.dias_retraso >= 0) {
+                        explosivosNormales.push(ex);
+                        
+                        // Es candidato a apertura si salió ayer en la noche Y tiene flancos de subida
+                        if (numerosDeCierre.has(ex.num) && ex.subidas > ex.bajadas) {
+                            candidatosApertura.push(ex);
+                        }
                     }
                 });
 
-                let listaFinal = Object.values(mapaUnico);
+                // 6. Ordenar todos por volatilidad (de mayor a menor)
+                explosivosNormales.sort((a, b) => b.volatilidad - a.volatilidad);
+                candidatosApertura.sort((a, b) => b.volatilidad - a.volatilidad);
 
-                // Ordenar: Primero los de APERTURA, luego los EXPLOSIVOS, y dentro de ellos por retraso
-                listaFinal.sort((a, b) => {
-                    if (a.tipo === "APERTURA" && b.tipo !== "APERTURA") return -1;
-                    if (b.tipo === "APERTURA" && a.tipo !== "APERTURA") return 1;
-                    return b.dias_retraso - a.dias_retraso;
-                });
+                // 7. Seleccionar solo los 3 MEJORES disparos de apertura
+                let topApertura = candidatosApertura.slice(0, 3);
+
+                // Para no duplicar tarjetas, quitamos los de apertura de la lista normal
+                let idsTopApertura = new Set(topApertura.map(a => a.num));
+                let topExplosivosNormales = explosivosNormales.filter(e => !idsTopApertura.has(e.num)).slice(0, 15);
 
                 loader.style.display = 'none';
 
-                if (listaFinal.length === 0) {
-                    panel.innerHTML = `<p style="color:#aaa; width:100%; text-align:center; margin-top:50px;">No se detectaron patrones fuertes para hoy. Mañana será otro día.</p>`;
-                    return;
+                // Dibujar
+                let html = '';
+
+                if (topApertura.length > 0) {
+                    html += `<div class="seccion-titulo">🎯 TOP 3 DISPAROS DE APERTURA (Alta Volatilidad + Cierre 6/7 PM)</div>`;
+                    topApertura.forEach(ex => {
+                        let pct = ((ex.volatilidad - volMin) / rangoVol) * 100;
+                        html += `
+                            <div class="card-explosivo card-apertura">
+                                <div>
+                                    <div class="num-explosivo">${ex.num.toString().padStart(2, '0')}</div>
+                                    <div class="animal-explosivo">${ex.animal}</div>
+                                    <div class="detalle">Retraso: <span>${ex.dias_retraso > 0 ? ex.dias_retraso + ' días' : 'HOY'}</span></div>
+                                    <div class="detalle">Ciclo: <span>${ex.ciclo.toFixed(1)} días</span></div>
+                                    <div class="detalle">Flancos: <span>Sub ${ex.subidas} / Baj ${ex.bajadas}</span></div>
+                                    <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;">Volatilidad: ${ex.volatilidad}</div>
+                                    <div class="barra-progreso-container">
+                                        <div class="barra-progreso-fuego" style="width: ${pct}%; background-color: #00ffcc;"></div>
+                                    </div>
+                                </div>
+                                <div class="badge-apertura">🎯 APERTURA SEGURA</div>
+                            </div>`;
+                    });
                 }
 
-                // Dibujar las tarjetas
-                listaFinal.slice(0, 20).forEach(ex => {
-                    let card = document.createElement('div');
-                    card.className = 'card-explosivo';
-                    
-                    let porcentaje = Math.min(100, (ex.dias_retraso / 10) * 100);
-                    if (porcentaje < 0) porcentaje = 0;
+                if (topExplosivosNormales.length > 0) {
+                    html += `<div class="seccion-titulo" style="color: #ff00cc; margin-top: 20px;">💥 EXPLOSIVOS POTENCIALES (Ordenados por Volatilidad)</div>`;
+                    topExplosivosNormales.forEach(ex => {
+                        let pct = ((ex.volatilidad - volMin) / rangoVol) * 100;
+                        html += `
+                            <div class="card-explosivo">
+                                <div>
+                                    <div class="num-explosivo">${ex.num.toString().padStart(2, '0')}</div>
+                                    <div class="animal-explosivo">${ex.animal}</div>
+                                    <div class="detalle">Retraso: <span>${ex.dias_retraso > 0 ? ex.dias_retraso + ' días' : 'HOY'}</span></div>
+                                    <div class="detalle">Ciclo: <span>${ex.ciclo.toFixed(1)} días</span></div>
+                                    <div class="detalle">Flancos: <span>Sub ${ex.subidas} / Baj ${ex.bajadas}</span></div>
+                                    <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;">Volatilidad: ${ex.volatilidad}</div>
+                                    <div class="barra-progreso-container">
+                                        <div class="barra-progreso-fuego" style="width: ${pct}%;"></div>
+                                    </div>
+                                </div>
+                                <div class="badge-fuego">💥 POTENCIAL</div>
+                            </div>`;
+                    });
+                }
 
-                    // Configurar los badges según el tipo
-                    let badgeHtml = '';
-                    if (ex.tipo === "APERTURA") {
-                        badgeHtml = `<div class="badge-apertura">🎯 DISPARO DE APERTURA</div>`;
-                    } else {
-                        badgeHtml = `<div class="badge-fuego">💥 EXPLOSIVO POTENCIAL</div>`;
-                    }
-
-                    card.innerHTML = `
-                        <div>
-                            <div class="num-explosivo">${ex.num.toString().padStart(2, '0')}</div>
-                            <div class="animal-explosivo">${ex.animal}</div>
-                            
-                            <div class="detalle">Retraso: <span>${ex.dias_retraso > 0 ? ex.dias_retraso + ' días' : 'HOY'}</span></div>
-                            <div class="detalle">Ciclo: <span>${ex.ciclo.toFixed(1)} días</span></div>
-                            <div class="detalle">Flancos: <span>Sub ${ex.subidas} / Baj ${ex.bajadas}</span></div>
-                            <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;">Volatilidad: ${ex.subidas + ex.bajadas}</div>
-                            
-                            <div class="barra-progreso-container">
-                                <div class="barra-progreso-fuego" style="width: ${porcentaje}%; background-color: ${ex.tipo === 'APERTURA' ? '#00ffcc' : '#ff00cc'};"></div>
-                            </div>
-                        </div>
-                        ${badgeHtml}
-                    `;
-                    panel.appendChild(card);
-                });
+                if (html === '') {
+                    panel.innerHTML = `<p style="color:#aaa; width:100%; text-align:center; margin-top:50px;">No se detectaron patrones fuertes para hoy.</p>`;
+                } else {
+                    panel.innerHTML = html;
+                }
 
             } catch (error) {
                 console.error(error);
