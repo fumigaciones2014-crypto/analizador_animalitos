@@ -41,6 +41,24 @@
         .badge-espejo { background-color: #551111; color: #ff5555; border: 1px solid #ff5555; padding: 5px; border-radius: 4px; font-size: 0.75rem; text-align: center; margin-top: 5px; }
         
         .mensaje-vacio { color: #aaa; width: 100%; text-align: center; margin-top: 50px; font-size: 1.2rem; }
+
+        /* ==========================================
+           DISEÑO RESPONSIVO PARA MÓVILES (EXPLOSIVOS/ATRASADOS)
+        ========================================== */
+        @media (max-width: 768px) {
+            /* Ajustar la barra superior */
+            .header-bar { flex-direction: column; text-align: center; gap: 10px; }
+            h1 { font-size: 1.2rem; }
+            .btn-regresar { width: 100%; }
+            
+            /* Ajustar los controles (selects y botones) */
+            .controles { flex-direction: column; align-items: stretch; }
+            .controles select, .btn-buscar { width: 100%; }
+            
+            /* Hacer que las tarjetas ocupen el 100% del ancho del celular */
+            .panel-resultados { justify-content: center; }
+            .card-explosivo, .card-atrasado { width: 100%; max-width: 350px; }
+        }
     </style>
 </head>
 <body>
