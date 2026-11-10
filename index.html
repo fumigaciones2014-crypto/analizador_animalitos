@@ -81,13 +81,12 @@
             </div>
 
             <div class="toolbar">
-                <select id="select-filtro">
-                    <option value="hora">Por Hora</option>
-                    <option value="bloques">Por Bloques de Horas</option>
-                    <option value="vecinos">Por Número y Vecinos</option>
+                <select id="select-filtro" onchange="aplicarFiltros()">
+                    <option value="reciente">Más Recientes</option>
+                    <option value="numero">Ordenar por Número</option>
                 </select>
-                <input type="text" id="input-buscar" placeholder="Buscar Animal o Número...">
-                <button id="btn-limpiar" class="btn-tool">LIMPIAR FILTRO</button>
+                <input type="text" id="input-buscar" placeholder="Buscar Animal o Número..." oninput="aplicarFiltros()">
+                <button id="btn-limpiar" class="btn-tool" onclick="limpiarFiltros()">LIMPIAR FILTRO</button>
             </div>
 
             <div class="table-container">
@@ -138,6 +137,7 @@
     <script>
         let datosLotto = [], datosGuacharo = [], datosMini = [], loteriaActual = 'lotto';
         let numParaHistorial = "";
+        let datosFiltradosActuales = []; // Para guardar lo que se está mostrando
 
         // Reloj
         setInterval(() => {
@@ -154,7 +154,7 @@
                     fetch('mapeo_mini.json').then(r => r.json())
                 ]);
                 datosLotto = resLotto; datosGuacharo = resGua; datosMini = resMini;
-                renderizarTabla(datosLotto);
+                aplicarFiltros(); // Llama a la función de filtros en lugar de renderizar directo
             } catch (error) {
                 console.error("Error cargando los JSON:", error);
             }
@@ -164,14 +164,26 @@
         function renderizarTabla(datos) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
-            datos.slice(-50).reverse().forEach(registro => {
+            // Tomamos los últimos 50 (por defecto) pero si el filtro trae menos, muestra lo que haya
+            const registrosAMostrar = datos.slice(-50).reverse(); 
+            
+            if (registrosAMostrar.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; color: #888;">No se encontraron resultados con ese filtro.</td></tr>`;
+                return;
+            }
+
+            registrosAMostrar.forEach(registro => {
                 const tr = document.createElement('tr');
                 const fechaParts = registro.fecha.split('-');
+                // Aseguramos que el número se trate como string y no pierda ceros a la izquierda
+                let numMostrar = registro.numero.toString().padStart(2, '0');
+                if(registro.numero === '??') numMostrar = '??';
+
                 tr.innerHTML = `
                     <td>${fechaParts[2]}-${fechaParts[1]}</td>
                     <td>${registro.hora}</td>
                     <td>${registro.animal || '---'}</td>
-                    <td class="num-verde">${registro.numero}</td>
+                    <td class="num-verde">${numMostrar}</td>
                     <td><button class="btn-ver" onclick="abrirAnalisis('${registro.numero}', '${registro.hora}')">👁️</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -185,9 +197,46 @@
             document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.remove('tab-inactive');
             document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.add('tab-active');
             
-            if (loteria === 'lotto') renderizarTabla(datosLotto);
-            else if (loteria === 'gua') renderizarTabla(datosGuacharo);
-            else if (loteria === 'mini') renderizarTabla(datosMini);
+            aplicarFiltros(); // Re-aplica filtros al cambiar de lotería
+        }
+
+        // ==========================================
+        // FUNCIONALIDAD DE FILTROS
+        // ==========================================
+        function aplicarFiltros() {
+            let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
+            let textoBusqueda = document.getElementById('input-buscar').value.trim().toUpperCase();
+            let orden = document.getElementById('select-filtro').value;
+
+            // 1. Filtrar por texto (Animal o Número)
+            let filtrados = datosBase.filter(reg => {
+                let animal = (reg.animal || '').toUpperCase();
+                let numero = reg.numero.toString();
+                // Rellenamos con 0 a la izquierda si es necesario para comparar
+                let numeroConCero = numero.padStart(2, '0');
+                return animal.includes(textoBusqueda) || numero.includes(textoBusqueda) || numeroConCero.includes(textoBusqueda);
+            });
+
+            // 2. Ordenar
+            if (orden === 'numero') {
+                filtrados.sort((a, b) => {
+                    let numA = a.numero === '??' ? 999 : parseInt(a.numero);
+                    let numB = b.numero === '??' ? 999 : parseInt(b.numero);
+                    return numA - numB;
+                });
+            } else {
+                // Por defecto (reciente), el JSON ya viene ordenado cronológicamente
+                // El renderizado se encarga de invertirlo
+            }
+
+            datosFiltradosActuales = filtrados;
+            renderizarTabla(filtrados);
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('input-buscar').value = '';
+            document.getElementById('select-filtro').value = 'reciente';
+            aplicarFiltros();
         }
 
         // ==========================================
@@ -324,11 +373,21 @@
             let datos = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
             let numOrig = parseInt(numero);
             
-            // Guardamos el número para el botón de ir al gráfico
-            numParaHistorial = numero;
+            // Guardamos el string original para evitar problemas con ceros (ej: "06")
+            numParaHistorial = numero.toString(); 
 
             let resOrig = analizarNumeroIndividual(datos, numOrig);
             
+            // Si el número no tiene datos (ej: el 14 no ha salido), mostramos alerta
+            if (resOrig.ultima === "No registrado") {
+                document.getElementById('modal-ojo-titulo').innerText = `Análisis para [${numOrig}]`;
+                document.getElementById('modal-ojo-cuerpo').innerHTML = `<p style="color:#ff5555;">Este número no tiene apariciones registradas en el historial actual.</p>`;
+                document.getElementById('btn-ir-analisis').style.display = 'none';
+                document.getElementById('modal-ojo').style.display = 'flex';
+                return;
+            }
+
+            document.getElementById('btn-ir-analisis').style.display = 'block';
             document.getElementById('modal-ojo-titulo').innerText = `Análisis Rápido para [${numOrig}] - ${hora}`;
             
             let html = `<div class="box-modal">
