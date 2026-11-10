@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Atrasados</title>
+    <style>
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #f9a825; margin: 0; font-size: 1.8rem; text-shadow: 0 0 10px rgba(249,168,37,0.5); }
+        .btn-regresar { background-color: #b8860b; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .btn-regresar:hover { background-color: #daa520; box-shadow: 0 0 15px rgba(249,168,37,0.4); }
+        
+        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap;}
+        .controles label { font-weight: bold; color: #ccc; }
+        .controles select { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
+        .btn-buscar { background-color: #f9a825; color: #000; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s;}
+        .btn-buscar:hover { background-color: #ffc107; box-shadow: 0 0 10px rgba(249,168,37,0.5); }
+
+        .panel-resultados { display: flex; flex-wrap: wrap; gap: 15px; flex-grow: 1; overflow-y: auto; align-content: flex-start; }
+        .loader { display: none; text-align: center; color: #f9a825; font-size: 1.2rem; margin-top: 50px; width: 100%;}
+        
+        /* Tarjeta de Atrasados */
+        .card-atrasado { 
+            background: linear-gradient(145deg, #332b11, #1a1a1a);
+            border: 1px solid #f9a825; border-left: 6px solid #ffcc00;
+            border-radius: 8px; padding: 15px; width: 240px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: transform 0.2s;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .card-atrasado:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(249, 168, 37, 0.4); }
+        
+        .num-atrasado { font-size: 2.5rem; font-weight: bold; color: #ffcc00; text-align: center; margin-bottom: 5px; text-shadow: 0 0 10px #ffcc00; }
+        .animal-atrasado { text-align: center; font-size: 1rem; color: #fff; margin-bottom: 10px; font-weight: bold;}
+        
+        .detalle { font-size: 0.85rem; color: #ccc; margin-bottom: 5px; display: flex; justify-content: space-between;}
+        .detalle span { font-weight: bold; color: #fff; }
+        
+        .badge-jornada { padding: 5px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-align: center; margin-top: 10px; color: #000;}
+        .badge-espejo { background-color: #551111; color: #ff5555; border: 1px solid #ff5555; padding: 5px; border-radius: 4px; font-size: 0.75rem; text-align: center; margin-top: 5px; }
+        
+        .mensaje-vacio { color: #aaa; width: 100%; text-align: center; margin-top: 50px; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>⏳ NÚMEROS ATRASADOS (Por Días Exactos)</h1>
+        <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
+    </div>
+
+    <div class="controles">
+        <label>Lotería:</label>
+        <select id="combo-loteria">
+            <option value="mapeo_lotto.json">Lotto Activo</option>
+            <option value="mapeo_gua.json">Guacharo</option>
+            <option value="mapeo_mini.json">Guacharito Millonario</option>
+        </select>
+
+        <label>Días de Retraso Exactos:</label>
+        <select id="combo-dias">
+            <option value="1">1 Día de Retraso</option>
+            <option value="2">2 Días de Retraso</option>
+            <option value="3">3 Días de Retraso</option>
+            <option value="4">4 Días de Retraso</option>
+            <option value="5">5 Días de Retraso</option>
+            <option value="6">6 Días de Retraso</option>
+            <option value="7">7 Días de Retraso</option>
+        </select>
+
+        <button class="btn-buscar" onclick="buscarAtrasados()">🔍 Buscar Atrasados</button>
+    </div>
+
+    <div class="loader" id="loader">Escaneando el ciclo de vida de cada número...</div>
+    <div class="panel-resultados" id="panel-resultados">
+        <!-- Aquí se inyectarán las tarjetas -->
+    </div>
+
+    <script>
+        // --- LÓGICA MATEMÁTICA BASE (Traducida de Python) ---
+        function voltearNumero(num) {
+            let s = num.toString();
+            if (s.length === 1) return num;
+            return parseInt(s.split('').reverse().join('')) || 0;
+        }
+
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            let mapaAnimales = {};
+            
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaStr = registro.hora;
+                
+                let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let minuto = parseInt(horaParts[2]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (minuto / 60);
+
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
+                if (registro.animal) mapaAnimales[num] = registro.animal;
+            });
+
+            if (historialNumeros.length === 0) return null;
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+            if (indicesApariciones.length === 0) return null;
+
+            let subidas = 0, bajadas = 0;
+            indicesApariciones.forEach(idx => {
+                if (idx > 0) {
+                    if (historialNumeros[idx] > historialNumeros[idx-1]) subidas++;
+                    else if (historialNumeros[idx] < historialNumeros[idx-1]) bajadas++;
+                }
+            });
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let dias = calcularDiferenciaDias(fechasHoras[indicesApariciones[i-1]].fecha, fechasHoras[indicesApariciones[i]].fecha);
+                if (dias > 0) ciclos.push(dias);
+            }
+
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            
+            let diasRetraso = 0, diasDesdeUltima = 999;
+            let hoySinHora = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+            if (promedioCiclo > 0) {
+                let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
+                diasDesdeUltima = Math.round((hoySinHora - fechaBase) / (1000 * 60 * 60 * 24));
+                let fechaEstimadaDate = new Date(fechaBase);
+                fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
+                diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
+            }
+
+            return {
+                num: numeroObjetivo, subidas, bajadas, ciclo: promedioCiclo, ultima: ultimaAparicion,
+                dias_retraso: diasRetraso, dias_desde_ultima: diasDesdeUltima, animal: mapaAnimales[numeroObjetivo] || '---'
+            };
+        }
+
+        // --- FUNCIÓN PRINCIPAL DE ATRASADOS ---
+        async function buscarAtrasados() {
+            const loader = document.getElementById('loader');
+            const panel = document.getElementById('panel-resultados');
+            const loteriaFile = document.getElementById('combo-loteria').value;
+            const diasBuscados = parseInt(document.getElementById('combo-dias').value);
+            
+            loader.style.display = 'block';
+            panel.innerHTML = '';
+
+            try {
+                const res = await fetch(loteriaFile);
+                const datos = await res.json();
+
+                let limiteMax = loteriaFile.includes('lotto') ? 36 : (loteriaFile.includes('gua') ? 99 : 75);
+                let resultados = [];
+
+                // Iterar sobre todos los números
+                for (let num = 0; num <= limiteMax; num++) {
+                    let stats = analizarNumeroIndividual(datos, num);
+                    
+                    // Filtro: Si el número tiene exactamente los días de retraso buscados
+                    if (stats && stats.dias_retraso === diasBuscados) {
+                        
+                        // Determinar jornada por flancos
+                        let jornada = "INDEFINIDA";
+                        let colorJornada = "#888";
+                        if (stats.subidas > stats.bajadas) {
+                            jornada = "MAÑANA 🌅";
+                            colorJornada = "#00ffcc";
+                        } else if (stats.bajadas > stats.subidas) {
+                            jornada = "TARDE 🌇";
+                            colorJornada = "#ffcc00";
+                        }
+
+                        // Detectar si hubo "Sustitución" (el número inverso salió hace poco)
+                        let numInverso = voltearNumero(num);
+                        let sustitucion = false;
+                        if (numInverso !== num) {
+                            let statsInv = analizarNumeroIndividual(datos, numInverso);
+                            if (statsInv && statsInv.dias_desde_ultima <= 2) {
+                                sustitucion = true;
+                            }
+                        }
+
+                        resultados.push({
+                            ...stats,
+                            jornada: jornada,
+                            colorJornada: colorJornada,
+                            sustitucion: sustitucion,
+                            numInverso: numInverso
+                        });
+                    }
+                }
+
+                loader.style.display = 'none';
+
+                if (resultados.length === 0) {
+                    panel.innerHTML = `<p class="mensaje-vacio">No se encontraron números con exactamente <b>${diasBuscados}</b> días de retraso en esta lotería.</p>`;
+                    return;
+                }
+
+                // Ordenar por número de menor a mayor
+                resultados.sort((a, b) => a.num - b.num);
+
+                // Dibujar las tarjetas
+                resultados.forEach(res => {
+                    let card = document.createElement('div');
+                    card.className = 'card-atrasado';
+                    
+                    let htmlSustitucion = '';
+                    if (res.sustitucion) {
+                        htmlSustitucion = `<div class="badge-espejo">⚠️ SUSTITUCIÓN: Salió su inverso [${res.numInverso}]</div>`;
+                    }
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="num-atrasado">${res.num.toString().padStart(2, '0')}</div>
+                            <div class="animal-atrasado">${res.animal}</div>
+                            
+                            <div class="detalle">Ciclo Prom.: <span>${res.ciclo.toFixed(1)} días</span></div>
+                            <div class="detalle">Subidas: <span>${res.subidas}</span></div>
+                            <div class="detalle">Bajadas: <span>${res.bajadas}</span></div>
+                            <div class="detalle" style="margin-top:5px;">Retraso: <span style="color:#ff5555;">${res.dias_retraso} días</span></div>
+                        </div>
+                        <div>
+                            <div class="badge-jornada" style="background-color: ${res.colorJornada};">
+                                Probable: ${res.jornada}
+                            </div>
+                            ${htmlSustitucion}
+                        </div>
+                    `;
+                    panel.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error(error);
+                loader.style.display = 'none';
+                panel.innerHTML = `<p style="color:#ff5555; width:100%; text-align:center;">Error al cargar los datos.</p>`;
+            }
+        }
+
+        // Ejecutar al cargar la página con los valores por defecto
+        window.onload = buscarAtrasados;
+    </script>
+</body>
+</html>
