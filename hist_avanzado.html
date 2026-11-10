@@ -4,21 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JARVIS - Historial Avanzado</title>
-    <!-- Importamos Chart.js para el gráfico -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            background-color: #2b2b2b; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
-        }
+        body { background-color: #2b2b2b; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
         .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 15px; }
         h1 { color: #00aaff; margin: 0; font-size: 1.5rem; text-shadow: 0 0 10px rgba(0,170,255,0.5); }
-        .btn-regresar {
-            background-color: #006633; color: white; border: none; padding: 10px 20px; font-weight: bold;
-            border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s;
-        }
+        .btn-regresar { background-color: #006633; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
         .btn-regresar:hover { background-color: #008844; box-shadow: 0 0 15px rgba(0,255,100,0.4); }
-        
         .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #1e1e1e; padding: 15px; border-radius: 8px; border: 1px solid #333; flex-wrap: wrap; }
         .controles label { font-weight: bold; color: #ccc; }
         .controles select, .controles input { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; }
@@ -27,20 +19,12 @@
         .btn-proyectar:hover { background-color: #0055aa; }
         .btn-aut { background-color: #006633; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; }
         .btn-aut:hover { background-color: #009944; }
-        
         .contenedor-principal { display: flex; flex-direction: column; gap: 15px; flex-grow: 1; overflow: hidden; }
-        
         .canvas-container { background-color: #1e1e1e; border: 1px solid #444; border-radius: 8px; padding: 10px; height: 35%; position: relative; }
-        
         .resultados { background-color: #1e1e1e; color: #00ffcc; font-family: Consolas, monospace; font-size: 14px; border: 1px solid #444; border-radius: 8px; padding: 20px; flex-grow: 1; overflow-y: auto; line-height: 1.6; }
-        
-        /* Estilos internos del texto generado */
         .box { background-color: #222; padding: 10px; border-left: 4px solid #00ffcc; margin-bottom: 10px; border-radius: 4px; }
         .box-vector { background-color: #112233; border-left-color: #ff00cc; }
-        .box-franja { background-color: #1a1a1a; border-left-color: #00aaff; }
-        .box-atrayentes { background-color: #1a1a2e; border-left-color: #ffcc00; }
         .box-cadenas { background-color: #2a1133; border-left-color: #ff00cc; }
-        .box-alerta { background-color: #331111; border: 1px solid #ff5555; }
         .texto-resaltado { font-size: 14pt; font-weight: bold; }
     </style>
 </head>
@@ -58,7 +42,6 @@
             <option value="mapeo_gua.json">Guacharo</option>
             <option value="mapeo_mini.json">Guacharito Millonario</option>
         </select>
-        
         <input type="number" id="input-numero" placeholder="Núm" min="0" max="99">
         <button class="btn-proyectar" onclick="ejecutarAnalisisManual()">Proyectar</button>
         <button class="btn-aut" onclick="ejecutarModoAutomatico()">MODO AUT</button>
@@ -72,8 +55,7 @@
             <p style="color:#888;">Selecciona una lotería e ingresa un número para iniciar el análisis, o presiona "MODO AUT".</p>
         </div>
     </div>
-
-    <!-- BARRA DE PROGRESO REAL -->
+    
     <div id="contenedor-progreso" style="display: none; margin-top: 10px;">
         <div style="background-color: #333; border-radius: 5px; height: 20px; overflow: hidden; border: 1px solid #555;">
             <div id="barra-progreso" style="width: 0%; height: 100%; background-color: #00ff00; transition: width 0.1s;"></div>
@@ -84,7 +66,6 @@
     <script>
         let chartInstance = null;
 
-        // --- LÓGICA MATEMÁTICA (Traducida de Python) ---
         function voltearNumero(num) {
             let s = num.toString();
             if (s.length === 1) return num;
@@ -99,13 +80,11 @@
 
         function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
             let historialNumeros = [], fechasHoras = [];
-            
             datosLoteria.forEach(registro => {
                 let numStr = (registro.numero || '').toString().trim();
                 if (numStr === '??' || isNaN(numStr)) return;
                 let num = parseInt(numStr);
                 let horaStr = registro.hora;
-                
                 let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
                 if(!horaParts) return;
                 let hora = parseInt(horaParts[1]);
@@ -114,13 +93,11 @@
                 if (ampm === 'PM' && hora < 12) hora += 12;
                 if (ampm === 'AM' && hora === 12) hora = 0;
                 let horaDecimal = hora + (minuto / 60);
-
                 historialNumeros.push(num);
                 fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
             });
 
             if (historialNumeros.length === 0) return null;
-
             let indicesApariciones = [];
             historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
 
@@ -147,11 +124,9 @@
             let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
             let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
             let ultimaFechaStr = `${ultimaAparicion.fecha} (${ultimaAparicion.horaStr})`;
-
             let prediccion = "Neutro";
             if (subidas > bajadas) prediccion = "MAÑANA (Flanco de Bajada)";
             else if (bajadas > subidas) prediccion = "TARDE (Flanco de Subida)";
-
             let fechaEst = "N/A", diasRetraso = 0, diasDesdeUltima = 999;
             let hoy = new Date();
             
@@ -159,7 +134,6 @@
                 let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
                 let hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
                 diasDesdeUltima = Math.round((hoySinHora - fechaBase) / (1000 * 60 * 60 * 24));
-                
                 let fechaEstimadaDate = new Date(fechaBase);
                 fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
                 fechaEst = fechaEstimadaDate.toISOString().split('T')[0];
@@ -171,7 +145,6 @@
                 if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
                 if (idx + 1 < historialNumeros.length) numerosVecinos.push(historialNumeros[idx + 1]);
             });
-            
             let conteo = {};
             numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
             let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => [parseInt(e[0]), e[1]]);
@@ -192,33 +165,27 @@
                 let n = tendenciaHora.length;
                 let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
                 for(let i=0; i<n; i++) {
-                    let x = i + 1;
-                    let y = tendenciaHora[i];
+                    let x = i + 1; let y = tendenciaHora[i];
                     sumX += x; sumY += y; sumXY += x*y; sumX2 += x*x;
                 }
                 let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX) || 0;
                 let b = (sumY - m * sumX) / n;
-
                 let proxHora = m * (n + 1) + b;
                 proxHora = Math.max(8, Math.min(20, proxHora));
-
                 let dir = "ESTABLE ⏸️", color = "#ffffff";
                 if (m < -0.1) { dir = "DESCENDENTE (Mañana) 🌅"; color = "#00ffcc"; }
                 else if (m > 0.1) { dir = "ASCENDENTE (Tarde) 🌇"; color = "#ffcc00"; }
-
                 vectorInfo = {
                     pendiente: m.toFixed(3), direccion: dir, color: color,
                     proxima_hora_decimal: proxHora,
                     proxima_hora_str: `${Math.floor(proxHora).toString().padStart(2,'0')}:${Math.floor((proxHora % 1) * 60).toString().padStart(2,'0')}`
                 };
-
                 let puntosDebajo = 0, puntosEncima = 0;
                 for(let i=0; i<n; i++) {
                     let horaLinea = m * (i + 1) + b;
                     if (tendenciaHora[i] < horaLinea) puntosDebajo++;
                     else if (tendenciaHora[i] > horaLinea) puntosEncima++;
                 }
-
                 if (puntosDebajo < puntosEncima) zonaEquilibrio = { tipo: "deba", mensaje: "Mitad Inferior (Mañana)", detalle: `${puntosDebajo} abajo vs ${puntosEncima} arriba`, color: "#00ffcc", rango: "08:00 AM - 02:00 PM" };
                 else if (puntosEncima < puntosDebajo) zonaEquilibrio = { tipo: "encima", mensaje: "Mitad Superior (Tarde)", detalle: `${puntosEncima} arriba vs ${puntosDebajo} abajo`, color: "#ffcc00", rango: "02:00 PM - 08:00 PM" };
                 else zonaEquilibrio = { tipo: "equilibrado", mensaje: "Equilibrio Perfecto", detalle: `${puntosDebajo} abajo y ${puntosEncima} arriba`, color: "#ffffff", rango: "Sin sesgo" };
@@ -236,9 +203,7 @@
             let cadenas = [];
             let resInicial = analizarNumeroIndividual(datosLoteria, numeroInicial);
             if (!resInicial || resInicial.top_atrayentes.length === 0) return [[numeroInicial]];
-
             let opcionesIniciales = resInicial.top_atrayentes.slice(0, cantidadCadenas).map(at => at[0]);
-            
             opcionesIniciales.forEach(opcion => {
                 let secuencia = [numeroInicial, opcion];
                 let actual = opcion;
@@ -259,62 +224,40 @@
             return cadenas;
         }
 
-        // --- RENDERIZADO EN PANTALLA ---
         async function obtenerDatos() {
             let loteria = document.getElementById('combo-loteria').value;
             let res = await fetch(loteria);
             return await res.json();
         }
 
-        function actualizarGrafico(tendencias, vectorInfo, proximaHora) {
+        function actualizarGrafico(tendencias, vectorInfo) {
             let ctx = document.getElementById('graficoLineas').getContext('2d');
             if (chartInstance) chartInstance.destroy();
-
             let labels = tendencias.map((_, i) => `Ap. ${i+1}`);
             if (vectorInfo && vectorInfo.proxima_hora_decimal) {
                 labels.push("Próx.");
                 tendencias.push(vectorInfo.proxima_hora_decimal);
             }
-
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Hora de Aparición (Decimal)',
-                        data: tendencias,
-                        borderColor: '#00ffcc',
-                        backgroundColor: 'rgba(0, 255, 204, 0.2)',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#2b2b2b',
-                        pointBorderColor: '#00ffcc',
-                        pointRadius: 5,
-                        fill: false,
-                        tension: 0.1
+                        label: 'Hora de Aparición (Decimal)', data: tendencias,
+                        borderColor: '#00ffcc', backgroundColor: 'rgba(0, 255, 204, 0.2)',
+                        borderWidth: 2, pointBackgroundColor: '#2b2b2b', pointBorderColor: '#00ffcc', pointRadius: 5, fill: false, tension: 0.1
                     }]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     scales: {
-                        y: {
-                            min: 8, max: 20,
-                            ticks: {
-                                color: 'white',
-                                callback: function(value) {
-                                    let h = Math.floor(value);
-                                    let ampm = h >= 12 ? 'PM' : 'AM';
-                                    if (h > 12) h -= 12;
-                                    if (h === 0) h = 12;
-                                    return `${h.toString().padStart(2, '0')}:00 ${ampm}`;
-                                }
-                            },
-                            grid: { color: '#444' }
-                        },
+                        y: { min: 8, max: 20, ticks: { color: 'white', callback: function(value) {
+                            let h = Math.floor(value); let ampm = h >= 12 ? 'PM' : 'AM'; if (h > 12) h -= 12; if (h === 0) h = 12;
+                            return `${h.toString().padStart(2, '0')}:00 ${ampm}`;
+                        } }, grid: { color: '#444' } },
                         x: { ticks: { color: 'white' }, grid: { display: false } }
                     },
-                    plugins: {
-                        legend: { labels: { color: 'white' } }
-                    }
+                    plugins: { legend: { labels: { color: 'white' } } }
                 }
             });
         }
@@ -322,26 +265,20 @@
         async function ejecutarAnalisisManual() {
             let numStr = document.getElementById('input-numero').value.trim();
             if (isNaN(numStr) || numStr === '') return alert("Ingresa un número válido.");
-            
             let datos = await obtenerDatos();
             let numOrig = parseInt(numStr);
-
             let resOrig = analizarNumeroIndividual(datos, numOrig);
             if (!resOrig || resOrig.ultima === "No registrado") {
                 document.getElementById('texto-resultados').innerHTML = "<p style='color:#ff5555;'>No hay datos válidos para este número.</p>";
                 return;
             }
-
-            actualizarGrafico([...resOrig.tendencia_hora], resOrig.vector_info, resOrig.vector_info.proxima_hora_decimal);
-
+            actualizarGrafico([...resOrig.tendencia_hora], resOrig.vector_info);
             let html = `<h3>Análisis de Flancos para [${numOrig}]:</h3>`;
-            
             html += `<div class="box">
                 <b>Número Solicitado [${numOrig}]:</b><br>
                 • Flancos: Subidas (${resOrig.subidas}) | Bajadas (${resOrig.bajadas})<br>
                 • Ciclo Promedio: ${resOrig.ciclo} días<br>
                 • Última Aparición: ${resOrig.ultima}<br>`;
-            
             let colorOrig = resOrig.prediccion.includes("MAÑANA") ? "#00ffcc" : (resOrig.prediccion.includes("TARDE") ? "#ffcc00" : "#fff");
             html += `• Proyección: <span style="color:${colorOrig}; font-weight:bold;">${resOrig.prediccion}</span><br>`;
             if (resOrig.fecha_estimada !== "N/A") {
@@ -350,7 +287,6 @@
                 else if (resOrig.dias_retraso === 0) html += ` <span style="color:#ffff00;">(Para hoy)</span>`;
             }
             html += `</div>`;
-
             let cadenas = generarMultiplesSecuencias(datos, numOrig, 3);
             html += `<div class="box-cadenas">
                 <b style="color:#ff00cc;">🔗 TRIPLE CADENA DE ATRACCIÓN:</b><br>`;
@@ -364,11 +300,9 @@
                 html += `<br>`;
             });
             html += `</div>`;
-
             if (resOrig.vector_info.direccion) {
                  html += `<div class="box-vector"><b style="color:${resOrig.vector_info.color};">🧭 VECTOR:</b> ${resOrig.vector_info.direccion} (Próx. Hora: ${resOrig.vector_info.proxima_hora_str})</div>`;
             }
-            
             document.getElementById('texto-resultados').innerHTML = html;
         }
 
@@ -385,17 +319,13 @@
 
             let datos = await obtenerDatos();
             let loteriaNombre = document.getElementById('combo-loteria').options[document.getElementById('combo-loteria').selectedIndex].text;
-            
             await new Promise(r => setTimeout(r, 100));
 
             let fechaHoy = new Date();
             let fechaHoyStr = fechaHoy.toISOString().split('T')[0];
-            
             try {
                 let ultimaFechaData = datos[datos.length - 1].fecha;
-                if (new Date(ultimaFechaData) > fechaHoy) {
-                    fechaHoyStr = ultimaFechaData;
-                }
+                if (new Date(ultimaFechaData) > fechaHoy) { fechaHoyStr = ultimaFechaData; }
             } catch(e) {}
 
             let limiteMax = loteriaNombre.includes('Lotto') ? 36 : (loteriaNombre.includes('Guacharo') ? 99 : 75);
@@ -411,12 +341,9 @@
                     let fechaBase = new Date(stats.ultima.split(' ')[0] + 'T00:00:00');
                     let fechaEst = new Date(fechaBase);
                     fechaEst.setDate(fechaEst.getDate() + Math.round(parseFloat(stats.ciclo)));
-                    
                     let hoy = new Date(fechaHoyStr + 'T00:00:00');
                     let diasRetraso = Math.round((hoy - fechaEst) / (1000 * 60 * 60 * 24));
-
                     let etiqueta = `[${num}]`;
-                    
                     if (diasRetraso === 0 || diasRetraso === -1) {
                         if (stats.prediccion === "MAÑANA") numsManana.push({et: etiqueta, f: fechaEst, c: stats.ciclo, s: stats.subidas, b: stats.bajadas});
                         else if (stats.prediccion === "TARDE") numsTarde.push({et: etiqueta, f: fechaEst, c: stats.ciclo, s: stats.subidas, b: stats.bajadas});
@@ -424,7 +351,6 @@
                         numsVencidos.push({et: etiqueta, f: fechaEst, d: diasRetraso, s: stats.subidas, b: stats.bajadas});
                     }
                 }
-
                 if (num % 5 === 0) await new Promise(r => setTimeout(r, 10));
             }
 
@@ -434,24 +360,19 @@
 
             let html = `<h3>🤖 ESCANEO AUTOMÁTICO: ${loteriaNombre.toUpperCase()}</h3>`;
             html += `<p>Filtro aplicado para el día de hoy (${fechaHoyStr}) y mañana.</p>`;
-
             html += `<h4 style='color: #00ffcc;'>🌅 Proyectados para la MAÑANA:</h4>`;
             if (numsManana.length > 0) {
                 html += `<ul>`;
                 numsManana.forEach(n => html += `<li><b>${n.et}</b> - Estimado: ${n.f.toISOString().split('T')[0]} | Ciclo: ${n.c} días | Sub: ${n.s} / Baj: ${n.b}</li>`);
                 html += `</ul>`;
-            } else {
-                html += `<p style='color:#888;'>Ningún número cumple con los filtros para la mañana.</p>`;
-            }
+            } else { html += `<p style='color:#888;'>Ningún número cumple con los filtros para la mañana.</p>`; }
 
             html += `<h4 style='color: #ffcc00;'>🌇 Proyectados para la TARDE:</h4>`;
             if (numsTarde.length > 0) {
                 html += `<ul>`;
                 numsTarde.forEach(n => html += `<li><b>${n.et}</b> - Estimado: ${n.f.toISOString().split('T')[0]} | Ciclo: ${n.c} días | Sub: ${n.s} / Baj: ${n.b}</li>`);
                 html += `</ul>`;
-            } else {
-                html += `<p style='color:#888;'>Ningún número cumple con los filtros para la tarde.</p>`;
-            }
+            } else { html += `<p style='color:#888;'>Ningún número cumple con los filtros para la tarde.</p>`; }
 
             html += `<h4 style='color: #ff5555;'>⚠️ Números Vencidos (3 a 15 días):</h4>`;
             if (numsVencidos.length > 0) {
@@ -463,14 +384,12 @@
                     html += `<li><b>${n.et}</b> - Debía salir: ${n.f.toISOString().split('T')[0]} | Retraso: <b style="color:#ff5555;">${n.d} días</b> | <span style="color:${colorHora};">Posible: ${horaProb}</span></li>`;
                 });
                 html += `</ul>`;
-            } else {
-                html += `<p style='color:#888;'>No hay números con retraso significativo.</p>`;
-            }
+            } else { html += `<p style='color:#888;'>No hay números con retraso significativo.</p>`; }
 
             resultadosDiv.innerHTML = html;
         }
 
-        // Esta función se ejecuta al cargar la página. Lee la URL por si viene un número desde el ojito.
+        // Recibir número desde la ventana anterior (Ojito)
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const numeroDesdeIndex = urlParams.get('numero');
