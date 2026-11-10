@@ -523,4 +523,37 @@
                 let stats = analizarNumeroIndividual(datosBase, i);
                 if(stats && stats.ultima !== "No registrado") {
                     // Fórmula de puntaje: Flancos + (Ciclo * 2) + (Dias Retraso * 5)
-                    let puntaje = (stats.subidas + stats.bajadas) + (parseFloat(stats.cic
+                    let puntaje = (stats.subidas + stats.bajadas) + (parseFloat(stats.ciclo) * 2) + (stats.dias_retraso * 5);
+                    puntajes[i] = puntaje;
+                }
+            }
+
+            // Ordenar de mayor a menor y tomar el Top 9
+            let top9 = Object.entries(puntajes)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 9)
+                .map(e => parseInt(e[0]));
+
+            // 4. Elegir 2 números al azar de ese Top 9
+            let num1 = top9[Math.floor(Math.random() * top9.length)];
+            let num2 = top9[Math.floor(Math.random() * top9.length)];
+            
+            // Evitar que salgan los mismos 2 números
+            while (num1 === num2 && top9.length > 1) {
+                num2 = top9[Math.floor(Math.random() * top9.length)];
+            }
+
+            // 5. Mostrar Modal
+            document.getElementById('bola-1').innerText = num1.toString().padStart(2, '0');
+            document.getElementById('bola-2').innerText = num2.toString().padStart(2, '0');
+            document.getElementById('modal-suerte').style.display = 'flex';
+        }
+
+        function cerrarModalSuerte() {
+            document.getElementById('modal-suerte').style.display = 'none';
+        }
+
+        window.onload = cargarDatos;
+    </script>
+</body>
+</html>
