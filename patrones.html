@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Patrones</title>
+    <style>
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #66bb6a; margin: 0; font-size: 1.8rem; text-shadow: 0 0 10px rgba(102,187,106,0.5); }
+        .btn-regresar { background-color: #2e7d32; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .btn-regresar:hover { background-color: #388e3c; box-shadow: 0 0 15px rgba(102,187,106,0.4); }
+        
+        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; }
+        .controles select { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
+        .btn-buscar { background-color: #2e7d32; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-buscar:hover { background-color: #43a047; box-shadow: 0 0 10px rgba(102,187,106,0.3); }
+
+        .loader { display: none; text-align: center; color: #66bb6a; font-size: 1.2rem; margin-top: 50px; width: 100%;}
+
+        /* Contenedor Grid Principal */
+        .panel-patrones { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; overflow-y: auto; align-content: start; }
+        
+        .tarjeta-patron { background: #222; border-radius: 10px; border: 1px solid #444; overflow: hidden; display: flex; flex-direction: column;}
+        .tarjeta-header { background: #1e1e1e; padding: 15px; font-size: 1.1rem; font-weight: bold; border-bottom: 1px solid #333; text-align: center;}
+        
+        /* Listas Internas */
+        .lista-patron { padding: 15px; display: flex; flex-direction: column; gap: 10px;}
+        
+        .item-patron { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 10px 15px; border-radius: 6px; border-left: 4px solid #66bb6a;}
+        .item-rank { font-size: 1.2rem; font-weight: bold; color: #66bb6a; width: 30px;}
+        .item-info { flex-grow: 1; padding-left: 10px;}
+        .item-num { font-size: 1.3rem; font-weight: bold; color: #fff;}
+        .item-animal { font-size: 0.85rem; color: #aaa; text-transform: uppercase;}
+        .item-stat { font-size: 1.1rem; font-weight: bold; color: #ffcc00; text-align: right;}
+        .item-stat small { display: block; font-size: 0.75rem; color: #888; font-weight: normal;}
+
+        /* Colores específicos por tarjeta */
+        .t-calientes .item-patron { border-left-color: #ff5555; }
+        .t-calientes .item-rank { color: #ff5555; }
+        
+        .t-atrayentes .item-patron { border-left-color: #ffcc00; }
+        .t-atrayentes .item-rank { color: #ffcc00; }
+        
+        .t-animales .item-patron { border-left-color: #29b6f6; }
+        .t-animales .item-rank { color: #29b6f6; }
+        
+        .t-frios .item-patron { border-left-color: #9e9e9e; }
+        .t-frios .item-rank { color: #9e9e9e; }
+
+        /* RESPONSIVO PARA MÓVILES */
+        @media (max-width: 768px) {
+            .header-bar { flex-direction: column; text-align: center; gap: 10px; }
+            h1 { font-size: 1.3rem; }
+            .btn-regresar { width: 100%; }
+            
+            .controles { flex-direction: column; align-items: stretch; }
+            .controles select, .btn-buscar { width: 100%; }
+            
+            /* Pasar de 2 columnas a 1 sola columna en el celular */
+            .panel-patrones { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>📊 PATRONES DE FRECUENCIA</h1>
+        <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
+    </div>
+
+    <div class="controles">
+        <label style="font-weight: bold; color: #ccc;">Lotería a analizar:</label>
+        <select id="combo-loteria">
+            <option value="mapeo_lotto.json">Lotto Activo</option>
+            <option value="mapeo_gua.json">Guacharo</option>
+            <option value="mapeo_mini.json">Guacharito Millonario</option>
+        </select>
+        <button class="btn-buscar" onclick="generarPatrones()">📈 Analizar Patrones</button>
+    </div>
+
+    <div class="loader" id="loader">Procesando frecuencias y conexiones...</div>
+    
+    <div class="panel-patrones" id="panel-patrones">
+        <!-- Aquí se inyectarán las tarjetas -->
+    </div>
+
+    <script>
+        function voltearNumero(num) {
+            let s = num.toString();
+            if (s.length === 1) return num;
+            return parseInt(s.split('').reverse().join('')) || 0;
+        }
+
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            let mapaAnimales = {};
+            
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaParts = registro.hora.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (parseInt(horaParts[2]) / 60);
+
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: registro.hora, num: num, decimal: horaDecimal });
+                if (registro.animal) mapaAnimales[num] = registro.animal;
+            });
+
+            if (historialNumeros.length === 0) return null;
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+            if (indicesApariciones.length === 0) return null;
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let dias = calcularDiferenciaDias(fechasHoras[indicesApariciones[i-1]].fecha, fechasHoras[indicesApariciones[i]].fecha);
+                if (dias > 0) ciclos.push(dias);
+            }
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            let hoySinHora = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+            let diasDesdeUltima = Math.round((hoySinHora - new Date(ultimaAparicion.fecha + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+
+            // Atrayentes
+            let numerosVecinos = [];
+            indicesApariciones.forEach(idx => {
+                if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
+                if (idx + 1 < historialNumeros.length) numerosVecinos.push(historialNumeros[idx + 1]);
+            });
+            let conteo = {};
+            numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
+            let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => [parseInt(e[0]), e[1]]);
+
+            return {
+                num: numeroObjetivo, ciclo: promedioCiclo, dias_desde_ultima: diasDesdeUltima, 
+                top_atrayentes: topAtrayentes, animal: mapaAnimales[numeroObjetivo] || '---',
+                apariciones: indicesApariciones.length
+            };
+        }
+
+        // --- LÓGICA PRINCIPAL DE PATRONES ---
+        async function generarPatrones() {
+            const loader = document.getElementById('loader');
+            const panel = document.getElementById('panel-patrones');
+            const loteriaFile = document.getElementById('combo-loteria').value;
+            
+            loader.style.display = 'block';
+            panel.innerHTML = '';
+
+            try {
+                const res = await fetch(loteriaFile);
+                const datos = await res.json();
+                
+                // 1. Filtrar últimos 30 días para ver qué está "caliente" actualmente
+                let hoy = new Date();
+                let hace30Dias = new Date(); hace30Dias.setDate(hoy.getDate() - 30);
+                let hace30DiasStr = hace30Dias.toISOString().split('T')[0];
+                
+                let conteoNumeros = {};
+                let conteoAnimales = {};
+
+                datos.forEach(reg => {
+                    if (reg.fecha >= hace30DiasStr && reg.numero !== '??') {
+                        let num = parseInt(reg.numero);
+                        conteoNumeros[num] = (conteoNumeros[num] || 0) + 1;
+                        if (reg.animal) {
+                            let animal = reg.animal.toUpperCase();
+                            conteoAnimales[animal] = (conteoAnimales[animal] || 0) + 1;
+                        }
+                    }
+                });
+
+                // Ordenar Calientes
+                let topCalientes = Object.entries(conteoNumeros)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 8)
+                    .map(([num, cant]) => {
+                        let stats = analizarNumeroIndividual(datos, parseInt(num));
+                        return { num: parseInt(num), cant: cant, animal: stats ? stats.animal : '---' };
+                    });
+
+                // Ordenar Animales
+                let topAnimales = Object.entries(conteoAnimales)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 8)
+                    .map(([animal, cant]) => ({ animal: animal, cant: cant }));
+
+                // 2. Buscar Atrayentes y Fríos (Escaneo general)
+                let limiteMax = loteriaFile.includes('lotto') ? 36 : (loteriaFile.includes('gua') ? 99 : 75);
+                let todosAtrayentes = [];
+                let todosFrios = [];
+
+                for (let num = 0; num <= limiteMax; num++) {
+                    let stats = analizarNumeroIndividual(datos, num);
+                    if (stats) {
+                        // Atrayentes (los que más conexiones tienen)
+                        let fuerzaAtraccion = stats.top_atrayentes.reduce((sum, at) => sum + at[1], 0);
+                        todosAtrayentes.push({ num: num, animal: stats.animal, fuerza: fuerzaAtraccion });
+                        
+                        // Fríos (los que llevan más días sin salir)
+                        if (stats.dias_desde_ultima < 999) {
+                            todosFrios.push({ num: num, animal: stats.animal, dias: stats.dias_desde_ultima });
+                        }
+                    }
+                }
+
+                let topAtrayentesGlobal = todosAtrayentes.sort((a, b) => b.fuerza - a.fuerza).slice(0, 8);
+                let topFriosGlobal = todosFrios.sort((a, b) => b.dias - a.dias).slice(0, 8);
+
+                loader.style.display = 'none';
+
+                // --- RENDERIZAR ---
+                let html = '';
+
+                // Tarjeta 1: Calientes
+                html += `<div class="tarjeta-patron t-calientes">
+                    <div class="tarjeta-header" style="color:#ff5555;">🔥 Top Números Calientes (Últimos 30 días)</div>
+                    <div class="lista-patron">`;
+                topCalientes.forEach((item, i) => {
+                    html += `<div class="item-patron">
+                        <div class="item-rank">#${i+1}</div>
+                        <div class="item-info">
+                            <div class="item-num">${item.num.toString().padStart(2,'0')}</div>
+                            <div class="item-animal">${item.animal}</div>
+                        </div>
+                        <div class="item-stat">${item.cant} <small>veces</small></div>
+                    </div>`;
+                });
+                html += `</div></div>`;
+
+                // Tarjeta 2: Atrayentes
+                html += `<div class="tarjeta-patron t-atrayentes">
+                    <div class="tarjeta-header" style="color:#ffcc00;">🧲 Números con Mayor Atracción</div>
+                    <div class="lista-patron">`;
+                topAtrayentesGlobal.forEach((item, i) => {
+                    html += `<div class="item-patron">
+                        <div class="item-rank">#${i+1}</div>
+                        <div class="item-info">
+                            <div class="item-num">${item.num.toString().padStart(2,'0')}</div>
+                            <div class="item-animal">${item.animal}</div>
+                        </div>
+                        <div class="item-stat">${item.fuerza} <small>conexiones</small></div>
+                    </div>`;
+                });
+                html += `</div></div>`;
+
+                // Tarjeta 3: Animales
+                html += `<div class="tarjeta-patron t-animales">
+                    <div class="tarjeta-header" style="color:#29b6f6;">🐾 Animales Dominantes</div>
+                    <div class="lista-patron">`;
+                topAnimales.forEach((item, i) => {
+                    html += `<div class="item-patron">
+                        <div class="item-rank">#${i+1}</div>
+                        <div class="item-info">
+                            <div class="item-num" style="font-size:1.1rem">${item.animal}</div>
+                        </div>
+                        <div class="item-stat">${item.cant} <small>salidas</small></div>
+                    </div>`;
+                });
+                html += `</div></div>`;
+
+                // Tarjeta 4: Fríos
+                html += `<div class="tarjeta-patron t-frios">
+                    <div class="tarjeta-header" style="color:#9e9e9e;">❄️ Números Más Fríos (Días sin salir)</div>
+                    <div class="lista-patron">`;
+                topFriosGlobal.forEach((item, i) => {
+                    html += `<div class="item-patron">
+                        <div class="item-rank">#${i+1}</div>
+                        <div class="item-info">
+                            <div class="item-num">${item.num.toString().padStart(2,'0')}</div>
+                            <div class="item-animal">${item.animal}</div>
+                        </div>
+                        <div class="item-stat">${item.dias} <small>días</small></div>
+                    </div>`;
+                });
+                html += `</div></div>`;
+
+                panel.innerHTML = html;
+
+            } catch (error) {
+                console.error(error);
+                loader.style.display = 'none';
+                panel.innerHTML = `<p style="color:#ff5555; text-align:center; grid-column: span 2;">Error al cargar los datos.</p>`;
+            }
+        }
+
+        // Ejecutar al cargar
+        window.onload = generarPatrones;
+    </script>
+</body>
+</html>
