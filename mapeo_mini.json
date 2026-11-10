@@ -15694,5 +15694,17 @@
         "hora": "05:00 PM",
         "animal": "ELEFANTE",
         "numero": "29"
+    },
+    {
+        "fecha": "2026-11-10",
+        "hora": "06:00 PM",
+        "animal": "ESCARABAJO",
+        "numero": "95"
+    },
+    {
+        "fecha": "2026-11-10",
+        "hora": "07:00 PM",
+        "animal": "PERRO",
+        "numero": "27"
     }
 ]
