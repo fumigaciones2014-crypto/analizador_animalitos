@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Ruleta x N°</title>
+    <style>
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #b0bec5; margin: 0; font-size: 1.8rem; text-shadow: 0 0 10px rgba(176,190,197,0.5); }
+        .btn-regresar { background-color: #546e7a; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .btn-regresar:hover { background-color: #78909c; box-shadow: 0 0 15px rgba(176,190,197,0.4); }
+        
+        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap;}
+        .controles label { font-weight: bold; color: #ccc; }
+        .controles select, .controles input { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
+        .controles input { width: 100px; text-align: center; }
+        .btn-buscar { background-color: #455a64; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-buscar:hover { background-color: #607d8b; box-shadow: 0 0 10px rgba(176,190,197,0.3); }
+
+        /* Contenedor de la Ruleta */
+        .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
+        
+        .fila { display: flex; align-items: center; gap: 10px; }
+        .fila-label { width: 80px; text-align: right; font-weight: bold; color: #888; font-size: 0.9rem;}
+        .casillas-container { display: flex; gap: 5px; flex-grow: 1;}
+        
+        .casilla { 
+            background-color: #555; color: white; flex: 1; text-align: center; 
+            padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem;
+            border: 1px solid #333; transition: all 0.3s;
+        }
+
+        /* Colores de Resaltado */
+        .num-objetivo { 
+            background-color: #ff00cc !important; color: white !important; 
+            box-shadow: 0 0 15px #ff00cc; transform: scale(1.1); z-index: 10;
+            border: 2px solid #fff;
+        }
+        .vecino-antes { 
+            background-color: #00ffcc !important; color: #000 !important; 
+            box-shadow: 0 0 10px #00ffcc;
+        }
+        .vecino-despues { 
+            background-color: #ffcc00 !important; color: #000 !important; 
+            box-shadow: 0 0 10px #ffcc00;
+        }
+
+        /* Caja de Resultados de Texto */
+        .resultado-texto { background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; max-width: 600px; margin: 20px auto 0; width: 100%; box-sizing: border-box; text-align: center;}
+        .badge-info { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: bold; margin: 5px;}
+        .b-antes { background-color: #00ffcc; color: #000;}
+        .b-despues { background-color: #ffcc00; color: #000;}
+        .b-objetivo { background-color: #ff00cc; color: white;}
+
+        .mensaje-error { color: #ff5555; text-align: center; font-size: 1.1rem; margin-top: 20px;}
+
+        /* RESPONSIVO PARA MÓVILES */
+        @media (max-width: 768px) {
+            .header-bar { flex-direction: column; text-align: center; gap: 10px; }
+            h1 { font-size: 1.3rem; }
+            .btn-regresar { width: 100%; }
+            
+            .controles { flex-direction: column; align-items: stretch; }
+            .controles select, .controles input, .btn-buscar { width: 100%; }
+            
+            .fila-label { width: 50px; font-size: 0.7rem;}
+            .casilla { padding: 10px 2px; font-size: 1rem; }
+            .ruleta-container { padding: 10px; gap: 5px;}
+            .casillas-container { gap: 3px;}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h1>🎡 RULETA X N° (Vecinos)</h1>
+        <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
+    </div>
+
+    <div class="controles">
+        <label>Lotería:</label>
+        <select id="combo-loteria">
+            <option value="mapeo_lotto.json">Lotto Activo</option>
+            <option value="mapeo_gua.json">Guacharo</option>
+            <option value="mapeo_mini.json">Guacharito Millonario</option>
+        </select>
+
+        <label>Número a buscar:</label>
+        <input type="number" id="input-numero" placeholder="Ej: 25" min="0" max="99">
+        
+        <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar Vecinos</button>
+    </div>
+
+    <!-- La Mesa de la Ruleta -->
+    <div class="ruleta-container" id="ruleta-container">
+        <!-- Las filas se inyectarán aquí con JS -->
+    </div>
+
+    <!-- Caja de Texto con Resultados -->
+    <div class="resultado-texto" id="resultado-texto" style="display: none;">
+        <!-- Info se inyecta aquí -->
+    </div>
+
+    <script>
+        // Estructura exacta de tu Ruleta Europea
+        const FILAS_RULETA = [
+            { id: "fila_1", nums: [12, 35, 3, 26, 0, 32, 15] },
+            { id: "fila_2", nums: [28, 19] },
+            { id: "fila_3", nums: [7, 4] },
+            { id: "fila_4", nums: [29, 21] },
+            { id: "fila_5", nums: [18, 2] },
+            { id: "fila_6", nums: [22, 25] },
+            { id: "fila_7", nums: [9, 17] },
+            { id: "fila_8", nums: [31, 34] },
+            { id: "fila_9", nums: [14, 6] },
+            { id: "fila_10", nums: [20, 27] },
+            { id: "fila_11", nums: [1, 13] },
+            { id: "fila_12", nums: [33, 36] },
+            { id: "fila_13", nums: [16, 24, 5, 10, 23, 8, 30, 11] }
+        ];
+
+        // 1. Dibujar la Ruleta al cargar la página
+        function dibujarRuleta() {
+            const container = document.getElementById('ruleta-container');
+            container.innerHTML = '';
+
+            FILAS_RULETA.forEach(fila => {
+                let rowDiv = document.createElement('div');
+                rowDiv.className = 'fila';
+
+                let labelDiv = document.createElement('div');
+                labelDiv.className = 'fila-label';
+                labelDiv.innerText = fila.id;
+                rowDiv.appendChild(labelDiv);
+
+                let casillasDiv = document.createElement('div');
+                casillasDiv.className = 'casillas-container';
+
+                fila.nums.forEach(num => {
+                    let casilla = document.createElement('div');
+                    casilla.className = 'casilla';
+                    casilla.id = `casilla-${num}`;
+                    casilla.innerText = num;
+                    casillasDiv.appendChild(casilla);
+                });
+
+                rowDiv.appendChild(casillasDiv);
+                container.appendChild(rowDiv);
+            });
+        }
+
+        // 2. Lógica principal
+        async function buscarVecinosRuleta() {
+            const inputVal = document.getElementById('input-numero').value.trim();
+            const loteriaFile = document.getElementById('combo-loteria').value;
+            const textResult = document.getElementById('resultado-texto');
+
+            if (inputVal === '' || isNaN(inputVal)) {
+                alert("Por favor, ingresa un número válido.");
+                return;
+            }
+
+            // Limpiar colores previos
+            document.querySelectorAll('.casilla').forEach(c => {
+                c.classList.remove('num-objetivo', 'vecino-antes', 'vecino-despues');
+            });
+
+            let numeroObjetivo = parseInt(inputVal);
+
+            try {
+                const res = await fetch(loteriaFile);
+                const datos = await res.json();
+
+                // Extraer solo los números válidos en orden cronológico
+                let historial = [];
+                datos.forEach(reg => {
+                    if (reg.numero !== '??' && !isNaN(reg.numero)) {
+                        historial.push(parseInt(reg.numero));
+                    }
+                });
+
+                // Buscar la última aparición del número objetivo
+                let ultimoIndice = -1;
+                for (let i = historial.length - 1; i >= 0; i--) {
+                    if (historial[i] === numeroObjetivo) {
+                        ultimoIndice = i;
+                        break;
+                    }
+                }
+
+                if (ultimoIndice === -1) {
+                    textResult.style.display = 'block';
+                    textResult.innerHTML = `<p class="mensaje-error">El número ${numeroObjetivo} no tiene apariciones registradas en esta lotería.</p>`;
+                    return;
+                }
+
+                // Obtener 5 anteriores y 5 posteriores
+                let antes = [];
+                let despues = [];
+
+                for (let i = 1; i <= 5; i++) {
+                    if (ultimoIndice - i >= 0) antes.unshift(historial[ultimoIndice - i]); // unshift para mantener orden
+                    if (ultimoIndice + i < historial.length) despues.push(historial[ultimoIndice + i]);
+                }
+
+                // 3. Pintar en la Ruleta
+                // Pintar el objetivo
+                if (document.getElementById(`casilla-${numeroObjetivo}`)) {
+                    document.getElementById(`casilla-${numeroObjetivo}`).classList.add('num-objetivo');
+                }
+
+                // Pintar vecinos antes (Verde)
+                antes.forEach(num => {
+                    if (document.getElementById(`casilla-${num}`)) {
+                        document.getElementById(`casilla-${num}`).classList.add('vecino-antes');
+                    }
+                });
+
+                // Pintar vecinos después (Amarillo)
+                despues.forEach(num => {
+                    if (document.getElementById(`casilla-${num}`)) {
+                        document.getElementById(`casilla-${num}`).classList.add('vecino-despues');
+                    }
+                });
+
+                // 4. Mostrar info en texto
+                textResult.style.display = 'block';
+                let htmlInfo = `<h3>Análisis para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
+                
+                htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Última aparición el <b>${datos[ultimoIndice] ? datos[ultimoIndice].fecha : 'N/A'}</b> a las <b>${datos[ultimoIndice] ? datos[ultimoIndice].hora : 'N/A'}</b></p>`;
+                
+                htmlInfo += `<p><b>5 Números ANTERIORES (Verde):</b><br>`;
+                if (antes.length > 0) {
+                    antes.forEach(n => htmlInfo += `<span class="badge-info b-antes">${n}</span>`);
+                } else {
+                    htmlInfo += `<span style="color:#888;">No hay datos suficientes hacia atrás.</span>`;
+                }
+                htmlInfo += `</p>`;
+
+                htmlInfo += `<p style="margin-top: 15px;"><b>5 Números POSTERIORES (Amarillo):</b><br>`;
+                if (despues.length > 0) {
+                    despues.forEach(n => htmlInfo += `<span class="badge-info b-despues">${n}</span>`);
+                } else {
+                    htmlInfo += `<span style="color:#888;">No hay datos suficientes hacia adelante.</span>`;
+                }
+                htmlInfo += `</p>`;
+
+                textResult.innerHTML = htmlInfo;
+
+            } catch (error) {
+                console.error(error);
+                textResult.style.display = 'block';
+                textResult.innerHTML = `<p class="mensaje-error">Error al cargar los datos.</p>`;
+            }
+        }
+
+        // Iniciar dibujo
+        window.onload = dibujarRuleta;
+    </script>
+</body>
+</html>
