@@ -73,7 +73,7 @@
         
         .porcentaje { position: absolute; bottom: -20px; font-size: 0.75rem; color: #aaa; white-space: nowrap; }
         
-        .origen-fuerza { font-size: 0.7rem; color: #ff8888; margin-top: 5px; text-align: center; display: block; width: 100%;}
+        .origen-fuerza { font-size: 0.75rem; color: #ff8888; margin-top: 10px; text-align: center; display: block; width: 100%; line-height: 1.2;}
 
         .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; min-width: 300px;}
         canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); width: 100%; height: auto; max-width: 800px;}
@@ -218,7 +218,6 @@
         let modoSecuenciaActivo = false;
         let temporizadorSecuencia = null;
         
-        // Arreglo que guarda el historial en el orden exacto de ingreso
         let historialSecuencia = []; 
 
         function toggleSecuencia() {
@@ -604,19 +603,21 @@
         }
 
         // ============================================================
-        // NUEVA LÓGICA DE HISTORIAL Y FUERZA DE SALIDA (BARRIDO)
+        // LÓGICA DE HISTORIAL Y FUERZA DE SALIDA (BARRIDO CORREGIDO)
         // ============================================================
         function actualizarHistorialYFuerza(numActual, fractales, inmediatos, todosLosNumeros) {
             const historialCont = document.getElementById('historial-contenido');
             
+            // Si el historial está vacío, limpiamos el contenedor
             if (historialSecuencia.length === 0) {
                 historialCont.innerHTML = '';
             }
 
-            const yaExiste = historialSecuencia.some(h => h.numero === numActual);
+            // Guardamos la nueva base en el historial (evitando duplicados exactos si se re-renderiza)
+            const yaExiste = historialSecuencia.some(h => h.num === numActual);
             if (!yaExiste) {
                 historialSecuencia.push({
-                    numero: numActual,
+                    num: numActual, // <--- CORREGIDO: Ahora es 'num', no 'numero'
                     fractales: JSON.parse(JSON.stringify(fractales)),
                     inmediatos: JSON.parse(JSON.stringify(inmediatos))
                 });
@@ -624,9 +625,8 @@
 
             historialCont.innerHTML = '';
             
-            // Contador para el Top 4 de Fuerza de Salida
             let contadorFuerza = {};
-            let origenFuerza = {}; // Para rastrear en qué número se predijo
+            let origenFuerza = {}; 
 
             // 1. Renderizar Historial y evaluar aciertos (BARRIDO HACIA ADELANTE)
             historialSecuencia.forEach((item, index) => {
@@ -638,29 +638,27 @@
 
                 // Lógica de barrido: comparar esta base contra TODAS las que vinieron después
                 if (index < historialSecuencia.length - 1) {
-                    const numerosPosteriores = historialSecuencia.slice(index + 1).map(h => h.numero);
+                    const numerosPosteriores = historialSecuencia.slice(index + 1).map(h => h.num);
                     
                     item.fractales.forEach(f => { 
                         if (numerosPosteriores.includes(f.num)) {
                             aciertosFractal.push(f.num); 
-                            // Sumamos a Fuerza de Salida
                             contadorFuerza[f.num] = (contadorFuerza[f.num] || 0) + 1;
                             if(!origenFuerza[f.num]) origenFuerza[f.num] = [];
-                            origenFuerza[f.num].push(`Base ${item.numero}`);
+                            origenFuerza[f.num].push(`Base ${item.num}`);
                         }
                     });
                     item.inmediatos.forEach(v => { 
                         if (numerosPosteriores.includes(v.num)) {
                             aciertosInmediatos.push(v.num); 
-                            // Sumamos a Fuerza de Salida
                             contadorFuerza[v.num] = (contadorFuerza[v.num] || 0) + 1;
                             if(!origenFuerza[v.num]) origenFuerza[v.num] = [];
-                            origenFuerza[v.num].push(`Base ${item.numero}`);
+                            origenFuerza[v.num].push(`Base ${item.num}`);
                         }
                     });
                 }
 
-                let html = `<div class="historial-numero">Base: ${item.numero.toString().padStart(2, '0')}</div>`;
+                let html = `<div class="historial-numero">Base: ${item.num.toString().padStart(2, '0')}</div>`;
                 
                 html += `<div class="bolitas-grid-historial">`;
                 item.fractales.forEach(f => {
