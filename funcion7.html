@@ -24,20 +24,48 @@
         /* Contenedor de la Ruleta */
         .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
         
-        /* Contenedor del Canvas Fractal */
-        .canvas-container { display: flex; justify-content: center; align-items: center; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 10px; margin: 0 auto; max-width: 800px; width: 100%; position: relative;}
-        canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
-
-        /* Leyenda del Fractal */
-        .leyenda-fractal {
-            position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.85);
-            padding: 10px; border-radius: 8px; border: 1px solid #444; font-size: 0.85rem; pointer-events: none;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        /* Contenedor del Canvas Fractal CON LEYENDA A LA IZQUIERDA */
+        .canvas-container { 
+            display: none; /* Oculto por defecto */
+            justify-content: center; 
+            align-items: flex-start; /* Alinea arriba */
+            gap: 20px; /* Espacio entre leyenda y canvas */
+            background: #0a0a0a; 
+            border: 2px solid #333; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin: 0 auto; 
+            max-width: 1100px; /* Más ancho para que quepa todo */
+            width: 100%; 
+            box-sizing: border-box;
         }
-        .leyenda-fractal h4 { margin: 0 0 5px 0; color: #00ffcc; }
-        .leyenda-fractal p { margin: 2px 0; color: #ccc; }
+        
+        /* El Canvas */
+        .canvas-wrapper {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            max-width: 800px;
+        }
+        canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); width: 100%; height: auto;}
+
+        /* Leyenda del Fractal (Columna Izquierda) */
+        .leyenda-fractal {
+            width: 280px; /* Ancho fijo */
+            flex-shrink: 0;
+            background: rgba(20, 20, 20, 0.95);
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid #444; 
+            font-size: 0.9rem; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            color: #ccc;
+        }
+        .leyenda-fractal h4 { margin: 0 0 10px 0; color: #00ffcc; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;}
+        .leyenda-fractal p { margin: 8px 0; line-height: 1.3;}
         .leyenda-fractal .highlight-yellow { color: #ffcc00; font-weight: bold; }
         .leyenda-fractal .highlight-magenta { color: #ff00cc; font-weight: bold; }
+        .leyenda-fractal .bullet { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
         /* Caja de Resultados de Texto */
         .resultado-texto { background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; max-width: 600px; margin: 20px auto 0; width: 100%; box-sizing: border-box; text-align: center;}
@@ -65,6 +93,10 @@
         .grid-guacharo .casilla { padding: 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
 
         /* RESPONSIVO */
+        @media (max-width: 900px) {
+            .canvas-container { flex-direction: column; align-items: center; }
+            .leyenda-fractal { width: 100%; max-width: 600px; margin-bottom: 20px; }
+        }
         @media (max-width: 768px) {
             .header-bar { flex-direction: column; text-align: center; gap: 10px; }
             h1 { font-size: 1.3rem; }
@@ -77,7 +109,6 @@
             .casillas-container { gap: 3px;}
             .grid-guacharo { gap: 2px; }
             .grid-guacharo .casilla { font-size: 0.65rem; }
-            .leyenda-fractal { position: relative; top: 0; left: 0; margin-bottom: 10px; width: 100%; box-sizing: border-box; text-align: center;}
         }
     </style>
 </head>
@@ -109,17 +140,24 @@
         <!-- Se inyecta con JS -->
     </div>
 
-    <!-- Contenedor del Canvas Fractal -->
-    <div class="canvas-container" id="canvas-container" style="display: none;">
+    <!-- Contenedor del Canvas Fractal con Leyenda a la Izquierda -->
+    <div class="canvas-container" id="canvas-container">
+        
+        <!-- Leyenda (Columna Izquierda) -->
         <div class="leyenda-fractal">
-            <h4>Guía del Fractal (Fríos al Centro)</h4>
-            <p><span style="color:#fff; font-weight:bold;">Centro (Fríos):</span> Números cargados, no salen hace tiempo.</p>
-            <p><span style="color:#fff; font-weight:bold;">Periferia (Calientes):</span> Números que ya se gastaron de tanto salir.</p>
-            <p><span style="color:#fff; font-weight:bold;">Líneas Verdes:</span> Atracción (salen juntos).</p>
-            <p><span class="highlight-magenta">Objetivo:</span> El número que buscas.</p>
-            <p><span class="highlight-yellow">Fondo Amarillo:</span> Los 4 recomendados para cruzar.</p>
+            <h4>Guía del Fractal</h4>
+            <p><strong>Centro (Fríos):</strong> Números cargados que no salen hace tiempo. Tienen presión estadística.</p>
+            <p><strong>Periferia (Calientes):</strong> Números que ya se "gastaron" de tanto salir.</p>
+            <p><strong>Líneas Verdes:</strong> Atracción. Indican qué números suelen salir juntos en la misma ventana de tiempo.</p>
+            <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> El número que estás analizando.</p>
+            <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Fondo Amarillo:</span> Los 4 números recomendados (alta atracción + fríos).</p>
         </div>
-        <canvas id="fractal-canvas" width="800" height="800"></canvas>
+
+        <!-- El Canvas (Columna Derecha) -->
+        <div class="canvas-wrapper">
+            <canvas id="fractal-canvas" width="800" height="800"></canvas>
+        </div>
+
     </div>
 
     <!-- Caja de Texto con Resultados -->
@@ -402,7 +440,7 @@
                     }
                 });
 
-                // 2. Encontrar los 4 Números Recomendados
+                // 2. Encontrar los 4 Números Recomendados (Priorizando Fríos)
                 let recomendados = [];
                 if (numeroObjetivo !== null && adyacentes[numeroObjetivo]) {
                     let candidatos = [];
@@ -411,9 +449,7 @@
                         let fuerzaConexion = adyacentes[numeroObjetivo][numAdj];
                         let frecuenciaPropia = nodos[numAdj].count;
                         
-                        // NUEVA LÓGICA: Damos más puntos a los que tienen MENOS frecuencia (los fríos)
-                        // Pero seguimos valorando mucho la fuerza de conexión.
-                        // Usamos una base de 100 para restar la frecuencia (así los de freq 0 valen más)
+                        // NUEVA LÓGICA: PuntajeFrio = 100 - frecuencia (los de freq 0 valen 100)
                         let puntajeFrio = 100 - frecuenciaPropia; 
                         let puntaje = puntajeFrio + (fuerzaConexion * 5); 
                         
@@ -455,7 +491,6 @@
                     if (nodos[n1] && nodos[n2]) {
                         let alpha = Math.min(weight / 10, 0.5); 
                         
-                        // Si es conexión con el objetivo, brillo magenta
                         if (numeroObjetivo !== null && (n1 === numeroObjetivo || n2 === numeroObjetivo)) {
                             ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.3})`; 
                             ctx.lineWidth = 1.5;
@@ -473,7 +508,6 @@
 
                 // Dibujar Nodos
                 numerosOrdenados.forEach(nodo => {
-                    // Dibujamos todos, incluso los que no han salido (freq 0), porque ahora son los "fríos" clave
                     let size = 15 + (nodo.count / 5); 
                     let isRecomendado = recomendados.includes(nodo.id);
                     let isObjetivo = (nodo.id === numeroObjetivo);
@@ -491,7 +525,6 @@
                         ctx.lineWidth = 2;
                     } else {
                         let intensity = Math.min(nodo.count * 5, 255);
-                        // Los fríos (count 0) se ven gris oscuro
                         ctx.fillStyle = nodo.count === 0 ? 'rgba(30, 30, 30, 0.8)' : `rgba(50, 50, 50, 0.8)`;
                         ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`;
                         ctx.lineWidth = 2;
@@ -506,7 +539,6 @@
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     
-                    // Formatear "00" para el cero
                     let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
                     ctx.fillText(textNum, nodo.x, nodo.y);
                 });
