@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal (Secuencias y Potencial de Salida)</title>
+    <title>JARVIS - Fractal (Predicción y Deuda Estadística)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -126,7 +126,7 @@
 <body>
 
     <div class="header-bar">
-        <h1>🎡 RULETA X N° (Predicción y Fuerza)</h1>
+        <h1>🎡 RULETA X N° (Predicción y Deuda Estadística)</h1>
         <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
     </div>
 
@@ -163,7 +163,7 @@
                 <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
                 <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
                 <p><span class="bullet" style="background:#b388ff;"></span> <span class="highlight-purple">Morado:</span> Aciertos (Máx 8).</p>
-                <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Potencial de Salida.</p>
+                <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Potencial de Salida (Deuda).</p>
             </div>
 
             <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
@@ -180,7 +180,7 @@
                 </div>
 
                 <div id="panel-prediccion-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
-                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida (Futuro)</h4>
+                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida (Deuda)</h4>
                     <div class="bolitas-grid" id="bolitas-prediccion"></div>
                     <span class="origen-fuerza" id="origen-prediccion-texto"></span>
                 </div>
@@ -611,7 +611,7 @@
         }
 
         // ============================================================
-        // LÓGICA DE HISTORIAL, ACIERTOS Y PREDICCIÓN FUTURA
+        // LÓGICA DE HISTORIAL, ACIERTOS Y DEUDA ESTADÍSTICA (PREDICCIÓN)
         // ============================================================
         function actualizarHistorialYFuerza(numActual, fractalesActuales, inmediatosActuales, todosLosNumeros) {
             const historialCont = document.getElementById('historial-contenido');
@@ -620,7 +620,6 @@
                 historialCont.innerHTML = '';
             }
 
-            // Guardar base actual en el historial
             const yaExiste = historialSecuencia.some(h => h.num === numActual);
             if (!yaExiste) {
                 historialSecuencia.push({
@@ -681,32 +680,19 @@
                 historialCont.appendChild(itemDiv);
             });
             
-            // 2. Calcular POTENCIAL DE SALIDA (Predicción Futura)
-            if (historialSecuencia.length > 1) {
-                // Tomamos las predicciones de la base actual
-                const prediccionesActuales = [
-                    ...fractalesActuales.map(f => f.num),
-                    ...inmediatosActuales.map(v => v.num)
+            // 2. Calcular DEUDA ESTADÍSTICA (Números más repetidos en TODAS las bases)
+            historialSecuencia.forEach((item) => {
+                const numerosDeEstaBase = [
+                    ...item.fractales.map(f => f.num),
+                    ...item.inmediatos.map(v => v.num)
                 ];
 
-                // Barrido hacia atrás: Revisamos las bases anteriores
-                for (let i = 0; i < historialSecuencia.length - 1; i++) {
-                    const baseAnterior = historialSecuencia[i];
-                    const numerosBaseAnterior = [
-                        ...baseAnterior.fractales.map(f => f.num),
-                        ...baseAnterior.inmediatos.map(v => v.num)
-                    ];
-
-                    // Si un número de las predicciones actuales coincide con una base anterior, suma fuerza
-                    prediccionesActuales.forEach(numPred => {
-                        if (numerosBaseAnterior.includes(numPred)) {
-                            contadorPrediccion[numPred] = (contadorPrediccion[numPred] || 0) + 1;
-                            if (!origenPrediccion[numPred]) origenPrediccion[numPred] = [];
-                            origenPrediccion[numPred].push(`B${baseAnterior.num}`);
-                        }
-                    });
-                }
-            }
+                numerosDeEstaBase.forEach(num => {
+                    contadorPrediccion[num] = (contadorPrediccion[num] || 0) + 1;
+                    if (!origenPrediccion[num]) origenPrediccion[num] = [];
+                    origenPrediccion[num].push(`B${item.num}`);
+                });
+            });
 
             const panelDer = document.getElementById('panel-historial');
             panelDer.scrollTop = panelDer.scrollHeight;
@@ -721,7 +707,7 @@
                 return { num: parseInt(num), aciertos: contadorAciertos[num] };
             });
             arrayAciertos.sort((a, b) => b.aciertos - a.aciertos);
-            let topAciertos = arrayAciertos.slice(0, 8); // Límite 8
+            let topAciertos = arrayAciertos.slice(0, 8);
 
             if (topAciertos.length > 0) {
                 panelAciertos.style.display = 'block';
@@ -751,7 +737,7 @@
             }
 
             // ============================================================
-            // 4. MOSTRAR POTENCIAL DE SALIDA (PREDICCIÓN FUTURA) - ROJO
+            // 4. MOSTRAR DEUDA ESTADÍSTICA (PREDICCIÓN) - ROJO
             // ============================================================
             const panelPrediccion = document.getElementById('panel-prediccion-container');
             const bPrediccion = document.getElementById('bolitas-prediccion');
@@ -761,13 +747,13 @@
                 return { num: parseInt(num), fuerza: contadorPrediccion[num] };
             });
             arrayPrediccion.sort((a, b) => b.fuerza - a.fuerza);
-            let topPrediccion = arrayPrediccion.slice(0, 4); // Top 4 para predicción
+            let topPrediccion = arrayPrediccion.slice(0, 4);
 
             if (topPrediccion.length > 0) {
                 panelPrediccion.style.display = 'block';
                 bPrediccion.innerHTML = '';
                 let totalFuerza = arrayPrediccion.reduce((acc, curr) => acc + curr.fuerza, 0);
-                let textoOrigen = "Fuerza detectada en: " + topPrediccion.map(t => `${t.num.toString().padStart(2,'0')} (${origenPrediccion[t.num].join(', ')})`).join(' | ');
+                let textoOrigen = "Presión en: " + topPrediccion.map(t => `${t.num.toString().padStart(2,'0')} (${origenPrediccion[t.num].join(', ')})`).join(' | ');
 
                 topPrediccion.forEach((item, index) => {
                     let porcentaje = (item.fuerza / totalFuerza) * 100;
