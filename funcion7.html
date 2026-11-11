@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal de Atracción (Fríos al Centro)</title>
+    <title>JARVIS - Fractal de Atracción (Doble Capa)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -28,24 +28,24 @@
         .canvas-container { 
             display: none; 
             justify-content: center; 
-            align-items: stretch; /* Estirar para que la columna izquierda ocupe el alto */
+            align-items: stretch; 
             gap: 20px; 
             background: #0a0a0a; 
             border: 2px solid #333; 
             border-radius: 12px; 
             padding: 20px; 
             margin: 0 auto; 
-            max-width: 1100px; 
+            max-width: 1150px; /* Un poco más ancho para que quepa todo bien */
             width: 100%; 
             box-sizing: border-box;
         }
         
-        /* Columna Izquierda (Leyenda + Recomendados) */
+        /* Columna Izquierda (Leyenda + Recomendados + Inmediatos) */
         .panel-izquierdo {
             display: flex;
             flex-direction: column;
             gap: 15px;
-            width: 280px; 
+            width: 300px; 
             flex-shrink: 0;
         }
 
@@ -62,6 +62,7 @@
         .leyenda-fractal h4 { margin: 0 0 10px 0; color: #00ffcc; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;}
         .leyenda-fractal p { margin: 8px 0; line-height: 1.3;}
         .leyenda-fractal .highlight-yellow { color: #ffcc00; font-weight: bold; }
+        .leyenda-fractal .highlight-green { color: #00ffcc; font-weight: bold; }
         .leyenda-fractal .highlight-magenta { color: #ff00cc; font-weight: bold; }
         .leyenda-fractal .bullet { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
@@ -84,7 +85,8 @@
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            min-height: 120px; /* Espacio para las bolitas */
+            min-height: 100px;
+            margin-bottom: 15px;
         }
 
         .bolita-recomendada {
@@ -100,8 +102,22 @@
             transition: all 0.3s ease;
             position: relative;
         }
+
+        .bolita-inmediata {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background-color: #00ffcc;
+            color: #000;
+            font-weight: bold;
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.6);
+            transition: all 0.3s ease;
+            position: relative;
+        }
         
-        .bolita-recomendada .porcentaje {
+        .porcentaje {
             position: absolute;
             bottom: -20px;
             font-size: 0.75rem;
@@ -144,9 +160,9 @@
         .grid-guacharo .casilla { padding: 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
 
         /* RESPONSIVO */
-        @media (max-width: 900px) {
+        @media (max-width: 950px) {
             .canvas-container { flex-direction: column; align-items: center; }
-            .panel-izquierdo { width: 100%; max-width: 600px; flex-direction: row; flex-wrap: wrap; }
+            .panel-izquierdo { width: 100%; max-width: 600px; flex-direction: row; flex-wrap: wrap; justify-content: center; }
             .leyenda-fractal { flex: 1; min-width: 250px; }
             .panel-recomendados { flex: 1; min-width: 250px; }
         }
@@ -202,19 +218,25 @@
             
             <!-- Leyenda -->
             <div class="leyenda-fractal">
-                <h4>Guía del Fractal</h4>
-                <p><strong>Centro (Fríos):</strong> Números cargados que no salen hace tiempo. Tienen presión estadística.</p>
-                <p><strong>Periferia (Calientes):</strong> Números que ya se "gastaron" de tanto salir.</p>
-                <p><strong>Líneas Verdes:</strong> Atracción. Indican qué números suelen salir juntos en la misma ventana de tiempo.</p>
-                <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> El número que estás analizando.</p>
-                <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Fondo Amarillo:</span> Los 4 números recomendados (alta atracción + fríos).</p>
+                <h4>Guía de Doble Capa</h4>
+                <p><strong>Centro (Fríos):</strong> Alta presión estadística.</p>
+                <p><strong>Periferia (Calientes):</strong> Números ya gastados.</p>
+                <p><strong>Líneas Verdes:</strong> Atracción histórica.</p>
+                <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
+                <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal (Tendencia / Fríos).</p>
+                <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos (Modo Simple).</p>
             </div>
 
             <!-- Panel de Recomendados Ponderados -->
             <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
-                <h4>Top 4 Recomendados</h4>
-                <div class="bolitas-grid" id="bolitas-grid">
-                    <!-- Aquí se inyectarán las bolitas con JS -->
+                <h4>Top 4 Fractal (Tendencia)</h4>
+                <div class="bolitas-grid" id="bolitas-fractal">
+                    <!-- Bolitas amarillas -->
+                </div>
+                
+                <h4 style="color: #00ffcc; margin-top: 10px;">Vecinos Inmediatos</h4>
+                <div class="bolitas-grid" id="bolitas-inmediatas">
+                    <!-- Bolitas verdes -->
                 </div>
             </div>
 
@@ -444,7 +466,7 @@
         }
 
         // ============================================================
-        // MAPA FRACTAL Y ALGORITMO DE RECOMENDACIÓN (FRÍOS AL CENTRO)
+        // MAPA FRACTAL Y ALGORITMO DE DOBLE CAPA
         // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
@@ -453,13 +475,15 @@
             const textResult = document.getElementById('resultado-texto');
             const inputVal = document.getElementById('input-numero').value.trim();
             const panelRecomendados = document.getElementById('panel-recomendados');
-            const bolitasGrid = document.getElementById('bolitas-grid');
+            const bolitasFractal = document.getElementById('bolitas-fractal');
+            const bolitasInmediatas = document.getElementById('bolitas-inmediatas');
             
             canvasContainer.style.display = 'flex';
             ruletaContainer.style.display = 'none';
             textResult.style.display = 'none';
             panelRecomendados.style.display = 'none';
-            bolitasGrid.innerHTML = '';
+            bolitasFractal.innerHTML = '';
+            bolitasInmediatas.innerHTML = '';
 
             const canvas = document.getElementById('fractal-canvas');
             const ctx = canvas.getContext('2d');
@@ -511,8 +535,10 @@
                     }
                 });
 
-                // 2. Encontrar los 4 Números Recomendados (Priorizando Fríos)
-                let recomendados = [];
+                // ============================================================
+                // LÓGICA 1: TOP 4 FRACTAL (Fríos con alta atracción)
+                // ============================================================
+                let recomendadosFractal = [];
                 if (numeroObjetivo !== null && adyacentes[numeroObjetivo]) {
                     let candidatos = [];
                     for (let adj in adyacentes[numeroObjetivo]) {
@@ -520,15 +546,45 @@
                         let fuerzaConexion = adyacentes[numeroObjetivo][numAdj];
                         let frecuenciaPropia = nodos[numAdj].count;
                         
-                        // NUEVA LÓGICA: PuntajeFrio = 100 - frecuencia (los de freq 0 valen 100)
                         let puntajeFrio = 100 - frecuenciaPropia; 
                         let puntaje = puntajeFrio + (fuerzaConexion * 5); 
                         
                         candidatos.push({ num: numAdj, puntaje: puntaje });
                     }
-                    
                     candidatos.sort((a, b) => b.puntaje - a.puntaje);
-                    recomendados = candidatos.slice(0, 4);
+                    recomendadosFractal = candidatos.slice(0, 4);
+                }
+
+                // ============================================================
+                // LÓGICA 2: VECINOS INMEDIATOS (Modo Simple - Arrastre físico)
+                // ============================================================
+                let recomendadosInmediatos = [];
+                // Extraemos los vecinos directos (basado en las últimas apariciones)
+                let indicesApariciones = [];
+                historial.forEach((h, i) => {
+                    if (h === numeroObjetivo) indicesApariciones.push(i);
+                });
+                
+                if (indicesApariciones.length > 0) {
+                    let ultimas = indicesApariciones.slice(-5).reverse();
+                    let conteoVecinos = {};
+                    
+                    ultimas.forEach(idx => {
+                        if (idx - 1 >= 0) { let n = historial[idx - 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx - 2 >= 0) { let n = historial[idx - 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx + 1 < historial.length) { let n = historial[idx + 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx + 2 < historial.length) { let n = historial[idx + 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    });
+
+                    let candidatosInmediatos = [];
+                    for (let num in conteoVecinos) {
+                        let count = conteoVecinos[num];
+                        // Damos un puntaje alto a los que más veces fueron vecinos
+                        let puntaje = count * 10; 
+                        candidatosInmediatos.push({ num: parseInt(num), puntaje: puntaje });
+                    }
+                    candidatosInmediatos.sort((a, b) => b.puntaje - a.puntaje);
+                    recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
                 }
 
                 // 3. Posicionamiento Radial Invertido (Fríos al Centro)
@@ -536,7 +592,6 @@
                 const centroY = height / 2;
                 const radioMax = Math.min(width, height) / 2 - 40;
 
-                // ORDEN INVERTIDO: Los que tienen menos 'count' van primero (al centro)
                 const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
 
                 numerosOrdenados.forEach((nodo, index) => {
@@ -580,7 +635,8 @@
                 // Dibujar Nodos
                 numerosOrdenados.forEach(nodo => {
                     let size = 15 + (nodo.count / 5); 
-                    let isRecomendado = recomendados.some(r => r.num === nodo.id);
+                    let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
+                    let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
                     let isObjetivo = (nodo.id === numeroObjetivo);
 
                     ctx.beginPath();
@@ -590,8 +646,12 @@
                         ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; 
                         ctx.strokeStyle = `#fff`;
                         ctx.lineWidth = 3;
-                    } else if (isRecomendado) {
+                    } else if (isFractal) {
                         ctx.fillStyle = `#ffcc00`; 
+                        ctx.strokeStyle = `#fff`;
+                        ctx.lineWidth = 2;
+                    } else if (isInmediato) {
+                        ctx.fillStyle = `#00ffcc`; 
                         ctx.strokeStyle = `#fff`;
                         ctx.lineWidth = 2;
                     } else {
@@ -604,7 +664,7 @@
                     ctx.fill();
                     ctx.stroke();
 
-                    ctx.fillStyle = (isRecomendado || isObjetivo) ? '#000' : '#fff'; 
+                    ctx.fillStyle = (isFractal || isInmediato || isObjetivo) ? '#000' : '#fff'; 
                     ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -614,49 +674,44 @@
                 });
 
                 // 5. Generar Bolitas Ponderadas en el Panel Izquierdo
-                if (recomendados.length > 0) {
-                    panelRecomendados.style.display = 'flex';
-                    
-                    // Calcular la suma total de puntajes para sacar porcentajes
-                    let sumaPuntajes = recomendados.reduce((acc, curr) => acc + curr.puntaje, 0);
-                    
-                    // Tamaño base y máximo para las bolitas
-                    const minSize = 40;
-                    const maxSize = 80;
+                panelRecomendados.style.display = 'flex';
 
-                    recomendados.forEach(rec => {
+                // Función auxiliar para crear bolitas
+                function crearBolitas(candidatos, contenedor, claseCss) {
+                    if (candidatos.length === 0) return;
+                    
+                    let sumaPuntajes = candidatos.reduce((acc, curr) => acc + curr.puntaje, 0);
+                    const minSize = 35;
+                    const maxSize = 75;
+
+                    candidatos.forEach((rec, index) => {
                         let porcentaje = (rec.puntaje / sumaPuntajes) * 100;
-                        
-                        // Calcular tamaño proporcional al porcentaje (escala de 0 a 100)
-                        // El que tenga mayor porcentaje tendrá maxSize
                         let size = minSize + ((porcentaje / 100) * (maxSize - minSize));
-                        
-                        // Ajuste fino: si el porcentaje es muy bajo, que no quede microscópico
                         if (size < minSize) size = minSize;
 
-                        // Crear la bolita
                         let bolita = document.createElement('div');
-                        bolita.className = 'bolita-recomendada';
+                        bolita.className = claseCss;
                         bolita.style.width = `${size}px`;
                         bolita.style.height = `${size}px`;
                         bolita.style.fontSize = `${size * 0.35}px`;
                         bolita.innerText = rec.num.toString().padStart(2, '0');
                         
-                        // Añadir el porcentaje debajo
                         let spanPorcentaje = document.createElement('span');
                         spanPorcentaje.className = 'porcentaje';
                         spanPorcentaje.innerText = `${porcentaje.toFixed(1)}%`;
                         bolita.appendChild(spanPorcentaje);
 
-                        // Resaltar la más grande (mayor probabilidad)
-                        if (rec === recomendados[0]) {
-                            bolita.style.boxShadow = '0 0 25px #ffcc00, inset 0 0 10px #fff';
+                        if (index === 0) {
+                            bolita.style.boxShadow = `0 0 25px ${claseCss === 'bolita-recomendada' ? '#ffcc00' : '#00ffcc'}, inset 0 0 10px #fff`;
                             bolita.style.border = '3px solid #fff';
                         }
 
-                        bolitasGrid.appendChild(bolita);
+                        contenedor.appendChild(bolita);
                     });
                 }
+
+                crearBolitas(recomendadosFractal, bolitasFractal, 'bolita-recomendada');
+                crearBolitas(recomendadosInmediatos, bolitasInmediatas, 'bolita-inmediata');
 
             } catch (error) {
                 console.error(error);
