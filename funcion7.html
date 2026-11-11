@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal de Atracción (Doble Capa)</title>
+    <title>JARVIS - Fractal de Atracción (Doble Capa + Secuencias)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -15,16 +15,27 @@
         .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap;}
         .controles label { font-weight: bold; color: #ccc; }
         .controles select, .controles input { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
-        .controles input { width: 100px; text-align: center; }
+        .controles input { width: 150px; text-align: center; }
+        
         .btn-buscar { background-color: #455a64; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .btn-buscar:hover { background-color: #607d8b; box-shadow: 0 0 10px rgba(176,190,197,0.3); }
+        
+        /* Nuevos Botones de Secuencia */
+        .btn-secuencia { background-color: #555; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; border: 1px solid #777; }
+        .btn-secuencia.activo { background-color: #00c853; border-color: #69f0ae; box-shadow: 0 0 15px rgba(0, 200, 83, 0.6); }
+        .btn-secuencia:hover { background-color: #777; }
+        .btn-secuencia.activo:hover { background-color: #00e676; }
+        
+        .btn-reset { background-color: #d32f2f; color: white; border: none; padding: 10px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-reset:hover { background-color: #f44336; box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
+
         .btn-fractal { background-color: #8e24aa; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; margin-left: auto; }
         .btn-fractal:hover { background-color: #ab47bc; box-shadow: 0 0 10px rgba(171, 71, 188, 0.5); }
 
         /* Contenedor de la Ruleta */
         .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
         
-        /* Contenedor del Canvas Fractal CON LEYENDA A LA IZQUIERDA */
+        /* Contenedor del Canvas Fractal */
         .canvas-container { 
             display: none; 
             justify-content: center; 
@@ -35,106 +46,35 @@
             border-radius: 12px; 
             padding: 20px; 
             margin: 0 auto; 
-            max-width: 1150px; /* Un poco más ancho para que quepa todo bien */
+            max-width: 1150px; 
             width: 100%; 
             box-sizing: border-box;
         }
         
-        /* Columna Izquierda (Leyenda + Recomendados + Inmediatos) */
-        .panel-izquierdo {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 300px; 
-            flex-shrink: 0;
-        }
+        .panel-izquierdo { display: flex; flex-direction: column; gap: 15px; width: 300px; flex-shrink: 0; }
 
-        /* Leyenda del Fractal */
-        .leyenda-fractal {
-            background: rgba(20, 20, 20, 0.95);
-            padding: 15px; 
-            border-radius: 8px; 
-            border: 1px solid #444; 
-            font-size: 0.9rem; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            color: #ccc;
-        }
+        .leyenda-fractal { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; font-size: 0.9rem; box-shadow: 0 0 10px rgba(0,0,0,0.5); color: #ccc; }
         .leyenda-fractal h4 { margin: 0 0 10px 0; color: #00ffcc; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;}
         .leyenda-fractal p { margin: 8px 0; line-height: 1.3;}
         .leyenda-fractal .highlight-yellow { color: #ffcc00; font-weight: bold; }
         .leyenda-fractal .highlight-green { color: #00ffcc; font-weight: bold; }
         .leyenda-fractal .highlight-magenta { color: #ff00cc; font-weight: bold; }
+        .leyenda-fractal .highlight-line { color: #ffd700; font-weight: bold; }
         .leyenda-fractal .bullet { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
-        /* Panel de Recomendados (Bolitas Ponderadas) */
-        .panel-recomendados {
-            background: rgba(20, 20, 20, 0.95);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        .panel-recomendados { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
         .panel-recomendados h4 { margin: 0 0 15px 0; color: #ffcc00; font-size: 1.1rem; text-align: center;}
         
-        .bolitas-grid {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            min-height: 100px;
-            margin-bottom: 15px;
-        }
+        .bolitas-grid { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 100px; margin-bottom: 15px; }
 
-        .bolita-recomendada {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 50%;
-            background-color: #ffcc00;
-            color: #000;
-            font-weight: bold;
-            border: 2px solid #fff;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .bolita-inmediata {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 50%;
-            background-color: #00ffcc;
-            color: #000;
-            font-weight: bold;
-            border: 2px solid #fff;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.6);
-            transition: all 0.3s ease;
-            position: relative;
-        }
+        .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); transition: all 0.3s ease; position: relative; }
+        .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); transition: all 0.3s ease; position: relative; }
         
-        .porcentaje {
-            position: absolute;
-            bottom: -20px;
-            font-size: 0.75rem;
-            color: #aaa;
-            white-space: nowrap;
-        }
+        .porcentaje { position: absolute; bottom: -20px; font-size: 0.75rem; color: #aaa; white-space: nowrap; }
 
-        /* El Canvas (Columna Derecha) */
-        .canvas-wrapper {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; }
         canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); width: 100%; height: auto;}
 
-        /* Caja de Resultados de Texto */
         .resultado-texto { background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; max-width: 600px; margin: 20px auto 0; width: 100%; box-sizing: border-box; text-align: center;}
         .badge-info { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: bold; margin: 5px;}
         .b-unico { background-color: #00ffcc; color: #000;}
@@ -143,7 +83,6 @@
 
         .mensaje-error { color: #ff5555; text-align: center; font-size: 1.1rem; margin-top: 20px;}
 
-        /* Estilos para las casillas Lotto */
         .fila { display: flex; align-items: center; gap: 10px; }
         .fila-label { width: 80px; text-align: right; font-weight: bold; color: #888; font-size: 0.9rem;}
         .casillas-container { display: flex; gap: 5px; flex-grow: 1;}
@@ -155,11 +94,9 @@
         .vecino-unico { background-color: #00ffcc !important; color: #000 !important; box-shadow: 0 0 10px #00ffcc; }
         .vecino-repetido { background-color: #ffcc00 !important; color: #000 !important; box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff !important; transform: scale(1.05); z-index: 9; }
 
-        /* Grid para Guacharo */
         .grid-guacharo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; width: 100%; max-width: 560px; margin: 0 auto; }
         .grid-guacharo .casilla { padding: 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
 
-        /* RESPONSIVO */
         @media (max-width: 950px) {
             .canvas-container { flex-direction: column; align-items: center; }
             .panel-izquierdo { width: 100%; max-width: 600px; flex-direction: row; flex-wrap: wrap; justify-content: center; }
@@ -171,7 +108,7 @@
             h1 { font-size: 1.3rem; }
             .btn-regresar { width: 100%; }
             .controles { flex-direction: column; align-items: stretch; }
-            .controles select, .controles input, .btn-buscar, .btn-fractal { width: 100%; margin-left: 0; margin-top: 5px; }
+            .controles select, .controles input, .btn-buscar, .btn-fractal, .btn-secuencia, .btn-reset { width: 100%; margin-left: 0; margin-top: 5px; }
             .fila-label { width: 50px; font-size: 0.7rem;}
             .casilla { padding: 10px 2px; font-size: 1rem; }
             .ruleta-container { padding: 10px; gap: 5px;}
@@ -185,7 +122,7 @@
 <body>
 
     <div class="header-bar">
-        <h1>🎡 RULETA X N° (Vecinos)</h1>
+        <h1>🎡 RULETA X N° (Vecinos y Secuencias)</h1>
         <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
     </div>
 
@@ -197,61 +134,52 @@
             <option value="mapeo_mini.json">Guacharito Millonario</option>
         </select>
 
-        <label>Número a buscar:</label>
-        <input type="number" id="input-numero" placeholder="Ej: 25" min="0" max="99">
+        <label>Número(s):</label>
+        <input type="text" id="input-numero" placeholder="Ej: 26 o 26,4,10" maxlength="50">
         
         <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar Vecinos</button>
+        
+        <!-- Nuevos botones para Secuencias -->
+        <button id="btn-secuencia" class="btn-secuencia" onclick="toggleSecuencia()">🔗 Secuencias Vecinos</button>
+        <button id="btn-reset" class="btn-reset" onclick="resetSecuencia()">🔄 Reset</button>
         
         <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Mapa Fractal</button>
     </div>
 
     <!-- La Mesa de la Ruleta -->
-    <div class="ruleta-container" id="ruleta-container">
-        <!-- Se inyecta con JS -->
-    </div>
+    <div class="ruleta-container" id="ruleta-container"></div>
 
     <!-- Contenedor del Canvas Fractal -->
     <div class="canvas-container" id="canvas-container">
         
-        <!-- Columna Izquierda (Leyenda + Recomendados) -->
         <div class="panel-izquierdo">
-            
-            <!-- Leyenda -->
             <div class="leyenda-fractal">
                 <h4>Guía de Doble Capa</h4>
                 <p><strong>Centro (Fríos):</strong> Alta presión estadística.</p>
                 <p><strong>Periferia (Calientes):</strong> Números ya gastados.</p>
                 <p><strong>Líneas Verdes:</strong> Atracción histórica.</p>
+                <p><span class="bullet" style="background:#ffd700;"></span> <span class="highlight-line">Línea Gruesa:</span> Secuencia de Búsqueda.</p>
                 <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
                 <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal (Tendencia / Fríos).</p>
                 <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos (Modo Simple).</p>
             </div>
 
-            <!-- Panel de Recomendados Ponderados -->
             <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
                 <h4>Top 4 Fractal (Tendencia)</h4>
-                <div class="bolitas-grid" id="bolitas-fractal">
-                    <!-- Bolitas amarillas -->
-                </div>
+                <div class="bolitas-grid" id="bolitas-fractal"></div>
                 
                 <h4 style="color: #00ffcc; margin-top: 10px;">Vecinos Inmediatos</h4>
-                <div class="bolitas-grid" id="bolitas-inmediatas">
-                    <!-- Bolitas verdes -->
-                </div>
+                <div class="bolitas-grid" id="bolitas-inmediatas"></div>
             </div>
-
         </div>
 
-        <!-- El Canvas (Columna Derecha) -->
         <div class="canvas-wrapper">
             <canvas id="fractal-canvas" width="800" height="800"></canvas>
         </div>
 
     </div>
 
-    <!-- Caja de Texto con Resultados -->
-    <div class="resultado-texto" id="resultado-texto" style="display: none;">
-    </div>
+    <div class="resultado-texto" id="resultado-texto" style="display: none;"></div>
 
     <script>
         // ============================================================
@@ -290,7 +218,56 @@
 
         let vistaActual = 'lotto';
         let datosGlobales = []; 
+        let modoSecuenciaActivo = false;
+        let temporizadorSecuencia = null;
 
+        // ============================================================
+        // LÓGICA DE SECUENCIAS Y MODO AUTO
+        // ============================================================
+        function toggleSecuencia() {
+            modoSecuenciaActivo = !modoSecuenciaActivo;
+            const btn = document.getElementById('btn-secuencia');
+            const input = document.getElementById('input-numero');
+            
+            if (modoSecuenciaActivo) {
+                btn.classList.add('activo');
+                btn.innerHTML = "✅ Secuencias ON";
+                input.placeholder = "Ej: 26,4,10,15";
+            } else {
+                btn.classList.remove('activo');
+                btn.innerHTML = "🔗 Secuencias Vecinos";
+                input.placeholder = "Ej: 25";
+            }
+        }
+
+        function resetSecuencia() {
+            const input = document.getElementById('input-numero');
+            input.value = '';
+            input.style.boxShadow = 'none';
+            // Limpiamos el mapa y mostramos la ruleta
+            document.getElementById('canvas-container').style.display = 'none';
+            document.getElementById('ruleta-container').style.display = 'flex';
+            document.getElementById('resultado-texto').style.display = 'none';
+            limpiarResaltados();
+            if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
+        }
+
+        // Escuchar el input para el modo auto
+        document.getElementById('input-numero').addEventListener('input', function(e) {
+            if (modoSecuenciaActivo) {
+                if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
+                // Retardo de 500ms para no saturar el procesador mientras se escribe
+                temporizadorSecuencia = setTimeout(() => {
+                    if (e.target.value.trim() !== '') {
+                        generarMapaFractal();
+                    }
+                }, 500);
+            }
+        });
+
+        // ============================================================
+        // FUNCIONES DE DIBUJO Y BÚSQUEDA
+        // ============================================================
         function cambiarVista() {
             const sel = document.getElementById('combo-loteria').value;
             vistaActual = (sel === 'mapeo_lotto.json') ? 'lotto' : 'guacharo';
@@ -390,14 +367,22 @@
             const loteriaFile = document.getElementById('combo-loteria').value;
             const textResult = document.getElementById('resultado-texto');
 
-            if (inputVal === '' || isNaN(inputVal)) {
-                alert("Por favor, ingresa un número válido.");
+            if (inputVal === '') {
+                alert("Por favor, ingresa al menos un número válido.");
                 return;
             }
+            
+            // Si hay comas, tomamos el primer número para el análisis simple de ruleta
+            let primerNumero = inputVal.split(',')[0].trim();
+            if (isNaN(primerNumero)) {
+                alert("El primer número no es válido.");
+                return;
+            }
+
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
             limpiarResaltados();
-            let numeroObjetivo = parseInt(inputVal);
+            let numeroObjetivo = parseInt(primerNumero);
 
             try {
                 const res = await fetch(loteriaFile);
@@ -418,7 +403,7 @@
 
                 if (indicesApariciones.length === 0) {
                     textResult.style.display = 'block';
-                    textResult.innerHTML = `<p class="mensaje-error">El número ${numeroObjetivo} no tiene apariciones registradas en esta lotería.</p>`;
+                    textResult.innerHTML = `<p class="mensaje-error">El número ${numeroObjetivo} no tiene apariciones registradas.</p>`;
                     return;
                 }
 
@@ -440,7 +425,10 @@
 
                 textResult.style.display = 'block';
                 let htmlInfo = `<h3>Análisis para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
-                htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Se analizaron las últimas <b>${ultimasApariciones.length}</b> apariciones en el historial.</p>`;
+                if (inputVal.includes(',')) {
+                    htmlInfo += `<p style="color:#ffd700; font-weight:bold;">⚠️ Modo Secuencia: Mostrando análisis del primer número (${numeroObjetivo}) en la ruleta. Usa "Generar Mapa Fractal" para ver la secuencia completa.</p>`;
+                }
+                htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Se analizaron las últimas <b>${ultimasApariciones.length}</b> apariciones.</p>`;
                 htmlInfo += `<div style="background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:15px; text-align:left; font-size:0.9rem;">`;
                 ultimasApariciones.forEach((idx, i) => { htmlInfo += `<b>Aparición ${i+1}:</b> ${historial[idx].fecha} (${historial[idx].hora})<br>`; });
                 htmlInfo += `</div>`;
@@ -455,7 +443,7 @@
                     vecinosDespues.forEach(n => { let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico'; htmlInfo += `<span class="badge-info ${clase}">${n}</span>`; });
                     htmlInfo += `</p>`;
                 }
-                htmlInfo += `<p style="margin-top: 15px; font-size: 0.9rem; color: #888;"><i>* El color Amarillo indica números vecinos que se repitieron en más de una aparición.</i></p>`;
+                htmlInfo += `<p style="margin-top: 15px; font-size: 0.9rem; color: #888;"><i>* El color Amarillo indica números vecinos que se repitieron.</i></p>`;
                 textResult.innerHTML = htmlInfo;
 
             } catch (error) {
@@ -466,7 +454,7 @@
         }
 
         // ============================================================
-        // MAPA FRACTAL Y ALGORITMO DE DOBLE CAPA
+        // MAPA FRACTAL Y ALGORITMO DE DOBLE CAPA (CON SOPORTE MULTI-NÚMERO)
         // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
@@ -478,6 +466,18 @@
             const bolitasFractal = document.getElementById('bolitas-fractal');
             const bolitasInmediatas = document.getElementById('bolitas-inmediatas');
             
+            if (inputVal === '') {
+                alert("Ingresa al menos un número para generar el mapa.");
+                return;
+            }
+
+            // Procesar números separados por coma
+            let numerosBusqueda = inputVal.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
+            if (numerosBusqueda.length === 0) {
+                alert("No se detectaron números válidos (0-99).");
+                return;
+            }
+
             canvasContainer.style.display = 'flex';
             ruletaContainer.style.display = 'none';
             textResult.style.display = 'none';
@@ -489,7 +489,9 @@
             const ctx = canvas.getContext('2d');
             const width = canvas.width;
             const height = canvas.height;
-            const numeroObjetivo = inputVal !== '' ? parseInt(inputVal) : null;
+            
+            // Tomamos el primer número como el objetivo principal para las recomendaciones
+            const numeroPrincipal = numerosBusqueda[0];
 
             try {
                 if (datosGlobales.length === 0) {
@@ -536,14 +538,14 @@
                 });
 
                 // ============================================================
-                // LÓGICA 1: TOP 4 FRACTAL (Fríos con alta atracción)
+                // LÓGICA 1: TOP 4 FRACTAL (Fríos con alta atracción) - Basado en el primer número
                 // ============================================================
                 let recomendadosFractal = [];
-                if (numeroObjetivo !== null && adyacentes[numeroObjetivo]) {
+                if (adyacentes[numeroPrincipal]) {
                     let candidatos = [];
-                    for (let adj in adyacentes[numeroObjetivo]) {
+                    for (let adj in adyacentes[numeroPrincipal]) {
                         let numAdj = parseInt(adj);
-                        let fuerzaConexion = adyacentes[numeroObjetivo][numAdj];
+                        let fuerzaConexion = adyacentes[numeroPrincipal][numAdj];
                         let frecuenciaPropia = nodos[numAdj].count;
                         
                         let puntajeFrio = 100 - frecuenciaPropia; 
@@ -556,13 +558,12 @@
                 }
 
                 // ============================================================
-                // LÓGICA 2: VECINOS INMEDIATOS (Modo Simple - Arrastre físico)
+                // LÓGICA 2: VECINOS INMEDIATOS (Modo Simple) - Basado en el primer número
                 // ============================================================
                 let recomendadosInmediatos = [];
-                // Extraemos los vecinos directos (basado en las últimas apariciones)
                 let indicesApariciones = [];
                 historial.forEach((h, i) => {
-                    if (h === numeroObjetivo) indicesApariciones.push(i);
+                    if (h === numeroPrincipal) indicesApariciones.push(i);
                 });
                 
                 if (indicesApariciones.length > 0) {
@@ -579,7 +580,6 @@
                     let candidatosInmediatos = [];
                     for (let num in conteoVecinos) {
                         let count = conteoVecinos[num];
-                        // Damos un puntaje alto a los que más veces fueron vecinos
                         let puntaje = count * 10; 
                         candidatosInmediatos.push({ num: parseInt(num), puntaje: puntaje });
                     }
@@ -608,7 +608,7 @@
                 ctx.fillStyle = '#0a0a0a';
                 ctx.fillRect(0, 0, width, height);
 
-                // Dibujar Aristas
+                // Dibujar Aristas Base
                 ctx.lineWidth = 0.5;
                 for (let key in aristas) {
                     let [n1, n2] = key.split('-').map(Number);
@@ -617,8 +617,8 @@
                     if (nodos[n1] && nodos[n2]) {
                         let alpha = Math.min(weight / 10, 0.5); 
                         
-                        if (numeroObjetivo !== null && (n1 === numeroObjetivo || n2 === numeroObjetivo)) {
-                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.3})`; 
+                        if (numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2)) {
+                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.2})`; 
                             ctx.lineWidth = 1.5;
                         } else {
                             ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; 
@@ -632,17 +632,46 @@
                     }
                 }
 
+                // ============================================================
+                // DIBUJAR LÍNEA DE SECUENCIA (Amarillo Carter Pila)
+                // ============================================================
+                if (numerosBusqueda.length > 1) {
+                    ctx.strokeStyle = '#ffd700'; // Amarillo Carter Pila
+                    ctx.lineWidth = 6; // Más gruesa
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.shadowColor = '#ffd700';
+                    ctx.shadowBlur = 15;
+
+                    ctx.beginPath();
+                    for (let i = 0; i < numerosBusqueda.length; i++) {
+                        let num = numerosBusqueda[i];
+                        if (nodos[num]) {
+                            if (i === 0) {
+                                ctx.moveTo(nodos[num].x, nodos[num].y);
+                            } else {
+                                ctx.lineTo(nodos[num].x, nodos[num].y);
+                            }
+                        }
+                    }
+                    ctx.stroke();
+                    
+                    // Resetear sombras
+                    ctx.shadowBlur = 0;
+                    ctx.lineWidth = 1;
+                }
+
                 // Dibujar Nodos
                 numerosOrdenados.forEach(nodo => {
                     let size = 15 + (nodo.count / 5); 
                     let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
                     let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
-                    let isObjetivo = (nodo.id === numeroObjetivo);
+                    let isBusqueda = numerosBusqueda.includes(nodo.id);
 
                     ctx.beginPath();
                     ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
                     
-                    if (isObjetivo) {
+                    if (isBusqueda) {
                         ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; 
                         ctx.strokeStyle = `#fff`;
                         ctx.lineWidth = 3;
@@ -664,7 +693,7 @@
                     ctx.fill();
                     ctx.stroke();
 
-                    ctx.fillStyle = (isFractal || isInmediato || isObjetivo) ? '#000' : '#fff'; 
+                    ctx.fillStyle = (isFractal || isInmediato || isBusqueda) ? '#000' : '#fff'; 
                     ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -676,7 +705,6 @@
                 // 5. Generar Bolitas Ponderadas en el Panel Izquierdo
                 panelRecomendados.style.display = 'flex';
 
-                // Función auxiliar para crear bolitas
                 function crearBolitas(candidatos, contenedor, claseCss) {
                     if (candidatos.length === 0) return;
                     
