@@ -51,7 +51,10 @@
             border: 1px solid #444;
             display: none; /* Oculto por defecto */
         }
-        .tabla-horarios-container h3 { color: #29b6f6; margin-top: 0; text-align: center; }
+        
+        .tabla-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px;}
+        .tabla-header h3 { color: #29b6f6; margin: 0; }
+        
         .tabla-horarios { width: 100%; border-collapse: collapse; color: #ddd; font-size: 0.9rem; }
         .tabla-horarios th, .tabla-horarios td { padding: 8px; text-align: center; border-bottom: 1px solid #444; }
         .tabla-horarios th { background-color: #333; color: #00ffcc; }
@@ -72,6 +75,7 @@
             .input-group input { width: 100%; }
             
             .grafico-container { padding: 10px; min-height: 300px; }
+            .tabla-header { flex-direction: column; align-items: flex-start; }
             .tabla-horarios th, .tabla-horarios td { padding: 5px; font-size: 0.8rem; }
         }
     </style>
@@ -85,13 +89,14 @@
 
     <div class="controles">
         <label>Lotería:</label>
-        <select id="combo-loteria">
+        <!-- Se agregó id para detectar cambios y actualizar la tabla si está visible -->
+        <select id="combo-loteria" onchange="actualizarTodo()">
             <option value="mapeo_lotto.json">Lotto Activo</option>
             <option value="mapeo_gua.json">Guacharo</option>
             <option value="mapeo_mini.json">Guacharito Millonario</option>
         </select>
 
-        <!-- Selector de Horarios -->
+        <!-- Selector de Horarios (Filtro superior) -->
         <label>Buscar por Horarios:</label>
         <select id="combo-horario" onchange="mostrarTablaHorarios()">
             <option value="none">-- Seleccionar --</option>
@@ -120,13 +125,28 @@
 
     <!-- Contenedor para la tabla de resultados por horario -->
     <div class="tabla-horarios-container" id="tabla-horarios-container">
-        <h3>Resultados Recientes (Últimos 15 días)</h3>
+        <div class="tabla-header">
+            <h3>Resultados Recientes (Últimos 15 días)</h3>
+            
+            <!-- NUEVO MENÚ DE FILTRO DE LA TABLA -->
+            <div>
+                <label for="filtro-tabla" style="color: #aaa; font-size: 0.9rem; margin-right: 10px;">Filtrar:</label>
+                <select id="filtro-tabla" onchange="mostrarTablaHorarios()" style="padding: 5px 10px; border-radius: 5px; background: #333; color: white; border: 1px solid #555;">
+                    <option value="todos">Mostrar Todos (Crudo)</option>
+                    <option value="19:00">Solo Números 7PM</option>
+                    <option value="18:00">Solo Números 6PM</option>
+                    <option value="17:00">Solo Números 5PM</option>
+                </select>
+            </div>
+        </div>
+
         <table class="tabla-horarios" id="tabla-resultados">
             <thead>
                 <tr>
                     <th>Fecha</th>
                     <th>Hora</th>
                     <th>Número</th>
+                    <th>Apertura (+1 Día)</th> <!-- NUEVA COLUMNA -->
                 </tr>
             </thead>
             <tbody>
@@ -136,8 +156,17 @@
     </div>
 
     <script>
-        let miChart = null; // Variable global para guardar el gráfico
-        let datosGlobales = []; // Guardamos los datos cargados para no hacer fetch repetido
+        let miChart = null; 
+        let datosGlobales = []; 
+
+        // Función para actualizar todo al cambiar de lotería
+        function actualizarTodo() {
+            dibujarGrafico();
+            const horaLimite = document.getElementById('combo-horario').value;
+            if (horaLimite !== 'none') {
+                mostrarTablaHorarios();
+            }
+        }
 
         // --- LÓGICA DE FLECHAS ---
         function cambiarNumero(delta) {
@@ -145,18 +174,35 @@
             let val = parseInt(input.value) || 0;
             val += delta;
             
-            // Lógica circular: si pasa de 99 vuelve a 0, si baja de 0 va a 99
             if (val > 99) val = 0;
             if (val < 0) val = 99;
             
             input.value = val;
             
-            // Auto-cargar el gráfico al mover flechas
-            // Usamos un pequeño delay para no saturar si el usuario hace clic muy rápido
             clearTimeout(window.timerGrafico);
             window.timerGrafico = setTimeout(() => {
                 dibujarGrafico();
             }, 300);
+        }
+
+        // --- FUNCIÓN AUXILIAR PARA PARSEAR FECHAS Y SUMAR DÍAS ---
+        function sumarDia(fechaStr) {
+            // Asumiendo formato YYYY-MM-DD
+            let partes = fechaStr.split('-');
+            if (partes.length !== 3) return null;
+            
+            let anio = parseInt(partes[0]);
+            let mes = parseInt(partes[1]) - 1; // Mes en JS es 0-index
+            let dia = parseInt(partes[2]);
+
+            let fecha = new Date(anio, mes, dia);
+            fecha.setDate(fecha.getDate() + 1);
+
+            let y = fecha.getFullYear();
+            let m = String(fecha.getMonth() + 1).padStart(2, '0');
+            let d = String(fecha.getDate()).padStart(2, '0');
+
+            return `${y}-${m}-${d}`;
         }
 
         // --- LÓGICA MATEMÁTICA DEL GRÁFICO ---
@@ -208,12 +254,11 @@
             canvas.style.display = 'none';
 
             try {
-                // Si ya tenemos los datos de esta lotería cargados, los usamos
                 if (datosGlobales.length === 0 || datosGlobales.file !== loteriaFile) {
                     const res = await fetch(loteriaFile);
                     const datos = await res.json();
                     datosGlobales = datos;
-                    datosGlobales.file = loteriaFile; // Guardamos referencia del archivo
+                    datosGlobales.file = loteriaFile; 
                 }
 
                 let numObjetivo = parseInt(inputNum);
@@ -228,14 +273,10 @@
                     return;
                 }
 
-                // Tomar las últimas 20 apariciones para no saturar el gráfico
                 let historialReciente = historial.slice(-20);
-
-                // Preparar los datos para Chart.js
                 let labels = historialReciente.map((h, i) => `${h.fecha} (${h.horaStr})`);
                 let dataY = historialReciente.map(h => h.horaDecimal);
 
-                // Configurar Chart.js
                 canvas.style.display = 'block';
                 let ctx = canvas.getContext('2d');
                 
@@ -257,7 +298,7 @@
                             pointRadius: 6,
                             pointHoverRadius: 8,
                             fill: true,
-                            tension: 0.3 // Curvatura de la línea
+                            tension: 0.3 
                         }]
                     },
                     options: {
@@ -266,11 +307,10 @@
                         interaction: { mode: 'index', intersect: false },
                         scales: {
                             y: {
-                                min: 8, max: 20, // Desde las 8 AM hasta las 8 PM
+                                min: 8, max: 20, 
                                 ticks: {
                                     color: '#ccc',
                                     callback: function(value) {
-                                        // Convertir número decimal (ej. 14.5) a hora (02:30 PM)
                                         let h = Math.floor(value);
                                         let m = Math.round((value % 1) * 60);
                                         let ampm = h >= 12 ? 'PM' : 'AM';
@@ -316,21 +356,20 @@
         // --- LÓGICA DE LA TABLA DE HORARIOS ---
         async function mostrarTablaHorarios() {
             const horaLimiteStr = document.getElementById('combo-horario').value;
+            const filtroTabla = document.getElementById('filtro-tabla').value; // Nuevo filtro
             const tablaContainer = document.getElementById('tabla-horarios-container');
             const tbody = document.querySelector('#tabla-resultados tbody');
             const loteriaFile = document.getElementById('combo-loteria').value;
 
-            // Si se selecciona "none", ocultamos la tabla
             if (horaLimiteStr === 'none') {
                 tablaContainer.style.display = 'none';
                 return;
             }
 
             tablaContainer.style.display = 'block';
-            tbody.innerHTML = '<tr><td colspan="3">Cargando datos...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4">Cargando datos...</td></tr>';
 
             try {
-                // Asegurarnos de tener los datos cargados
                 if (datosGlobales.length === 0 || datosGlobales.file !== loteriaFile) {
                     const res = await fetch(loteriaFile);
                     const datos = await res.json();
@@ -341,31 +380,13 @@
                 const horaLimite = parseInt(horaLimiteStr.split(':')[0]);
                 const resultadosFiltrados = [];
 
-                // 1. Filtrar por hora y obtener los últimos 15 días
-                // Primero, obtenemos todas las fechas únicas ordenadas de más reciente a más antigua
-                let fechasUnicas = [...new Set(datosGlobales.map(d => d.fecha))];
-                
-                // Asumimos que el JSON viene ordenado cronológicamente, pero por seguridad ordenamos
-                // Nota: Esto depende del formato de fecha en tu JSON (ej. YYYY-MM-DD). 
-                // Si es DD/MM/YYYY, la ordenación simple de strings podría fallar. 
-                // Aquí asumimos un formato estándar ordenable o que el JSON ya viene ordenado.
-                // Para robustez, intentaremos ordenar por fecha y hora real.
-                
-                // Ordenar datos globales por fecha y hora descendente (más nuevo primero)
-                // Asumiendo formato de fecha YYYY-MM-DD o similar que permita sort string.
-                // Si tu fecha es DD-MM-YYYY, esto necesita ajuste.
-                // Vamos a intentar un sort simple.
+                // 1. Obtener los últimos 15 días únicos
                 let datosOrdenados = [...datosGlobales].sort((a, b) => {
-                    // Convertir fecha a algo comparable. Asumimos YYYY-MM-DD por ahora.
-                    // Si es DD/MM/YYYY, habría que invertir.
-                    let fechaA = a.fecha; 
-                    let fechaB = b.fecha;
-                    if (fechaA < fechaB) return 1;
-                    if (fechaA > fechaB) return -1;
+                    if (a.fecha < b.fecha) return 1;
+                    if (a.fecha > b.fecha) return -1;
                     return 0;
                 });
 
-                // Tomar los últimos 15 días únicos
                 let diasContados = 0;
                 let fechasPermitidas = new Set();
                 
@@ -377,7 +398,7 @@
                     if (diasContados >= 15) break;
                 }
 
-                // 2. Filtrar registros que cumplan la hora y estén en los días permitidos
+                // 2. Filtrar registros por la hora seleccionada en el menú superior
                 datosGlobales.forEach(reg => {
                     if (!fechasPermitidas.has(reg.fecha)) return;
 
@@ -390,31 +411,66 @@
                     if (ampm === 'PM' && hora < 12) hora += 12;
                     if (ampm === 'AM' && hora === 12) hora = 0;
 
-                    // Comparar con la hora límite (ej. 17 para 5PM)
                     if (hora >= horaLimite) {
                         resultadosFiltrados.push(reg);
                     }
                 });
 
-                // Ordenar resultados finales: Fecha descendente, luego Hora descendente
-                resultadosFiltrados.sort((a, b) => {
+                // 3. Aplicar filtro específico del menú de la tabla (7PM, 6PM, 5PM)
+                let resultadosFinales = resultadosFiltrados;
+                if (filtroTabla !== 'todos') {
+                    resultadosFinales = resultadosFiltrados.filter(reg => {
+                        // Extraer hora exacta para comparar con el filtro (ej. "19:00")
+                        let horaStr = reg.hora;
+                        let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                        if(!horaParts) return false;
+                        
+                        let hora = parseInt(horaParts[1]);
+                        let ampm = horaParts[3].toUpperCase();
+                        if (ampm === 'PM' && hora < 12) hora += 12;
+                        if (ampm === 'AM' && hora === 12) hora = 0;
+                        
+                        let horaExacta = `${String(hora).padStart(2, '0')}:00`;
+                        return horaExacta === filtroTabla;
+                    });
+                }
+
+                // 4. Ordenar resultados finales
+                resultadosFinales.sort((a, b) => {
                     if (a.fecha < b.fecha) return 1;
                     if (a.fecha > b.fecha) return -1;
-                    // Si fechas iguales, ordenar por hora (convertida a decimal para comparar)
-                    return 0; // Aquí se podría añadir lógica de hora si es necesario
+                    return 0; 
                 });
 
-                // Renderizar tabla
+                // 5. Renderizar tabla con la nueva columna de Apertura (+1 Día)
                 tbody.innerHTML = '';
-                if (resultadosFiltrados.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3">No hay números registrados después de la hora seleccionada en los últimos 15 días.</td></tr>';
+                if (resultadosFinales.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No hay números registrados con los filtros seleccionados.</td></tr>';
                 } else {
-                    resultadosFiltrados.forEach(reg => {
+                    resultadosFinales.forEach(reg => {
+                        // Lógica para buscar apertura del día siguiente (8am y 9am)
+                        let fechaSiguiente = sumarDia(reg.fecha);
+                        let aperturaTexto = "No Disponible";
+
+                        if (fechaSiguiente) {
+                            // Buscar en los datos globales si existe la fecha siguiente y hora 8am o 9am
+                            let registrosApertura = datosGlobales.filter(d => 
+                                d.fecha === fechaSiguiente && 
+                                (d.hora.includes('08:00 AM') || d.hora.includes('09:00 AM'))
+                            );
+
+                            if (registrosApertura.length > 0) {
+                                // Si hay varios, los unimos
+                                aperturaTexto = registrosApertura.map(r => r.numero).join(' - ');
+                            }
+                        }
+
                         let tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${reg.fecha}</td>
                             <td>${reg.hora}</td>
                             <td style="color: #00ffcc; font-weight: bold;">${reg.numero}</td>
+                            <td style="color: #ffb74d; font-weight: bold;">${aperturaTexto}</td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -422,13 +478,11 @@
 
             } catch (error) {
                 console.error(error);
-                tbody.innerHTML = '<tr><td colspan="3">Error al cargar datos.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4">Error al cargar datos.</td></tr>';
             }
         }
 
-        // Inicializar el input en 0 al cargar
         document.getElementById('input-numero').value = 0;
-
     </script>
 </body>
 </html>
