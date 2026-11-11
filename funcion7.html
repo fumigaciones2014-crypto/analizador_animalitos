@@ -33,38 +33,11 @@
 
         .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
         
-        /* Contenedor del Canvas Fractal */
-        .canvas-container { 
-            display: none; 
-            justify-content: center; 
-            align-items: stretch; 
-            gap: 20px; 
-            background: #0a0a0a; 
-            border: 2px solid #333; 
-            border-radius: 12px; 
-            padding: 20px; 
-            margin: 0 auto; 
-            max-width: 1400px;
-            width: 100%; 
-            box-sizing: border-box;
-        }
+        .canvas-container { display: none; justify-content: center; align-items: stretch; gap: 20px; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 20px; margin: 0 auto; max-width: 1400px; width: 100%; box-sizing: border-box; }
         
-        /* Panel Izquierdo Fijo */
         .panel-izquierdo { display: flex; flex-direction: column; gap: 15px; width: 280px; flex-shrink: 0; }
         
-        /* Panel Derecho (Historial) */
-        .panel-derecho { 
-            display: flex; 
-            flex-direction: column; 
-            width: 280px; 
-            flex-shrink: 0; 
-            background: rgba(20, 20, 20, 0.95); 
-            border-radius: 8px; 
-            border: 1px solid #444; 
-            padding: 10px; 
-            overflow-y: auto; 
-            max-height: 850px; 
-        }
+        .panel-derecho { display: flex; flex-direction: column; width: 280px; flex-shrink: 0; background: rgba(20, 20, 20, 0.95); border-radius: 8px; border: 1px solid #444; padding: 10px; overflow-y: auto; max-height: 850px; }
         .panel-derecho h4 { margin: 0 0 10px 0; color: #ffcc00; font-size: 1rem; text-align: center; border-bottom: 1px solid #333; padding-bottom: 5px; }
         
         .historial-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #555; }
@@ -76,7 +49,6 @@
         .bolita-mini.amarilla { background-color: #ffcc00; color: #000; border: 1px solid #fff;}
         .bolita-mini.verde { background-color: #00ffcc; color: #000; border: 1px solid #fff;}
         
-        /* ESTILO DE ACIERTO */
         .acierto { border: 3px solid #ff00cc !important; box-shadow: 0 0 10px #ff00cc; transform: scale(1.1); z-index: 10; }
         .acierto::after { content: '✅'; position: absolute; top: -12px; right: -10px; font-size: 14px; }
 
@@ -97,8 +69,6 @@
 
         .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); transition: all 0.3s ease; position: relative; }
         .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); transition: all 0.3s ease; position: relative; }
-        
-        /* NUEVA BOLITA ROJA (Fuerza de Salida) */
         .bolita-fuerza { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ff0000; color: #fff; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 0, 0, 0.8); transition: all 0.3s ease; position: relative; }
         
         .porcentaje { position: absolute; bottom: -20px; font-size: 0.75rem; color: #aaa; white-space: nowrap; }
@@ -111,7 +81,6 @@
         .b-unico { background-color: #00ffcc; color: #000;}
         .b-repetido { background-color: #ffcc00; color: #000;}
         .b-objetivo { background-color: #ff00cc; color: white;}
-
         .mensaje-error { color: #ff5555; text-align: center; font-size: 1.1rem; margin-top: 20px;}
 
         .fila { display: flex; align-items: center; gap: 10px; }
@@ -178,10 +147,7 @@
 
     <div class="ruleta-container" id="ruleta-container"></div>
 
-    <!-- Contenedor Principal del Mapa -->
     <div class="canvas-container" id="canvas-container">
-        
-        <!-- Panel Izquierdo: Resultados Actuales y Fuerza -->
         <div class="panel-izquierdo">
             <div class="leyenda-fractal">
                 <h4>Guía de Doble Capa</h4>
@@ -203,7 +169,6 @@
                 <h4 style="color: #00ffcc; font-size: 0.95rem; margin-top: 5px;">Vecinos Inmediatos</h4>
                 <div class="bolitas-grid" id="bolitas-inmediatas"></div>
 
-                <!-- NUEVO PANEL: FUERZA DE SALIDA -->
                 <div id="panel-fuerza-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
                     <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Fuerza de Salida</h4>
                     <div class="bolitas-grid" id="bolitas-fuerza"></div>
@@ -211,27 +176,21 @@
             </div>
         </div>
 
-        <!-- Canvas Central -->
         <div class="canvas-wrapper">
             <canvas id="fractal-canvas" width="800" height="800"></canvas>
         </div>
 
-        <!-- Panel Derecho: Historial de Predicciones -->
         <div class="panel-derecho" id="panel-historial">
             <h4>Historial de Secuencia</h4>
             <div id="historial-contenido" style="color: #888; text-align: center; font-size: 0.9rem;">
                 Ingresa secuencias separadas por coma para ver el historial aquí.
             </div>
         </div>
-
     </div>
 
     <div class="resultado-texto" id="resultado-texto" style="display: none;"></div>
 
     <script>
-        // ============================================================
-        // CONFIGURACIÓN
-        // ============================================================
         const FILAS_RULETA_LOTTO = [
             { id: "fila_1", nums: [12, 35, 3, 26, 0, 32, 15] },
             { id: "fila_2", nums: [28, 19] }, { id: "fila_3", nums: [7, 4] }, { id: "fila_4", nums: [29, 21] },
@@ -255,13 +214,8 @@
         let datosGlobales = []; 
         let modoSecuenciaActivo = false;
         let temporizadorSecuencia = null;
-        
-        // Variable global para guardar el historial de la secuencia actual
         let historialSecuencia = []; 
 
-        // ============================================================
-        // LÓGICA DE SECUENCIAS Y MODO AUTO
-        // ============================================================
         function toggleSecuencia() {
             modoSecuenciaActivo = !modoSecuenciaActivo;
             const btn = document.getElementById('btn-secuencia');
@@ -282,7 +236,7 @@
             const input = document.getElementById('input-numero');
             input.value = '';
             input.style.boxShadow = 'none';
-            historialSecuencia = []; // Limpiamos el historial
+            historialSecuencia = [];
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
             document.getElementById('resultado-texto').style.display = 'none';
@@ -300,13 +254,10 @@
                     } else {
                         resetSecuencia();
                     }
-                }, 600); // Retardo para escribir tranquilo
+                }, 600);
             }
         });
 
-        // ============================================================
-        // FUNCIONES DE VISTA (RULETA)
-        // ============================================================
         function cambiarVista() {
             const sel = document.getElementById('combo-loteria').value;
             vistaActual = (sel === 'mapeo_lotto.json') ? 'lotto' : 'guacharo';
@@ -450,9 +401,6 @@
             }
         }
 
-        // ============================================================
-        // MAPA FRACTAL, HISTORIAL Y LÓGICA DE ACIERTOS
-        // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
             const canvasContainer = document.getElementById('canvas-container');
@@ -538,11 +486,9 @@
                     recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
                 }
 
-                // Actualizamos los paneles con los datos calculados
                 actualizarPanelIzquierdo(numeroPrincipal, recomendadosFractal, recomendadosInmediatos);
                 actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
 
-                // Dibujar Canvas
                 const centroX = width / 2; const centroY = height / 2; const radioMax = Math.min(width, height) / 2 - 40;
                 const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
 
@@ -616,9 +562,6 @@
             }
         }
 
-        // ============================================================
-        // ACTUALIZACIÓN DE PANELES
-        // ============================================================
         function actualizarPanelIzquierdo(numActual, fractales, inmediatos) {
             const panel = document.getElementById('panel-recomendados');
             const bFractal = document.getElementById('bolitas-fractal');
@@ -683,20 +626,21 @@
                 let aciertosFractal = [];
                 let aciertosInmediatos = [];
 
+                // Evaluar aciertos futuros
                 if (index < historialSecuencia.length - 1) {
                     const numerosPosteriores = historialSecuencia.slice(index + 1).map(h => h.numero);
                     
                     item.fractales.forEach(f => { 
                         if (numerosPosteriores.includes(f.num)) {
                             aciertosFractal.push(f.num); 
-                            // Sumamos al contador global de fuerza
+                            // REGLA LÓGICA: Si el número predicho sale en el futuro, suma a su fuerza
                             contadorFuerza[f.num] = (contadorFuerza[f.num] || 0) + 1;
                         }
                     });
                     item.inmediatos.forEach(v => { 
                         if (numerosPosteriores.includes(v.num)) {
                             aciertosInmediatos.push(v.num); 
-                            // Sumamos al contador global de fuerza
+                            // REGLA LÓGICA: Si el número predicho sale en el futuro, suma a su fuerza
                             contadorFuerza[v.num] = (contadorFuerza[v.num] || 0) + 1;
                         }
                     });
@@ -731,13 +675,11 @@
             const panelFuerza = document.getElementById('panel-fuerza-container');
             const bFuerza = document.getElementById('bolitas-fuerza');
             
-            // Convertir el contador a un array y ordenar de mayor a menor
             let arrayFuerza = Object.keys(contadorFuerza).map(num => {
                 return { num: parseInt(num), aciertos: contadorFuerza[num] };
             });
             arrayFuerza.sort((a, b) => b.aciertos - a.aciertos);
             
-            // Tomar el Top 4
             let topFuerza = arrayFuerza.slice(0, 4);
 
             if (topFuerza.length > 0) {
@@ -747,7 +689,6 @@
                 let totalAciertosGlobales = arrayFuerza.reduce((acc, curr) => acc + curr.aciertos, 0);
 
                 topFuerza.forEach((item, index) => {
-                    // Calcular el porcentaje de incidencia
                     let porcentaje = (item.aciertos / totalAciertosGlobales) * 100;
                     let size = 35 + ((porcentaje / 100) * 40); 
                     
