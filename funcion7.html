@@ -20,7 +20,6 @@
         .btn-buscar { background-color: #455a64; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .btn-buscar:hover { background-color: #607d8b; box-shadow: 0 0 10px rgba(176,190,197,0.3); }
         
-        /* Nuevos Botones de Secuencia */
         .btn-secuencia { background-color: #555; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; border: 1px solid #777; }
         .btn-secuencia.activo { background-color: #00c853; border-color: #69f0ae; box-shadow: 0 0 15px rgba(0, 200, 83, 0.6); }
         .btn-secuencia:hover { background-color: #777; }
@@ -32,7 +31,6 @@
         .btn-fractal { background-color: #8e24aa; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; margin-left: auto; }
         .btn-fractal:hover { background-color: #ab47bc; box-shadow: 0 0 10px rgba(171, 71, 188, 0.5); }
 
-        /* Contenedor de la Ruleta */
         .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
         
         /* Contenedor del Canvas Fractal */
@@ -46,12 +44,41 @@
             border-radius: 12px; 
             padding: 20px; 
             margin: 0 auto; 
-            max-width: 1150px; 
+            max-width: 1400px; /* Más ancho para la barra derecha */
             width: 100%; 
             box-sizing: border-box;
         }
         
-        .panel-izquierdo { display: flex; flex-direction: column; gap: 15px; width: 300px; flex-shrink: 0; }
+        /* Panel Izquierdo Fijo */
+        .panel-izquierdo { display: flex; flex-direction: column; gap: 15px; width: 280px; flex-shrink: 0; }
+        
+        /* Panel Derecho (Historial) */
+        .panel-derecho { 
+            display: flex; 
+            flex-direction: column; 
+            width: 280px; 
+            flex-shrink: 0; 
+            background: rgba(20, 20, 20, 0.95); 
+            border-radius: 8px; 
+            border: 1px solid #444; 
+            padding: 10px; 
+            overflow-y: auto; 
+            max-height: 800px; /* Misma altura que el canvas aprox */
+        }
+        .panel-derecho h4 { margin: 0 0 10px 0; color: #ffcc00; font-size: 1rem; text-align: center; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        
+        .historial-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #555; }
+        .historial-item:last-child { border-bottom: none; }
+        .historial-numero { text-align: center; font-size: 1.2rem; font-weight: bold; color: #00ffcc; margin-bottom: 5px; background: #222; border-radius: 5px; padding: 2px;}
+        
+        .bolitas-grid-historial { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 5px; }
+        .bolita-mini { width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-weight: bold; font-size: 0.8rem; position: relative; }
+        .bolita-mini.amarilla { background-color: #ffcc00; color: #000; border: 1px solid #fff;}
+        .bolita-mini.verde { background-color: #00ffcc; color: #000; border: 1px solid #fff;}
+        
+        /* ESTILO DE ACIERTO */
+        .acierto { border: 3px solid #ff00cc !important; box-shadow: 0 0 10px #ff00cc; transform: scale(1.1); z-index: 10; }
+        .acierto::after { content: '✅'; position: absolute; top: -12px; right: -10px; font-size: 14px; }
 
         .leyenda-fractal { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; font-size: 0.9rem; box-shadow: 0 0 10px rgba(0,0,0,0.5); color: #ccc; }
         .leyenda-fractal h4 { margin: 0 0 10px 0; color: #00ffcc; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;}
@@ -65,15 +92,15 @@
         .panel-recomendados { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
         .panel-recomendados h4 { margin: 0 0 15px 0; color: #ffcc00; font-size: 1.1rem; text-align: center;}
         
-        .bolitas-grid { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 100px; margin-bottom: 15px; }
+        .bolitas-grid { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 80px; margin-bottom: 15px; }
 
         .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); transition: all 0.3s ease; position: relative; }
         .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); transition: all 0.3s ease; position: relative; }
         
         .porcentaje { position: absolute; bottom: -20px; font-size: 0.75rem; color: #aaa; white-space: nowrap; }
 
-        .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; }
-        canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); width: 100%; height: auto;}
+        .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; min-width: 300px;}
+        canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); width: 100%; height: auto; max-width: 800px;}
 
         .resultado-texto { background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; max-width: 600px; margin: 20px auto 0; width: 100%; box-sizing: border-box; text-align: center;}
         .badge-info { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: bold; margin: 5px;}
@@ -97,11 +124,11 @@
         .grid-guacharo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; width: 100%; max-width: 560px; margin: 0 auto; }
         .grid-guacharo .casilla { padding: 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
 
-        @media (max-width: 950px) {
+        @media (max-width: 1150px) {
             .canvas-container { flex-direction: column; align-items: center; }
-            .panel-izquierdo { width: 100%; max-width: 600px; flex-direction: row; flex-wrap: wrap; justify-content: center; }
-            .leyenda-fractal { flex: 1; min-width: 250px; }
-            .panel-recomendados { flex: 1; min-width: 250px; }
+            .panel-izquierdo, .panel-derecho { width: 100%; max-width: 600px; flex-direction: row; flex-wrap: wrap; justify-content: center; max-height: none; overflow-y: visible; }
+            .leyenda-fractal, .panel-recomendados { flex: 1; min-width: 250px; }
+            .historial-item { width: 100%; }
         }
         @media (max-width: 768px) {
             .header-bar { flex-direction: column; text-align: center; gap: 10px; }
@@ -115,14 +142,14 @@
             .casillas-container { gap: 3px;}
             .grid-guacharo { gap: 2px; }
             .grid-guacharo .casilla { font-size: 0.65rem; }
-            .panel-izquierdo { flex-direction: column; }
+            .panel-izquierdo, .panel-derecho { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
     <div class="header-bar">
-        <h1>🎡 RULETA X N° (Vecinos y Secuencias)</h1>
+        <h1>🎡 RULETA X N° (Historial de Secuencias)</h1>
         <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
     </div>
 
@@ -135,23 +162,22 @@
         </select>
 
         <label>Número(s):</label>
-        <input type="text" id="input-numero" placeholder="Ej: 26 o 26,4,10" maxlength="50">
+        <input type="text" id="input-numero" placeholder="Ej: 26,33,31" maxlength="50">
         
         <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar Vecinos</button>
         
-        <!-- Nuevos botones para Secuencias -->
         <button id="btn-secuencia" class="btn-secuencia" onclick="toggleSecuencia()">🔗 Secuencias Vecinos</button>
         <button id="btn-reset" class="btn-reset" onclick="resetSecuencia()">🔄 Reset</button>
         
         <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Mapa Fractal</button>
     </div>
 
-    <!-- La Mesa de la Ruleta -->
     <div class="ruleta-container" id="ruleta-container"></div>
 
-    <!-- Contenedor del Canvas Fractal -->
+    <!-- Contenedor Principal del Mapa -->
     <div class="canvas-container" id="canvas-container">
         
+        <!-- Panel Izquierdo: Resultados Actuales -->
         <div class="panel-izquierdo">
             <div class="leyenda-fractal">
                 <h4>Guía de Doble Capa</h4>
@@ -160,21 +186,31 @@
                 <p><strong>Líneas Verdes:</strong> Atracción histórica.</p>
                 <p><span class="bullet" style="background:#ffd700;"></span> <span class="highlight-line">Línea Gruesa:</span> Secuencia de Búsqueda.</p>
                 <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
-                <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal (Tendencia / Fríos).</p>
-                <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos (Modo Simple).</p>
+                <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
+                <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
             </div>
 
             <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
-                <h4>Top 4 Fractal (Tendencia)</h4>
+                <h4 id="titulo-actual">Análisis Actual</h4>
+                <h4 style="color: #ffcc00; font-size: 0.95rem; margin-bottom: 5px;">Top 4 Fractal</h4>
                 <div class="bolitas-grid" id="bolitas-fractal"></div>
                 
-                <h4 style="color: #00ffcc; margin-top: 10px;">Vecinos Inmediatos</h4>
+                <h4 style="color: #00ffcc; font-size: 0.95rem; margin-top: 5px;">Vecinos Inmediatos</h4>
                 <div class="bolitas-grid" id="bolitas-inmediatas"></div>
             </div>
         </div>
 
+        <!-- Canvas Central -->
         <div class="canvas-wrapper">
             <canvas id="fractal-canvas" width="800" height="800"></canvas>
+        </div>
+
+        <!-- Panel Derecho: Historial de Predicciones -->
+        <div class="panel-derecho" id="panel-historial">
+            <h4>Historial de Secuencia</h4>
+            <div id="historial-contenido" style="color: #888; text-align: center; font-size: 0.9rem;">
+                Ingresa secuencias separadas por coma para ver el historial aquí.
+            </div>
         </div>
 
     </div>
@@ -183,43 +219,34 @@
 
     <script>
         // ============================================================
-        // CONFIGURACIÓN DE VISTAS
+        // CONFIGURACIÓN
         // ============================================================
         const FILAS_RULETA_LOTTO = [
             { id: "fila_1", nums: [12, 35, 3, 26, 0, 32, 15] },
-            { id: "fila_2", nums: [28, 19] },
-            { id: "fila_3", nums: [7, 4] },
-            { id: "fila_4", nums: [29, 21] },
-            { id: "fila_5", nums: [18, 2] },
-            { id: "fila_6", nums: [22, 25] },
-            { id: "fila_7", nums: [9, 17] },
-            { id: "fila_8", nums: [31, 34] },
-            { id: "fila_9", nums: [14, 6] },
-            { id: "fila_10", nums: [20, 27] },
-            { id: "fila_11", nums: [1, 13] },
-            { id: "fila_12", nums: [33, 36] },
+            { id: "fila_2", nums: [28, 19] }, { id: "fila_3", nums: [7, 4] }, { id: "fila_4", nums: [29, 21] },
+            { id: "fila_5", nums: [18, 2] }, { id: "fila_6", nums: [22, 25] }, { id: "fila_7", nums: [9, 17] },
+            { id: "fila_8", nums: [31, 34] }, { id: "fila_9", nums: [14, 6] }, { id: "fila_10", nums: [20, 27] },
+            { id: "fila_11", nums: [1, 13] }, { id: "fila_12", nums: [33, 36] },
             { id: "fila_13", nums: [16, 24, 5, 10, 23, 8, 30, 11] }
         ];
 
         const MATRIZ_GUACHARO = [
             [48, 24, 7, 33, "00", 50, 4, 34, 17, 28, 9, 47], 
             [64, 57, 38, 6, 49, 18, 56, 13, 27, 46, "", ""],
-            [44, 66, "", "", "", "", "", "", "", "", 15, 30],
-            [65, 2, "", "", "", "", "", "", "", "", 39, 21],
-            [20, 69, "", "", "", "", "", "", "", "", 41, 72],
-            [25, 52, "", "", "", "", "", "", "", "", 1, 26],
-            [70, 16, "", "", "", "", "", "", "", "", 19, 42],
-            [53, 68, "", "", "", "", "", "", "", "", 61, 51],
-            [0, 31, "", "", "", "", "", "", "", "", 12, 23],
-            [55, 11, "", "", "", "", "", "", "", "", 37, 73],
-            [60, 35, 10, 74, 43, 29, 40, 3, 58, 32, 14, 22],
-            [45, 59, 62, 71, 8, 36, 54, 67, 63, 5, "", ""]
+            [44, 66, "", "", "", "", "", "", "", "", 15, 30], [65, 2, "", "", "", "", "", "", "", "", 39, 21],
+            [20, 69, "", "", "", "", "", "", "", "", 41, 72], [25, 52, "", "", "", "", "", "", "", "", 1, 26],
+            [70, 16, "", "", "", "", "", "", "", "", 19, 42], [53, 68, "", "", "", "", "", "", "", "", 61, 51],
+            [0, 31, "", "", "", "", "", "", "", "", 12, 23], [55, 11, "", "", "", "", "", "", "", "", 37, 73],
+            [60, 35, 10, 74, 43, 29, 40, 3, 58, 32, 14, 22], [45, 59, 62, 71, 8, 36, 54, 67, 63, 5, "", ""]
         ];
 
         let vistaActual = 'lotto';
         let datosGlobales = []; 
         let modoSecuenciaActivo = false;
         let temporizadorSecuencia = null;
+        
+        // Variable global para guardar el historial de la secuencia actual
+        let historialSecuencia = []; 
 
         // ============================================================
         // LÓGICA DE SECUENCIAS Y MODO AUTO
@@ -232,7 +259,7 @@
             if (modoSecuenciaActivo) {
                 btn.classList.add('activo');
                 btn.innerHTML = "✅ Secuencias ON";
-                input.placeholder = "Ej: 26,4,10,15";
+                input.placeholder = "Ej: 26,33,31";
             } else {
                 btn.classList.remove('activo');
                 btn.innerHTML = "🔗 Secuencias Vecinos";
@@ -244,29 +271,30 @@
             const input = document.getElementById('input-numero');
             input.value = '';
             input.style.boxShadow = 'none';
-            // Limpiamos el mapa y mostramos la ruleta
+            historialSecuencia = []; // Limpiamos el historial
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
             document.getElementById('resultado-texto').style.display = 'none';
+            document.getElementById('panel-historial').innerHTML = '<h4>Historial de Secuencia</h4><div style="color: #888; text-align: center; font-size: 0.9rem;">Ingresa secuencias separadas por coma para ver el historial aquí.</div>';
             limpiarResaltados();
             if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
         }
 
-        // Escuchar el input para el modo auto
         document.getElementById('input-numero').addEventListener('input', function(e) {
             if (modoSecuenciaActivo) {
                 if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
-                // Retardo de 500ms para no saturar el procesador mientras se escribe
                 temporizadorSecuencia = setTimeout(() => {
                     if (e.target.value.trim() !== '') {
                         generarMapaFractal();
+                    } else {
+                        resetSecuencia();
                     }
-                }, 500);
+                }, 600); // 600ms de retardo para escribir tranquilo
             }
         });
 
         // ============================================================
-        // FUNCIONES DE DIBUJO Y BÚSQUEDA
+        // FUNCIONES DE VISTA (RULETA)
         // ============================================================
         function cambiarVista() {
             const sel = document.getElementById('combo-loteria').value;
@@ -290,42 +318,30 @@
             const container = document.getElementById('ruleta-container');
             container.innerHTML = '';
             FILAS_RULETA_LOTTO.forEach(fila => {
-                let rowDiv = document.createElement('div');
-                rowDiv.className = 'fila';
-                let labelDiv = document.createElement('div');
-                labelDiv.className = 'fila-label';
-                labelDiv.innerText = fila.id;
+                let rowDiv = document.createElement('div'); rowDiv.className = 'fila';
+                let labelDiv = document.createElement('div'); labelDiv.className = 'fila-label'; labelDiv.innerText = fila.id;
                 rowDiv.appendChild(labelDiv);
-                let casillasDiv = document.createElement('div');
-                casillasDiv.className = 'casillas-container';
+                let casillasDiv = document.createElement('div'); casillasDiv.className = 'casillas-container';
                 fila.nums.forEach(num => {
-                    let casilla = document.createElement('div');
-                    casilla.className = 'casilla';
-                    casilla.id = `casilla-${num}`;
-                    casilla.innerText = num;
-                    casilla.dataset.numero = num;
+                    let casilla = document.createElement('div'); casilla.className = 'casilla'; casilla.id = `casilla-${num}`;
+                    casilla.innerText = num; casilla.dataset.numero = num;
                     casilla.addEventListener('click', () => seleccionarNumeroDesdeRuleta(num));
                     casillasDiv.appendChild(casilla);
                 });
-                rowDiv.appendChild(casillasDiv);
-                container.appendChild(rowDiv);
+                rowDiv.appendChild(casillasDiv); container.appendChild(rowDiv);
             });
         }
 
         function dibujarRuletaGuacharo() {
             const container = document.getElementById('ruleta-container');
             container.innerHTML = '';
-            const grid = document.createElement('div');
-            grid.className = 'grid-guacharo';
+            const grid = document.createElement('div'); grid.className = 'grid-guacharo';
             MATRIZ_GUACHARO.forEach(fila => {
                 fila.forEach(num => {
                     const casilla = document.createElement('div');
-                    if (num === "") {
-                        casilla.className = 'casilla vacia';
-                    } else {
-                        casilla.className = 'casilla';
-                        casilla.id = `g-casilla-${num}`;
-                        casilla.innerText = num;
+                    if (num === "") { casilla.className = 'casilla vacia'; } 
+                    else {
+                        casilla.className = 'casilla'; casilla.id = `g-casilla-${num}`; casilla.innerText = num;
                         casilla.dataset.numero = num;
                         casilla.addEventListener('click', () => seleccionarNumeroDesdeRuleta(num));
                     }
@@ -338,8 +354,7 @@
         function seleccionarNumeroDesdeRuleta(num) {
             const inputNum = document.getElementById('input-numero');
             inputNum.value = num;
-            inputNum.style.transition = 'box-shadow 0.3s';
-            inputNum.style.boxShadow = '0 0 15px #ff00cc';
+            inputNum.style.transition = 'box-shadow 0.3s'; inputNum.style.boxShadow = '0 0 15px #ff00cc';
             setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
             buscarVecinosRuleta();
         }
@@ -352,14 +367,12 @@
 
         function pintarObjetivo(num) {
             const id = (vistaActual === 'lotto') ? `casilla-${num}` : `g-casilla-${num}`;
-            const el = document.getElementById(id);
-            if (el) el.classList.add('num-objetivo');
+            const el = document.getElementById(id); if (el) el.classList.add('num-objetivo');
         }
 
         function pintarVecino(num, repetido) {
             const id = (vistaActual === 'lotto') ? `casilla-${num}` : `g-casilla-${num}`;
-            const el = document.getElementById(id);
-            if (el) el.classList.add(repetido ? 'vecino-repetido' : 'vecino-unico');
+            const el = document.getElementById(id); if (el) el.classList.add(repetido ? 'vecino-repetido' : 'vecino-unico');
         }
 
         async function buscarVecinosRuleta() {
@@ -367,17 +380,10 @@
             const loteriaFile = document.getElementById('combo-loteria').value;
             const textResult = document.getElementById('resultado-texto');
 
-            if (inputVal === '') {
-                alert("Por favor, ingresa al menos un número válido.");
-                return;
-            }
+            if (inputVal === '') { alert("Por favor, ingresa al menos un número válido."); return; }
             
-            // Si hay comas, tomamos el primer número para el análisis simple de ruleta
             let primerNumero = inputVal.split(',')[0].trim();
-            if (isNaN(primerNumero)) {
-                alert("El primer número no es válido.");
-                return;
-            }
+            if (isNaN(primerNumero)) { alert("El primer número no es válido."); return; }
 
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
@@ -386,20 +392,17 @@
 
             try {
                 const res = await fetch(loteriaFile);
-                const datos = await res.json();
-                datosGlobales = datos; 
+                const datos = await res.json(); datosGlobales = datos; 
 
                 let historial = [];
-                datos.forEach((reg, index) => {
+                datos.forEach((reg) => {
                     if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
-                        historial.push({ num: parseInt(reg.numero), fecha: reg.fecha, hora: reg.hora, originalIndex: index });
+                        historial.push({ num: parseInt(reg.numero), fecha: reg.fecha, hora: reg.hora });
                     }
                 });
 
                 let indicesApariciones = [];
-                historial.forEach((h, i) => {
-                    if (h.num === numeroObjetivo) indicesApariciones.push(i);
-                });
+                historial.forEach((h, i) => { if (h.num === numeroObjetivo) indicesApariciones.push(i); });
 
                 if (indicesApariciones.length === 0) {
                     textResult.style.display = 'block';
@@ -408,9 +411,7 @@
                 }
 
                 let ultimasApariciones = indicesApariciones.slice(-5).reverse();
-                let vecinosAntes = [];
-                let vecinosDespues = [];
-                let contadorVecinos = {};
+                let vecinosAntes = []; let vecinosDespues = []; let contadorVecinos = {};
 
                 ultimasApariciones.forEach(idx => {
                     if (idx - 1 >= 0) { let n = historial[idx - 1].num; vecinosAntes.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
@@ -425,36 +426,21 @@
 
                 textResult.style.display = 'block';
                 let htmlInfo = `<h3>Análisis para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
-                if (inputVal.includes(',')) {
-                    htmlInfo += `<p style="color:#ffd700; font-weight:bold;">⚠️ Modo Secuencia: Mostrando análisis del primer número (${numeroObjetivo}) en la ruleta. Usa "Generar Mapa Fractal" para ver la secuencia completa.</p>`;
-                }
+                if (inputVal.includes(',')) { htmlInfo += `<p style="color:#ffd700; font-weight:bold;">⚠️ Modo Secuencia: Análisis del primer número en ruleta.</p>`; }
                 htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Se analizaron las últimas <b>${ultimasApariciones.length}</b> apariciones.</p>`;
                 htmlInfo += `<div style="background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:15px; text-align:left; font-size:0.9rem;">`;
                 ultimasApariciones.forEach((idx, i) => { htmlInfo += `<b>Aparición ${i+1}:</b> ${historial[idx].fecha} (${historial[idx].hora})<br>`; });
                 htmlInfo += `</div>`;
-                htmlInfo += `<p><b>Vecinos detectados:</b></p>`;
-                if (vecinosAntes.length > 0) {
-                    htmlInfo += `<p style="margin-bottom: 10px;"><span style="color:#00ffcc;">ANTERIORES:</span><br>`;
-                    vecinosAntes.forEach(n => { let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico'; htmlInfo += `<span class="badge-info ${clase}">${n}</span>`; });
-                    htmlInfo += `</p>`;
-                }
-                if (vecinosDespues.length > 0) {
-                    htmlInfo += `<p><b>POSTERIORES:</b><br>`;
-                    vecinosDespues.forEach(n => { let clase = contadorVecinos[n] > 1 ? 'b-repetido' : 'b-unico'; htmlInfo += `<span class="badge-info ${clase}">${n}</span>`; });
-                    htmlInfo += `</p>`;
-                }
-                htmlInfo += `<p style="margin-top: 15px; font-size: 0.9rem; color: #888;"><i>* El color Amarillo indica números vecinos que se repitieron.</i></p>`;
                 textResult.innerHTML = htmlInfo;
 
             } catch (error) {
-                console.error(error);
-                textResult.style.display = 'block';
+                console.error(error); textResult.style.display = 'block';
                 textResult.innerHTML = `<p class="mensaje-error">Error al cargar los datos.</p>`;
             }
         }
 
         // ============================================================
-        // MAPA FRACTAL Y ALGORITMO DE DOBLE CAPA (CON SOPORTE MULTI-NÚMERO)
+        // MAPA FRACTAL, HISTORIAL Y LÓGICA DE ACIERTOS
         // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
@@ -462,289 +448,276 @@
             const ruletaContainer = document.getElementById('ruleta-container');
             const textResult = document.getElementById('resultado-texto');
             const inputVal = document.getElementById('input-numero').value.trim();
-            const panelRecomendados = document.getElementById('panel-recomendados');
-            const bolitasFractal = document.getElementById('bolitas-fractal');
-            const bolitasInmediatas = document.getElementById('bolitas-inmediatas');
             
-            if (inputVal === '') {
-                alert("Ingresa al menos un número para generar el mapa.");
-                return;
-            }
+            if (inputVal === '') { alert("Ingresa al menos un número para generar el mapa."); return; }
 
             // Procesar números separados por coma
             let numerosBusqueda = inputVal.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
-            if (numerosBusqueda.length === 0) {
-                alert("No se detectaron números válidos (0-99).");
-                return;
-            }
+            if (numerosBusqueda.length === 0) { alert("No se detectaron números válidos (0-99)."); return; }
 
             canvasContainer.style.display = 'flex';
             ruletaContainer.style.display = 'none';
             textResult.style.display = 'none';
-            panelRecomendados.style.display = 'none';
-            bolitasFractal.innerHTML = '';
-            bolitasInmediatas.innerHTML = '';
+            
+            // El número principal actual es SIEMPRE el último de la lista
+            const numeroPrincipal = numerosBusqueda[numerosBusqueda.length - 1];
 
             const canvas = document.getElementById('fractal-canvas');
             const ctx = canvas.getContext('2d');
-            const width = canvas.width;
-            const height = canvas.height;
-            
-            // Tomamos el primer número como el objetivo principal para las recomendaciones
-            const numeroPrincipal = numerosBusqueda[0];
+            const width = canvas.width; const height = canvas.height;
 
             try {
                 if (datosGlobales.length === 0) {
-                    const res = await fetch(loteriaFile);
-                    datosGlobales = await res.json();
+                    const res = await fetch(loteriaFile); datosGlobales = await res.json();
                 }
 
-                let historial = [];
+                let historialDatos = [];
                 datosGlobales.forEach(reg => {
                     if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
-                        historial.push(parseInt(reg.numero));
+                        historialDatos.push(parseInt(reg.numero));
                     }
                 });
 
-                if (historial.length === 0) {
-                    alert("No hay datos válidos para generar el fractal.");
-                    return;
-                }
+                if (historialDatos.length === 0) { alert("No hay datos válidos."); return; }
 
-                // 1. Calcular Nodos y Aristas
+                // 1. Calcular Nodos y Aristas para el mapa general
                 const VENTANA = 5;
-                const nodos = {}; 
-                const aristas = {}; 
-                const adyacentes = {}; 
+                const nodos = {}; const aristas = {}; const adyacentes = {}; 
+                for(let i=0; i<100; i++) { nodos[i] = { count: 0, x: 0, y: 0, id: i }; adyacentes[i] = {}; }
 
-                for(let i=0; i<100; i++) {
-                    nodos[i] = { count: 0, x: 0, y: 0, id: i };
-                    adyacentes[i] = {}; 
-                }
-
-                historial.forEach((num, index) => {
+                historialDatos.forEach((num, index) => {
                     if (nodos[num]) nodos[num].count++;
-                    
                     for (let i = 1; i <= VENTANA; i++) {
-                        if (index + i < historial.length) {
-                            let nextNum = historial[index + i];
+                        if (index + i < historialDatos.length) {
+                            let nextNum = historialDatos[index + i];
                             let key = num < nextNum ? `${num}-${nextNum}` : `${nextNum}-${num}`;
                             aristas[key] = (aristas[key] || 0) + 1;
-                            
                             adyacentes[num][nextNum] = (adyacentes[num][nextNum] || 0) + 1;
                             adyacentes[nextNum][num] = (adyacentes[nextNum][num] || 0) + 1;
                         }
                     }
                 });
 
-                // ============================================================
-                // LÓGICA 1: TOP 4 FRACTAL (Fríos con alta atracción) - Basado en el primer número
-                // ============================================================
-                let recomendadosFractal = [];
+                // 2. Calcular Recomendados (AMARILLOS y VERDES) para el número actual (el último)
+                let recomendadosFractal = []; let recomendadosInmediatos = [];
+                
+                // Amarillos (Fractal)
                 if (adyacentes[numeroPrincipal]) {
                     let candidatos = [];
                     for (let adj in adyacentes[numeroPrincipal]) {
                         let numAdj = parseInt(adj);
                         let fuerzaConexion = adyacentes[numeroPrincipal][numAdj];
                         let frecuenciaPropia = nodos[numAdj].count;
-                        
-                        let puntajeFrio = 100 - frecuenciaPropia; 
-                        let puntaje = puntajeFrio + (fuerzaConexion * 5); 
-                        
+                        let puntaje = (100 - frecuenciaPropia) + (fuerzaConexion * 5); 
                         candidatos.push({ num: numAdj, puntaje: puntaje });
                     }
                     candidatos.sort((a, b) => b.puntaje - a.puntaje);
                     recomendadosFractal = candidatos.slice(0, 4);
                 }
 
-                // ============================================================
-                // LÓGICA 2: VECINOS INMEDIATOS (Modo Simple) - Basado en el primer número
-                // ============================================================
-                let recomendadosInmediatos = [];
+                // Verdes (Inmediatos)
                 let indicesApariciones = [];
-                historial.forEach((h, i) => {
-                    if (h === numeroPrincipal) indicesApariciones.push(i);
-                });
-                
+                historialDatos.forEach((h, i) => { if (h === numeroPrincipal) indicesApariciones.push(i); });
                 if (indicesApariciones.length > 0) {
                     let ultimas = indicesApariciones.slice(-5).reverse();
                     let conteoVecinos = {};
-                    
                     ultimas.forEach(idx => {
-                        if (idx - 1 >= 0) { let n = historial[idx - 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                        if (idx - 2 >= 0) { let n = historial[idx - 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                        if (idx + 1 < historial.length) { let n = historial[idx + 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                        if (idx + 2 < historial.length) { let n = historial[idx + 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx - 1 >= 0) { let n = historialDatos[idx - 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx - 2 >= 0) { let n = historialDatos[idx - 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx + 1 < historialDatos.length) { let n = historialDatos[idx + 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx + 2 < historialDatos.length) { let n = historialDatos[idx + 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
                     });
-
                     let candidatosInmediatos = [];
-                    for (let num in conteoVecinos) {
-                        let count = conteoVecinos[num];
-                        let puntaje = count * 10; 
-                        candidatosInmediatos.push({ num: parseInt(num), puntaje: puntaje });
-                    }
+                    for (let num in conteoVecinos) { candidatosInmediatos.push({ num: parseInt(num), puntaje: conteoVecinos[num] * 10 }); }
                     candidatosInmediatos.sort((a, b) => b.puntaje - a.puntaje);
                     recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
                 }
 
-                // 3. Posicionamiento Radial Invertido (Fríos al Centro)
-                const centroX = width / 2;
-                const centroY = height / 2;
-                const radioMax = Math.min(width, height) / 2 - 40;
+                // Actualizar Panel Izquierdo
+                actualizarPanelIzquierdo(numeroPrincipal, recomendadosFractal, recomendadosInmediatos);
 
+                // 3. Actualizar el Panel Derecho (Historial)
+                actualizarHistorial(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
+
+                // 4. Dibujar Mapa Fractal
+                const centroX = width / 2; const centroY = height / 2; const radioMax = Math.min(width, height) / 2 - 40;
                 const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
 
                 numerosOrdenados.forEach((nodo, index) => {
-                    let ratio = index / numerosOrdenados.length;
-                    let radio = ratio * radioMax;
+                    let ratio = index / numerosOrdenados.length; let radio = ratio * radioMax;
                     let angulo = index * 137.5 * (Math.PI / 180); 
-                    
                     nodo.x = centroX + Math.cos(angulo) * radio;
                     nodo.y = centroY + Math.sin(angulo) * radio;
                 });
 
-                // 4. Dibujar Mapa
-                ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = '#0a0a0a';
-                ctx.fillRect(0, 0, width, height);
+                ctx.clearRect(0, 0, width, height); ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, width, height);
 
-                // Dibujar Aristas Base
+                // Aristas
                 ctx.lineWidth = 0.5;
                 for (let key in aristas) {
-                    let [n1, n2] = key.split('-').map(Number);
-                    let weight = aristas[key];
-                    
+                    let [n1, n2] = key.split('-').map(Number); let weight = aristas[key];
                     if (nodos[n1] && nodos[n2]) {
                         let alpha = Math.min(weight / 10, 0.5); 
-                        
                         if (numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2)) {
-                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.2})`; 
-                            ctx.lineWidth = 1.5;
+                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.2})`; ctx.lineWidth = 1.5;
                         } else {
-                            ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; 
-                            ctx.lineWidth = 0.5;
+                            ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; ctx.lineWidth = 0.5;
                         }
-                        
-                        ctx.beginPath();
-                        ctx.moveTo(nodos[n1].x, nodos[n1].y);
-                        ctx.lineTo(nodos[n2].x, nodos[n2].y);
-                        ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(nodos[n1].x, nodos[n1].y); ctx.lineTo(nodos[n2].x, nodos[n2].y); ctx.stroke();
                     }
                 }
 
-                // ============================================================
-                // DIBUJAR LÍNEA DE SECUENCIA (Amarillo Carter Pila)
-                // ============================================================
+                // Línea de Secuencia (Amarillo Carter Pila)
                 if (numerosBusqueda.length > 1) {
-                    ctx.strokeStyle = '#ffd700'; // Amarillo Carter Pila
-                    ctx.lineWidth = 6; // Más gruesa
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    ctx.shadowColor = '#ffd700';
-                    ctx.shadowBlur = 15;
-
+                    ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 15;
                     ctx.beginPath();
                     for (let i = 0; i < numerosBusqueda.length; i++) {
                         let num = numerosBusqueda[i];
                         if (nodos[num]) {
-                            if (i === 0) {
-                                ctx.moveTo(nodos[num].x, nodos[num].y);
-                            } else {
-                                ctx.lineTo(nodos[num].x, nodos[num].y);
-                            }
+                            if (i === 0) ctx.moveTo(nodos[num].x, nodos[num].y);
+                            else ctx.lineTo(nodos[num].x, nodos[num].y);
                         }
                     }
-                    ctx.stroke();
-                    
-                    // Resetear sombras
-                    ctx.shadowBlur = 0;
-                    ctx.lineWidth = 1;
+                    ctx.stroke(); ctx.shadowBlur = 0; ctx.lineWidth = 1;
                 }
 
-                // Dibujar Nodos
+                // Nodos
                 numerosOrdenados.forEach(nodo => {
                     let size = 15 + (nodo.count / 5); 
                     let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
                     let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
                     let isBusqueda = numerosBusqueda.includes(nodo.id);
 
-                    ctx.beginPath();
-                    ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
+                    ctx.beginPath(); ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
                     
                     if (isBusqueda) {
-                        ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; 
-                        ctx.strokeStyle = `#fff`;
-                        ctx.lineWidth = 3;
+                        ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 3;
                     } else if (isFractal) {
-                        ctx.fillStyle = `#ffcc00`; 
-                        ctx.strokeStyle = `#fff`;
-                        ctx.lineWidth = 2;
+                        ctx.fillStyle = `#ffcc00`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
                     } else if (isInmediato) {
-                        ctx.fillStyle = `#00ffcc`; 
-                        ctx.strokeStyle = `#fff`;
-                        ctx.lineWidth = 2;
+                        ctx.fillStyle = `#00ffcc`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
                     } else {
                         let intensity = Math.min(nodo.count * 5, 255);
                         ctx.fillStyle = nodo.count === 0 ? 'rgba(30, 30, 30, 0.8)' : `rgba(50, 50, 50, 0.8)`;
-                        ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`;
-                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`; ctx.lineWidth = 2;
                     }
-
-                    ctx.fill();
-                    ctx.stroke();
+                    ctx.fill(); ctx.stroke();
 
                     ctx.fillStyle = (isFractal || isInmediato || isBusqueda) ? '#000' : '#fff'; 
                     ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                     let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
                     ctx.fillText(textNum, nodo.x, nodo.y);
                 });
 
-                // 5. Generar Bolitas Ponderadas en el Panel Izquierdo
-                panelRecomendados.style.display = 'flex';
+            } catch (error) {
+                console.error(error); alert("Error al generar el mapa fractal.");
+            }
+        }
 
-                function crearBolitas(candidatos, contenedor, claseCss) {
-                    if (candidatos.length === 0) return;
+        // ============================================================
+        // ACTUALIZACIÓN DE PANELES
+        // ============================================================
+        function actualizarPanelIzquierdo(numActual, fractales, inmediatos) {
+            const panel = document.getElementById('panel-recomendados');
+            const bFractal = document.getElementById('bolitas-fractal');
+            const bInmediatas = document.getElementById('bolitas-inmediatas');
+            const titulo = document.getElementById('titulo-actual');
+
+            panel.style.display = 'flex';
+            bFractal.innerHTML = ''; bInmediatas.innerHTML = '';
+            titulo.innerHTML = `Análisis Actual (${numActual.toString().padStart(2, '0')})`;
+
+            const crearBolitas = (candidatos, contenedor, claseCss) => {
+                if (candidatos.length === 0) return;
+                let suma = candidatos.reduce((acc, curr) => acc + curr.puntaje, 0);
+                candidatos.forEach((rec, index) => {
+                    let porcentaje = (rec.puntaje / suma) * 100;
+                    let size = 35 + ((porcentaje / 100) * 40); 
+                    let bolita = document.createElement('div');
+                    bolita.className = claseCss;
+                    bolita.style.width = `${size}px`; bolita.style.height = `${size}px`;
+                    bolita.style.fontSize = `${size * 0.35}px`;
+                    bolita.innerText = rec.num.toString().padStart(2, '0');
                     
-                    let sumaPuntajes = candidatos.reduce((acc, curr) => acc + curr.puntaje, 0);
-                    const minSize = 35;
-                    const maxSize = 75;
+                    let span = document.createElement('span'); span.className = 'porcentaje';
+                    span.innerText = `${porcentaje.toFixed(1)}%`; bolita.appendChild(span);
 
-                    candidatos.forEach((rec, index) => {
-                        let porcentaje = (rec.puntaje / sumaPuntajes) * 100;
-                        let size = minSize + ((porcentaje / 100) * (maxSize - minSize));
-                        if (size < minSize) size = minSize;
+                    if (index === 0) {
+                        bolita.style.boxShadow = `0 0 25px ${claseCss === 'bolita-recomendada' ? '#ffcc00' : '#00ffcc'}, inset 0 0 10px #fff`;
+                        bolita.style.border = '3px solid #fff';
+                    }
+                    contenedor.appendChild(bolita);
+                });
+            };
+            crearBolitas(fractales, bFractal, 'bolita-recomendada');
+            crearBolitas(inmediatos, bInmediatas, 'bolita-inmediata');
+        }
 
-                        let bolita = document.createElement('div');
-                        bolita.className = claseCss;
-                        bolita.style.width = `${size}px`;
-                        bolita.style.height = `${size}px`;
-                        bolita.style.fontSize = `${size * 0.35}px`;
-                        bolita.innerText = rec.num.toString().padStart(2, '0');
-                        
-                        let spanPorcentaje = document.createElement('span');
-                        spanPorcentaje.className = 'porcentaje';
-                        spanPorcentaje.innerText = `${porcentaje.toFixed(1)}%`;
-                        bolita.appendChild(spanPorcentaje);
+        function actualizarHistorial(numActual, fractales, inmediatos, todosLosNumeros) {
+            const historialCont = document.getElementById('historial-contenido');
+            
+            // Si es la primera vez que se genera el historial para esta secuencia, lo iniciamos
+            if (historialSecuencia.length === 0) {
+                historialCont.innerHTML = '';
+            }
 
-                        if (index === 0) {
-                            bolita.style.boxShadow = `0 0 25px ${claseCss === 'bolita-recomendada' ? '#ffcc00' : '#00ffcc'}, inset 0 0 10px #fff`;
-                            bolita.style.border = '3px solid #fff';
-                        }
+            // Verificar si este número ya está en el historial para no duplicarlo
+            const yaExiste = historialSecuencia.some(h => h.numero === numActual);
+            if (!yaExiste) {
+                // Guardamos una copia de los resultados de este número
+                historialSecuencia.push({
+                    numero: numActual,
+                    fractales: JSON.parse(JSON.stringify(fractales)),
+                    inmediatos: JSON.parse(JSON.stringify(inmediatos))
+                });
+            }
 
-                        contenedor.appendChild(bolita);
-                    });
+            // Renderizar todo el historial
+            historialCont.innerHTML = '';
+            
+            historialSecuencia.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'historial-item';
+                
+                // Si no es el último, verificamos si los números ingresados posteriormente acertaron
+                let aciertosFractal = [];
+                let aciertosInmediatos = [];
+
+                if (index < historialSecuencia.length - 1) {
+                    // Números que se ingresaron después de esta predicción
+                    const numerosPosteriores = historialSecuencia.slice(index + 1).map(h => h.numero);
+                    
+                    item.fractales.forEach(f => { if (numerosPosteriores.includes(f.num)) aciertosFractal.push(f.num); });
+                    item.inmediatos.forEach(v => { if (numerosPosteriores.includes(v.num)) aciertosInmediatos.push(v.num); });
                 }
 
-                crearBolitas(recomendadosFractal, bolitasFractal, 'bolita-recomendada');
-                crearBolitas(recomendadosInmediatos, bolitasInmediatas, 'bolita-inmediata');
+                let html = `<div class="historial-numero">Base: ${item.numero.toString().padStart(2, '0')}</div>`;
+                
+                // Amarillos
+                html += `<div class="bolitas-grid-historial">`;
+                item.fractales.forEach(f => {
+                    let isAcierto = aciertosFractal.includes(f.num) ? 'acierto' : '';
+                    html += `<div class="bolita-mini amarilla ${isAcierto}" title="Top Fractal">${f.num.toString().padStart(2, '0')}</div>`;
+                });
+                html += `</div>`;
 
-            } catch (error) {
-                console.error(error);
-                alert("Error al generar el mapa fractal.");
-            }
+                // Verdes
+                html += `<div class="bolitas-grid-historial">`;
+                item.inmediatos.forEach(v => {
+                    let isAcierto = aciertosInmediatos.includes(v.num) ? 'acierto' : '';
+                    html += `<div class="bolita-mini verde ${isAcierto}" title="Inmediato">${v.num.toString().padStart(2, '0')}</div>`;
+                });
+                html += `</div>`;
+
+                itemDiv.innerHTML = html;
+                historialCont.appendChild(itemDiv);
+            });
+            
+            // Hacer scroll hacia abajo para ver lo más reciente
+            const panelDer = document.getElementById('panel-historial');
+            panelDer.scrollTop = panelDer.scrollHeight;
         }
 
         window.onload = function() {
