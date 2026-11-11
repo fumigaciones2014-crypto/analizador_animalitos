@@ -163,7 +163,7 @@
                 <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
                 <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
                 <p><span class="bullet" style="background:#b388ff;"></span> <span class="highlight-purple">Morado:</span> Aciertos (Máx 8).</p>
-                <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Potencial de Salida (Deuda).</p>
+                <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Potencial de Salida (Top 6).</p>
             </div>
 
             <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
@@ -180,7 +180,7 @@
                 </div>
 
                 <div id="panel-prediccion-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
-                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida (Deuda)</h4>
+                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida (Top 6)</h4>
                     <div class="bolitas-grid" id="bolitas-prediccion"></div>
                     <span class="origen-fuerza" id="origen-prediccion-texto"></span>
                 </div>
@@ -707,7 +707,7 @@
                 return { num: parseInt(num), aciertos: contadorAciertos[num] };
             });
             arrayAciertos.sort((a, b) => b.aciertos - a.aciertos);
-            let topAciertos = arrayAciertos.slice(0, 8);
+            let topAciertos = arrayAciertos.slice(0, 8); // Límite 8
 
             if (topAciertos.length > 0) {
                 panelAciertos.style.display = 'block';
@@ -737,7 +737,7 @@
             }
 
             // ============================================================
-            // 4. MOSTRAR DEUDA ESTADÍSTICA (PREDICCIÓN) - ROJO
+            // 4. MOSTRAR DEUDA ESTADÍSTICA (PREDICCIÓN TOP 6) - ROJO
             // ============================================================
             const panelPrediccion = document.getElementById('panel-prediccion-container');
             const bPrediccion = document.getElementById('bolitas-prediccion');
@@ -746,8 +746,10 @@
             let arrayPrediccion = Object.keys(contadorPrediccion).map(num => {
                 return { num: parseInt(num), fuerza: contadorPrediccion[num] };
             });
+            // Ordenamos de mayor a menor fuerza
             arrayPrediccion.sort((a, b) => b.fuerza - a.fuerza);
-            let topPrediccion = arrayPrediccion.slice(0, 4);
+            // Ampliado a Top 6
+            let topPrediccion = arrayPrediccion.slice(0, 6);
 
             if (topPrediccion.length > 0) {
                 panelPrediccion.style.display = 'block';
@@ -757,7 +759,8 @@
 
                 topPrediccion.forEach((item, index) => {
                     let porcentaje = (item.fuerza / totalFuerza) * 100;
-                    let size = 40 + ((porcentaje / 100) * 40); 
+                    // Ajustamos el tamaño para que los primeros sean más grandes
+                    let size = 35 + ((porcentaje / 100) * 45); 
                     
                     let bolita = document.createElement('div');
                     bolita.className = 'bolita-prediccion';
