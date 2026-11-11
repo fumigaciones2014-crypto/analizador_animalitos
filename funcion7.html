@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal de Atracción (Doble Capa + Secuencias)</title>
+    <title>JARVIS - Fractal de Atracción (Secuencias y Fuerza)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -15,7 +15,7 @@
         .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap;}
         .controles label { font-weight: bold; color: #ccc; }
         .controles select, .controles input { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
-        .controles input { width: 150px; text-align: center; }
+        .controles input { width: 180px; text-align: center; }
         
         .btn-buscar { background-color: #455a64; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .btn-buscar:hover { background-color: #607d8b; box-shadow: 0 0 10px rgba(176,190,197,0.3); }
@@ -44,7 +44,7 @@
             border-radius: 12px; 
             padding: 20px; 
             margin: 0 auto; 
-            max-width: 1400px; /* Más ancho para la barra derecha */
+            max-width: 1400px;
             width: 100%; 
             box-sizing: border-box;
         }
@@ -63,7 +63,7 @@
             border: 1px solid #444; 
             padding: 10px; 
             overflow-y: auto; 
-            max-height: 800px; /* Misma altura que el canvas aprox */
+            max-height: 850px; 
         }
         .panel-derecho h4 { margin: 0 0 10px 0; color: #ffcc00; font-size: 1rem; text-align: center; border-bottom: 1px solid #333; padding-bottom: 5px; }
         
@@ -87,6 +87,7 @@
         .leyenda-fractal .highlight-green { color: #00ffcc; font-weight: bold; }
         .leyenda-fractal .highlight-magenta { color: #ff00cc; font-weight: bold; }
         .leyenda-fractal .highlight-line { color: #ffd700; font-weight: bold; }
+        .leyenda-fractal .highlight-red { color: #ff0000; font-weight: bold; }
         .leyenda-fractal .bullet { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
         .panel-recomendados { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
@@ -96,6 +97,9 @@
 
         .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); transition: all 0.3s ease; position: relative; }
         .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); transition: all 0.3s ease; position: relative; }
+        
+        /* NUEVA BOLITA ROJA (Fuerza de Salida) */
+        .bolita-fuerza { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ff0000; color: #fff; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 0, 0, 0.8); transition: all 0.3s ease; position: relative; }
         
         .porcentaje { position: absolute; bottom: -20px; font-size: 0.75rem; color: #aaa; white-space: nowrap; }
 
@@ -177,7 +181,7 @@
     <!-- Contenedor Principal del Mapa -->
     <div class="canvas-container" id="canvas-container">
         
-        <!-- Panel Izquierdo: Resultados Actuales -->
+        <!-- Panel Izquierdo: Resultados Actuales y Fuerza -->
         <div class="panel-izquierdo">
             <div class="leyenda-fractal">
                 <h4>Guía de Doble Capa</h4>
@@ -188,6 +192,7 @@
                 <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
                 <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
                 <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
+                <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Fuerza de Salida (Aciertos).</p>
             </div>
 
             <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
@@ -197,6 +202,12 @@
                 
                 <h4 style="color: #00ffcc; font-size: 0.95rem; margin-top: 5px;">Vecinos Inmediatos</h4>
                 <div class="bolitas-grid" id="bolitas-inmediatas"></div>
+
+                <!-- NUEVO PANEL: FUERZA DE SALIDA -->
+                <div id="panel-fuerza-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
+                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Fuerza de Salida</h4>
+                    <div class="bolitas-grid" id="bolitas-fuerza"></div>
+                </div>
             </div>
         </div>
 
@@ -289,7 +300,7 @@
                     } else {
                         resetSecuencia();
                     }
-                }, 600); // 600ms de retardo para escribir tranquilo
+                }, 600); // Retardo para escribir tranquilo
             }
         });
 
@@ -451,7 +462,6 @@
             
             if (inputVal === '') { alert("Ingresa al menos un número para generar el mapa."); return; }
 
-            // Procesar números separados por coma
             let numerosBusqueda = inputVal.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
             if (numerosBusqueda.length === 0) { alert("No se detectaron números válidos (0-99)."); return; }
 
@@ -459,7 +469,6 @@
             ruletaContainer.style.display = 'none';
             textResult.style.display = 'none';
             
-            // El número principal actual es SIEMPRE el último de la lista
             const numeroPrincipal = numerosBusqueda[numerosBusqueda.length - 1];
 
             const canvas = document.getElementById('fractal-canvas');
@@ -480,7 +489,6 @@
 
                 if (historialDatos.length === 0) { alert("No hay datos válidos."); return; }
 
-                // 1. Calcular Nodos y Aristas para el mapa general
                 const VENTANA = 5;
                 const nodos = {}; const aristas = {}; const adyacentes = {}; 
                 for(let i=0; i<100; i++) { nodos[i] = { count: 0, x: 0, y: 0, id: i }; adyacentes[i] = {}; }
@@ -498,10 +506,8 @@
                     }
                 });
 
-                // 2. Calcular Recomendados (AMARILLOS y VERDES) para el número actual (el último)
                 let recomendadosFractal = []; let recomendadosInmediatos = [];
                 
-                // Amarillos (Fractal)
                 if (adyacentes[numeroPrincipal]) {
                     let candidatos = [];
                     for (let adj in adyacentes[numeroPrincipal]) {
@@ -515,7 +521,6 @@
                     recomendadosFractal = candidatos.slice(0, 4);
                 }
 
-                // Verdes (Inmediatos)
                 let indicesApariciones = [];
                 historialDatos.forEach((h, i) => { if (h === numeroPrincipal) indicesApariciones.push(i); });
                 if (indicesApariciones.length > 0) {
@@ -533,13 +538,11 @@
                     recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
                 }
 
-                // Actualizar Panel Izquierdo
+                // Actualizamos los paneles con los datos calculados
                 actualizarPanelIzquierdo(numeroPrincipal, recomendadosFractal, recomendadosInmediatos);
+                actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
 
-                // 3. Actualizar el Panel Derecho (Historial)
-                actualizarHistorial(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
-
-                // 4. Dibujar Mapa Fractal
+                // Dibujar Canvas
                 const centroX = width / 2; const centroY = height / 2; const radioMax = Math.min(width, height) / 2 - 40;
                 const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
 
@@ -552,7 +555,6 @@
 
                 ctx.clearRect(0, 0, width, height); ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, width, height);
 
-                // Aristas
                 ctx.lineWidth = 0.5;
                 for (let key in aristas) {
                     let [n1, n2] = key.split('-').map(Number); let weight = aristas[key];
@@ -567,7 +569,6 @@
                     }
                 }
 
-                // Línea de Secuencia (Amarillo Carter Pila)
                 if (numerosBusqueda.length > 1) {
                     ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
                     ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 15;
@@ -582,7 +583,6 @@
                     ctx.stroke(); ctx.shadowBlur = 0; ctx.lineWidth = 1;
                 }
 
-                // Nodos
                 numerosOrdenados.forEach(nodo => {
                     let size = 15 + (nodo.count / 5); 
                     let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
@@ -655,18 +655,15 @@
             crearBolitas(inmediatos, bInmediatas, 'bolita-inmediata');
         }
 
-        function actualizarHistorial(numActual, fractales, inmediatos, todosLosNumeros) {
+        function actualizarHistorialYFuerza(numActual, fractales, inmediatos, todosLosNumeros) {
             const historialCont = document.getElementById('historial-contenido');
             
-            // Si es la primera vez que se genera el historial para esta secuencia, lo iniciamos
             if (historialSecuencia.length === 0) {
                 historialCont.innerHTML = '';
             }
 
-            // Verificar si este número ya está en el historial para no duplicarlo
             const yaExiste = historialSecuencia.some(h => h.numero === numActual);
             if (!yaExiste) {
-                // Guardamos una copia de los resultados de este número
                 historialSecuencia.push({
                     numero: numActual,
                     fractales: JSON.parse(JSON.stringify(fractales)),
@@ -674,28 +671,39 @@
                 });
             }
 
-            // Renderizar todo el historial
             historialCont.innerHTML = '';
             
+            // Contador para el Top 4 de Fuerza de Salida
+            let contadorFuerza = {};
+
             historialSecuencia.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'historial-item';
                 
-                // Si no es el último, verificamos si los números ingresados posteriormente acertaron
                 let aciertosFractal = [];
                 let aciertosInmediatos = [];
 
                 if (index < historialSecuencia.length - 1) {
-                    // Números que se ingresaron después de esta predicción
                     const numerosPosteriores = historialSecuencia.slice(index + 1).map(h => h.numero);
                     
-                    item.fractales.forEach(f => { if (numerosPosteriores.includes(f.num)) aciertosFractal.push(f.num); });
-                    item.inmediatos.forEach(v => { if (numerosPosteriores.includes(v.num)) aciertosInmediatos.push(v.num); });
+                    item.fractales.forEach(f => { 
+                        if (numerosPosteriores.includes(f.num)) {
+                            aciertosFractal.push(f.num); 
+                            // Sumamos al contador global de fuerza
+                            contadorFuerza[f.num] = (contadorFuerza[f.num] || 0) + 1;
+                        }
+                    });
+                    item.inmediatos.forEach(v => { 
+                        if (numerosPosteriores.includes(v.num)) {
+                            aciertosInmediatos.push(v.num); 
+                            // Sumamos al contador global de fuerza
+                            contadorFuerza[v.num] = (contadorFuerza[v.num] || 0) + 1;
+                        }
+                    });
                 }
 
                 let html = `<div class="historial-numero">Base: ${item.numero.toString().padStart(2, '0')}</div>`;
                 
-                // Amarillos
                 html += `<div class="bolitas-grid-historial">`;
                 item.fractales.forEach(f => {
                     let isAcierto = aciertosFractal.includes(f.num) ? 'acierto' : '';
@@ -703,7 +711,6 @@
                 });
                 html += `</div>`;
 
-                // Verdes
                 html += `<div class="bolitas-grid-historial">`;
                 item.inmediatos.forEach(v => {
                     let isAcierto = aciertosInmediatos.includes(v.num) ? 'acierto' : '';
@@ -715,9 +722,56 @@
                 historialCont.appendChild(itemDiv);
             });
             
-            // Hacer scroll hacia abajo para ver lo más reciente
             const panelDer = document.getElementById('panel-historial');
             panelDer.scrollTop = panelDer.scrollHeight;
+
+            // ============================================================
+            // PROCESAR Y MOSTRAR FUERZA DE SALIDA (TOP 4 ROJOS)
+            // ============================================================
+            const panelFuerza = document.getElementById('panel-fuerza-container');
+            const bFuerza = document.getElementById('bolitas-fuerza');
+            
+            // Convertir el contador a un array y ordenar de mayor a menor
+            let arrayFuerza = Object.keys(contadorFuerza).map(num => {
+                return { num: parseInt(num), aciertos: contadorFuerza[num] };
+            });
+            arrayFuerza.sort((a, b) => b.aciertos - a.aciertos);
+            
+            // Tomar el Top 4
+            let topFuerza = arrayFuerza.slice(0, 4);
+
+            if (topFuerza.length > 0) {
+                panelFuerza.style.display = 'block';
+                bFuerza.innerHTML = '';
+                
+                let totalAciertosGlobales = arrayFuerza.reduce((acc, curr) => acc + curr.aciertos, 0);
+
+                topFuerza.forEach((item, index) => {
+                    // Calcular el porcentaje de incidencia
+                    let porcentaje = (item.aciertos / totalAciertosGlobales) * 100;
+                    let size = 35 + ((porcentaje / 100) * 40); 
+                    
+                    let bolita = document.createElement('div');
+                    bolita.className = 'bolita-fuerza';
+                    bolita.style.width = `${size}px`; 
+                    bolita.style.height = `${size}px`;
+                    bolita.style.fontSize = `${size * 0.35}px`;
+                    bolita.innerText = item.num.toString().padStart(2, '0');
+                    
+                    let span = document.createElement('span'); 
+                    span.className = 'porcentaje';
+                    span.innerText = `${porcentaje.toFixed(1)}%`; 
+                    bolita.appendChild(span);
+
+                    if (index === 0) {
+                        bolita.style.boxShadow = `0 0 30px #ff0000, inset 0 0 10px #fff`;
+                        bolita.style.border = '3px solid #fff';
+                    }
+                    bFuerza.appendChild(bolita);
+                });
+            } else {
+                panelFuerza.style.display = 'none';
+            }
         }
 
         window.onload = function() {
