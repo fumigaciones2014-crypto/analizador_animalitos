@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal de Atracción (Secuencias y Predicción)</title>
+    <title>JARVIS - Fractal (Secuencias y Potencial de Salida)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -71,7 +71,6 @@
         .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); transition: all 0.3s ease; position: relative; }
         .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); transition: all 0.3s ease; position: relative; }
         
-        /* Bolitas de Predicción y Aciertos */
         .bolita-prediccion { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ff0000; color: #fff; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); transition: all 0.3s ease; position: relative; }
         .bolita-acierto { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #b388ff; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(179, 136, 255, 0.8); transition: all 0.3s ease; position: relative; }
         
@@ -127,7 +126,7 @@
 <body>
 
     <div class="header-bar">
-        <h1>🎡 RULETA X N° (Historial y Predicción)</h1>
+        <h1>🎡 RULETA X N° (Predicción y Fuerza)</h1>
         <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
     </div>
 
@@ -163,7 +162,7 @@
                 <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
                 <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
                 <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
-                <p><span class="bullet" style="background:#b388ff;"></span> <span class="highlight-purple">Morado:</span> Números Acertados.</p>
+                <p><span class="bullet" style="background:#b388ff;"></span> <span class="highlight-purple">Morado:</span> Aciertos (Máx 8).</p>
                 <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Potencial de Salida.</p>
             </div>
 
@@ -175,15 +174,13 @@
                 <h4 style="color: #00ffcc; font-size: 0.95rem; margin-top: 5px;">Vecinos Inmediatos</h4>
                 <div class="bolitas-grid" id="bolitas-inmediatas"></div>
 
-                <!-- PANEL DE ACIERTOS PASADOS -->
                 <div id="panel-aciertos-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
-                    <h4 style="color: #b388ff; font-size: 0.95rem; margin-top: 5px;">Números Acertados (Máx 8)</h4>
+                    <h4 style="color: #b388ff; font-size: 0.95rem; margin-top: 5px;">Aciertos Confirmados</h4>
                     <div class="bolitas-grid" id="bolitas-aciertos"></div>
                 </div>
 
-                <!-- NUEVO PANEL DE POTENCIAL DE SALIDA (PREDICCIÓN FUTURA) -->
                 <div id="panel-prediccion-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
-                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida</h4>
+                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida (Futuro)</h4>
                     <div class="bolitas-grid" id="bolitas-prediccion"></div>
                     <span class="origen-fuerza" id="origen-prediccion-texto"></span>
                 </div>
@@ -623,6 +620,7 @@
                 historialCont.innerHTML = '';
             }
 
+            // Guardar base actual en el historial
             const yaExiste = historialSecuencia.some(h => h.num === numActual);
             if (!yaExiste) {
                 historialSecuencia.push({
@@ -638,7 +636,7 @@
             let contadorPrediccion = {};
             let origenPrediccion = {};
 
-            // 1. Renderizar Historial y evaluar ACIERTOS (Barrido hacia atrás)
+            // 1. Renderizar Historial y evaluar ACIERTOS PASADOS
             historialSecuencia.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'historial-item';
@@ -683,14 +681,15 @@
                 historialCont.appendChild(itemDiv);
             });
             
-            // 2. Calcular PREDICCIÓN FUTURA (Barrido de bases anteriores contra predicciones actuales)
+            // 2. Calcular POTENCIAL DE SALIDA (Predicción Futura)
             if (historialSecuencia.length > 1) {
+                // Tomamos las predicciones de la base actual
                 const prediccionesActuales = [
                     ...fractalesActuales.map(f => f.num),
                     ...inmediatosActuales.map(v => v.num)
                 ];
 
-                // Revisamos todas las bases anteriores
+                // Barrido hacia atrás: Revisamos las bases anteriores
                 for (let i = 0; i < historialSecuencia.length - 1; i++) {
                     const baseAnterior = historialSecuencia[i];
                     const numerosBaseAnterior = [
@@ -698,12 +697,12 @@
                         ...baseAnterior.inmediatos.map(v => v.num)
                     ];
 
-                    // Buscamos intersección con las predicciones actuales
+                    // Si un número de las predicciones actuales coincide con una base anterior, suma fuerza
                     prediccionesActuales.forEach(numPred => {
                         if (numerosBaseAnterior.includes(numPred)) {
                             contadorPrediccion[numPred] = (contadorPrediccion[numPred] || 0) + 1;
                             if (!origenPrediccion[numPred]) origenPrediccion[numPred] = [];
-                            origenPrediccion[numPred].push(`Base ${baseAnterior.num}`);
+                            origenPrediccion[numPred].push(`B${baseAnterior.num}`);
                         }
                     });
                 }
@@ -722,7 +721,7 @@
                 return { num: parseInt(num), aciertos: contadorAciertos[num] };
             });
             arrayAciertos.sort((a, b) => b.aciertos - a.aciertos);
-            let topAciertos = arrayAciertos.slice(0, 8); // Límite aumentado a 8
+            let topAciertos = arrayAciertos.slice(0, 8); // Límite 8
 
             if (topAciertos.length > 0) {
                 panelAciertos.style.display = 'block';
@@ -731,7 +730,7 @@
 
                 topAciertos.forEach((item, index) => {
                     let porcentaje = (item.aciertos / totalAciertos) * 100;
-                    let size = 30 + ((porcentaje / 100) * 30); // Un poco más pequeñas
+                    let size = 30 + ((porcentaje / 100) * 30); 
                     
                     let bolita = document.createElement('div');
                     bolita.className = 'bolita-acierto';
@@ -752,7 +751,7 @@
             }
 
             // ============================================================
-            // 4. MOSTRAR POTENCIAL DE SALIDA (PREDICCIÓN) - ROJO
+            // 4. MOSTRAR POTENCIAL DE SALIDA (PREDICCIÓN FUTURA) - ROJO
             // ============================================================
             const panelPrediccion = document.getElementById('panel-prediccion-container');
             const bPrediccion = document.getElementById('bolitas-prediccion');
