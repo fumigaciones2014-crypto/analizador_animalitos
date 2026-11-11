@@ -60,7 +60,7 @@
 
         /* ESTILOS DEL MODAL (OJITO) */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-        .modal-content { background-color: #1e1e1e; padding: 20px; border: 2px solid var(--btn-azul-claro); border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; position: relative; }
+        .modal-content { background-color: #1e1e1e; padding: 20px; border: 2px solid var(--btn-azul-claro); border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; position: relative; }
         .close-btn { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
         .close-btn:hover { color: white; }
         
@@ -69,6 +69,23 @@
         .texto-cadena { font-size: 18px; font-weight: bold; letter-spacing: 1px; }
         .btn-ir-historial { display: block; text-align: center; background-color: #006633; color: white; text-decoration: none; padding: 12px; border-radius: 5px; font-weight: bold; margin-top: 15px; border: none; width: 100%; cursor: pointer; }
         .btn-ir-historial:hover { background-color: #008844; }
+
+        /* NUEVOS ESTILOS PARA EL RADAR EN EL MODAL */
+        .seccion-radar { background-color: #111; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #333; }
+        .seccion-radar h3 { color: #b0bec5; font-size: 1rem; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #333; padding-bottom: 5px;}
+        .bolitas-grid-modal { display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        
+        .bolita-modal {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 50%; font-weight: bold; border: 2px solid #fff; position: relative;
+            transition: all 0.3s ease;
+        }
+        .bolita-amarilla { background-color: #ffcc00; color: #000; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); }
+        .bolita-verde { background-color: #00ffcc; color: #000; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); }
+        
+        .porcentaje-modal {
+            position: absolute; bottom: -20px; font-size: 0.8rem; color: #aaa; white-space: nowrap;
+        }
 
         /* MODAL DE SUERTE */
         #modal-suerte .modal-content { border-color: #4caf50; text-align: center; }
@@ -157,12 +174,23 @@
         <a id="footer-link-resultados" href="https://loteriadehoy.com/animalitos/resultados/" target="_blank">RESULTADOS</a>
     </footer>
 
-    <!-- MODAL DEL OJITO -->
+    <!-- MODAL DEL OJITO (MEJORADO CON RADAR) -->
     <div id="modal-ojo" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="cerrarModalOjo()">&times;</span>
             <h2 id="modal-ojo-titulo" style="color: #ffcc00; margin-bottom: 15px;">Análisis...</h2>
             <div id="modal-ojo-cuerpo"></div>
+            
+            <!-- Aquí inyectaremos el Radar Fractal -->
+            <div id="modal-radar-container" style="display: none;">
+                <div class="seccion-radar">
+                    <h3>🎯 Radar de Atracción Rápida (Ruleta X N°)</h3>
+                    <div id="radar-contenido">
+                        <!-- Se llena con JS -->
+                    </div>
+                </div>
+            </div>
+
             <button id="btn-ir-analisis" class="btn-ir-historial" onclick="irAHistorialAvanzado()">📈 Ver Gráfico Completo en Historial</button>
         </div>
     </div>
@@ -201,7 +229,7 @@
                 ]);
                 datosLotto = resLotto; datosGuacharo = resGua; datosMini = resMini;
                 aplicarFiltros();
-                verificarSuerteDisponible(); // Revisar si puede pedir suerte
+                verificarSuerteDisponible();
             } catch (error) {
                 console.error("Error cargando los JSON:", error);
             }
@@ -378,6 +406,121 @@
             return cadenas;
         }
 
+        // ============================================================
+        // NUEVA FUNCIÓN: MOTOR DEL RADAR (RULETA X N°)
+        // ============================================================
+        function calcularRadarRapido(datosLoteria, numeroObjetivo) {
+            // 1. Calcular Nodos y Aristas
+            const VENTANA = 5;
+            const nodos = {}; 
+            const adyacentes = {}; 
+
+            for(let i=0; i<100; i++) {
+                nodos[i] = { count: 0, id: i };
+                adyacentes[i] = {}; 
+            }
+
+            let historial = [];
+            datosLoteria.forEach(reg => {
+                if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
+                    historial.push(parseInt(reg.numero));
+                }
+            });
+
+            historial.forEach((num, index) => {
+                if (nodos[num]) nodos[num].count++;
+                for (let i = 1; i <= VENTANA; i++) {
+                    if (index + i < historial.length) {
+                        let nextNum = historial[index + i];
+                        adyacentes[num][nextNum] = (adyacentes[num][nextNum] || 0) + 1;
+                        adyacentes[nextNum][num] = (adyacentes[nextNum][num] || 0) + 1;
+                    }
+                }
+            });
+
+            // 2. Lógica 1: Top 4 Fractal (Fríos con alta atracción)
+            let recomendadosFractal = [];
+            if (numeroObjetivo !== null && adyacentes[numeroObjetivo]) {
+                let candidatos = [];
+                for (let adj in adyacentes[numeroObjetivo]) {
+                    let numAdj = parseInt(adj);
+                    let fuerzaConexion = adyacentes[numeroObjetivo][numAdj];
+                    let frecuenciaPropia = nodos[numAdj].count;
+                    
+                    // PuntajeFrio = 100 - frecuencia (a menor frecuencia, mayor puntaje)
+                    let puntajeFrio = 100 - frecuenciaPropia; 
+                    let puntaje = puntajeFrio + (fuerzaConexion * 5); 
+                    
+                    candidatos.push({ num: numAdj, puntaje: puntaje });
+                }
+                candidatos.sort((a, b) => b.puntaje - a.puntaje);
+                recomendadosFractal = candidatos.slice(0, 4);
+            }
+
+            // 3. Lógica 2: Vecinos Inmediatos (Modo Simple)
+            let recomendadosInmediatos = [];
+            let indicesApariciones = [];
+            historial.forEach((h, i) => { if (h === numeroObjetivo) indicesApariciones.push(i); });
+            
+            if (indicesApariciones.length > 0) {
+                let ultimas = indicesApariciones.slice(-5).reverse();
+                let conteoVecinos = {};
+                
+                ultimas.forEach(idx => {
+                    if (idx - 1 >= 0) { let n = historial[idx - 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx - 2 >= 0) { let n = historial[idx - 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx + 1 < historial.length) { let n = historial[idx + 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx + 2 < historial.length) { let n = historial[idx + 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                });
+
+                let candidatosInmediatos = [];
+                for (let num in conteoVecinos) {
+                    let count = conteoVecinos[num];
+                    let puntaje = count * 10; 
+                    candidatosInmediatos.push({ num: parseInt(num), puntaje: puntaje });
+                }
+                candidatosInmediatos.sort((a, b) => b.puntaje - a.puntaje);
+                recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
+            }
+
+            return { fractal: recomendadosFractal, inmediatos: recomendadosInmediatos };
+        }
+
+        // Función para dibujar las bolitas en el modal
+        function renderizarBolitasModal(candidatos, contenedor, claseCss) {
+            if (candidatos.length === 0) return;
+            
+            let sumaPuntajes = candidatos.reduce((acc, curr) => acc + curr.puntaje, 0);
+            const minSize = 40;
+            const maxSize = 80;
+
+            candidatos.forEach((rec, index) => {
+                let porcentaje = (rec.puntaje / sumaPuntajes) * 100;
+                let size = minSize + ((porcentaje / 100) * (maxSize - minSize));
+                if (size < minSize) size = minSize;
+
+                let bolita = document.createElement('div');
+                bolita.className = `bolita-modal ${claseCss}`;
+                bolita.style.width = `${size}px`;
+                bolita.style.height = `${size}px`;
+                bolita.style.fontSize = `${size * 0.35}px`;
+                bolita.innerText = rec.num.toString().padStart(2, '0');
+                
+                let spanPorcentaje = document.createElement('span');
+                spanPorcentaje.className = 'porcentaje-modal';
+                spanPorcentaje.innerText = `${porcentaje.toFixed(1)}%`;
+                bolita.appendChild(spanPorcentaje);
+
+                if (index === 0) {
+                    bolita.style.boxShadow = `0 0 25px ${claseCss === 'bolita-amarilla' ? '#ffcc00' : '#00ffcc'}, inset 0 0 10px #fff`;
+                    bolita.style.border = '3px solid #fff';
+                }
+
+                contenedor.appendChild(bolita);
+            });
+        }
+
+        // Modificación de la función abrirAnalisis
         function abrirAnalisis(numero, hora) {
             if (numero === '??') return alert("Sorteo sin número registrado.");
             let datos = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
@@ -385,6 +528,10 @@
             numParaHistorial = numero.toString(); 
             let resOrig = analizarNumeroIndividual(datos, numOrig);
             
+            // Limpiar contenedor del radar
+            document.getElementById('modal-radar-container').style.display = 'none';
+            document.getElementById('radar-contenido').innerHTML = '';
+
             if (resOrig.ultima === "No registrado") {
                 document.getElementById('modal-ojo-titulo').innerText = `Análisis para [${numOrig}]`;
                 document.getElementById('modal-ojo-cuerpo').innerHTML = `<p style="color:#ff5555;">Este número no tiene apariciones registradas en el historial actual.</p>`;
@@ -425,6 +572,39 @@
             html += `</div>`;
 
             document.getElementById('modal-ojo-cuerpo').innerHTML = html;
+
+            // ============================================================
+            // AQUI SE EJECUTA EL RADAR EN SEGUNDO PLANO
+            // ============================================================
+            let radarResultados = calcularRadarRapido(datos, numOrig);
+            
+            if (radarResultados.fractal.length > 0 || radarResultados.inmediatos.length > 0) {
+                document.getElementById('modal-radar-container').style.display = 'block';
+                let radarHtml = '';
+
+                // Bloque Fractal (Amarillos)
+                if (radarResultados.fractal.length > 0) {
+                    radarHtml += `<h4 style="color: #ffcc00; font-size: 0.9rem; margin-bottom: 5px;">Top 4 Fractal (Tendencia)</h4>`;
+                    radarHtml += `<div class="bolitas-grid-modal" id="radar-bolitas-fractal"></div>`;
+                }
+
+                // Bloque Inmediatos (Verdes)
+                if (radarResultados.inmediatos.length > 0) {
+                    radarHtml += `<h4 style="color: #00ffcc; font-size: 0.9rem; margin-top: 15px; margin-bottom: 5px;">Vecinos Inmediatos (Arrastre)</h4>`;
+                    radarHtml += `<div class="bolitas-grid-modal" id="radar-bolitas-inmediatas"></div>`;
+                }
+
+                document.getElementById('radar-contenido').innerHTML = radarHtml;
+
+                // Renderizar bolitas
+                if (radarResultados.fractal.length > 0) {
+                    renderizarBolitasModal(radarResultados.fractal, document.getElementById('radar-bolitas-fractal'), 'bolita-amarilla');
+                }
+                if (radarResultados.inmediatos.length > 0) {
+                    renderizarBolitasModal(radarResultados.inmediatos, document.getElementById('radar-bolitas-inmediatas'), 'bolita-verde');
+                }
+            }
+
             document.getElementById('modal-ojo').style.display = 'flex';
         }
 
