@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal de Atracción (Secuencias y Fuerza)</title>
+    <title>JARVIS - Fractal de Atracción (Secuencias y Predicción)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -60,6 +60,7 @@
         .leyenda-fractal .highlight-magenta { color: #ff00cc; font-weight: bold; }
         .leyenda-fractal .highlight-line { color: #ffd700; font-weight: bold; }
         .leyenda-fractal .highlight-red { color: #ff0000; font-weight: bold; }
+        .leyenda-fractal .highlight-purple { color: #b388ff; font-weight: bold; }
         .leyenda-fractal .bullet { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
         .panel-recomendados { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
@@ -69,10 +70,12 @@
 
         .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); transition: all 0.3s ease; position: relative; }
         .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); transition: all 0.3s ease; position: relative; }
-        .bolita-fuerza { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ff0000; color: #fff; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 0, 0, 0.8); transition: all 0.3s ease; position: relative; }
+        
+        /* Bolitas de Predicción y Aciertos */
+        .bolita-prediccion { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ff0000; color: #fff; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); transition: all 0.3s ease; position: relative; }
+        .bolita-acierto { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #b388ff; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(179, 136, 255, 0.8); transition: all 0.3s ease; position: relative; }
         
         .porcentaje { position: absolute; bottom: -20px; font-size: 0.75rem; color: #aaa; white-space: nowrap; }
-        
         .origen-fuerza { font-size: 0.75rem; color: #ff8888; margin-top: 10px; text-align: center; display: block; width: 100%; line-height: 1.2;}
 
         .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; min-width: 300px;}
@@ -124,7 +127,7 @@
 <body>
 
     <div class="header-bar">
-        <h1>🎡 RULETA X N° (Historial de Secuencias)</h1>
+        <h1>🎡 RULETA X N° (Historial y Predicción)</h1>
         <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
     </div>
 
@@ -160,7 +163,8 @@
                 <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
                 <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
                 <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
-                <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Fuerza de Salida.</p>
+                <p><span class="bullet" style="background:#b388ff;"></span> <span class="highlight-purple">Morado:</span> Números Acertados.</p>
+                <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Potencial de Salida.</p>
             </div>
 
             <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
@@ -171,10 +175,17 @@
                 <h4 style="color: #00ffcc; font-size: 0.95rem; margin-top: 5px;">Vecinos Inmediatos</h4>
                 <div class="bolitas-grid" id="bolitas-inmediatas"></div>
 
-                <div id="panel-fuerza-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
-                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Fuerza de Salida</h4>
-                    <div class="bolitas-grid" id="bolitas-fuerza"></div>
-                    <span class="origen-fuerza" id="origen-fuerza-texto"></span>
+                <!-- PANEL DE ACIERTOS PASADOS -->
+                <div id="panel-aciertos-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
+                    <h4 style="color: #b388ff; font-size: 0.95rem; margin-top: 5px;">Números Acertados (Máx 8)</h4>
+                    <div class="bolitas-grid" id="bolitas-aciertos"></div>
+                </div>
+
+                <!-- NUEVO PANEL DE POTENCIAL DE SALIDA (PREDICCIÓN FUTURA) -->
+                <div id="panel-prediccion-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
+                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida</h4>
+                    <div class="bolitas-grid" id="bolitas-prediccion"></div>
+                    <span class="origen-fuerza" id="origen-prediccion-texto"></span>
                 </div>
             </div>
         </div>
@@ -603,32 +614,31 @@
         }
 
         // ============================================================
-        // LÓGICA DE HISTORIAL Y FUERZA DE SALIDA (BARRIDO CORREGIDO)
+        // LÓGICA DE HISTORIAL, ACIERTOS Y PREDICCIÓN FUTURA
         // ============================================================
-        function actualizarHistorialYFuerza(numActual, fractales, inmediatos, todosLosNumeros) {
+        function actualizarHistorialYFuerza(numActual, fractalesActuales, inmediatosActuales, todosLosNumeros) {
             const historialCont = document.getElementById('historial-contenido');
             
-            // Si el historial está vacío, limpiamos el contenedor
             if (historialSecuencia.length === 0) {
                 historialCont.innerHTML = '';
             }
 
-            // Guardamos la nueva base en el historial (evitando duplicados exactos si se re-renderiza)
             const yaExiste = historialSecuencia.some(h => h.num === numActual);
             if (!yaExiste) {
                 historialSecuencia.push({
-                    num: numActual, // <--- CORREGIDO: Ahora es 'num', no 'numero'
-                    fractales: JSON.parse(JSON.stringify(fractales)),
-                    inmediatos: JSON.parse(JSON.stringify(inmediatos))
+                    num: numActual,
+                    fractales: JSON.parse(JSON.stringify(fractalesActuales)),
+                    inmediatos: JSON.parse(JSON.stringify(inmediatosActuales))
                 });
             }
 
             historialCont.innerHTML = '';
             
-            let contadorFuerza = {};
-            let origenFuerza = {}; 
+            let contadorAciertos = {};
+            let contadorPrediccion = {};
+            let origenPrediccion = {};
 
-            // 1. Renderizar Historial y evaluar aciertos (BARRIDO HACIA ADELANTE)
+            // 1. Renderizar Historial y evaluar ACIERTOS (Barrido hacia atrás)
             historialSecuencia.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'historial-item';
@@ -636,24 +646,19 @@
                 let aciertosFractal = [];
                 let aciertosInmediatos = [];
 
-                // Lógica de barrido: comparar esta base contra TODAS las que vinieron después
                 if (index < historialSecuencia.length - 1) {
                     const numerosPosteriores = historialSecuencia.slice(index + 1).map(h => h.num);
                     
                     item.fractales.forEach(f => { 
                         if (numerosPosteriores.includes(f.num)) {
                             aciertosFractal.push(f.num); 
-                            contadorFuerza[f.num] = (contadorFuerza[f.num] || 0) + 1;
-                            if(!origenFuerza[f.num]) origenFuerza[f.num] = [];
-                            origenFuerza[f.num].push(`Base ${item.num}`);
+                            contadorAciertos[f.num] = (contadorAciertos[f.num] || 0) + 1;
                         }
                     });
                     item.inmediatos.forEach(v => { 
                         if (numerosPosteriores.includes(v.num)) {
                             aciertosInmediatos.push(v.num); 
-                            contadorFuerza[v.num] = (contadorFuerza[v.num] || 0) + 1;
-                            if(!origenFuerza[v.num]) origenFuerza[v.num] = [];
-                            origenFuerza[v.num].push(`Base ${item.num}`);
+                            contadorAciertos[v.num] = (contadorAciertos[v.num] || 0) + 1;
                         }
                     });
                 }
@@ -678,36 +683,99 @@
                 historialCont.appendChild(itemDiv);
             });
             
+            // 2. Calcular PREDICCIÓN FUTURA (Barrido de bases anteriores contra predicciones actuales)
+            if (historialSecuencia.length > 1) {
+                const prediccionesActuales = [
+                    ...fractalesActuales.map(f => f.num),
+                    ...inmediatosActuales.map(v => v.num)
+                ];
+
+                // Revisamos todas las bases anteriores
+                for (let i = 0; i < historialSecuencia.length - 1; i++) {
+                    const baseAnterior = historialSecuencia[i];
+                    const numerosBaseAnterior = [
+                        ...baseAnterior.fractales.map(f => f.num),
+                        ...baseAnterior.inmediatos.map(v => v.num)
+                    ];
+
+                    // Buscamos intersección con las predicciones actuales
+                    prediccionesActuales.forEach(numPred => {
+                        if (numerosBaseAnterior.includes(numPred)) {
+                            contadorPrediccion[numPred] = (contadorPrediccion[numPred] || 0) + 1;
+                            if (!origenPrediccion[numPred]) origenPrediccion[numPred] = [];
+                            origenPrediccion[numPred].push(`Base ${baseAnterior.num}`);
+                        }
+                    });
+                }
+            }
+
             const panelDer = document.getElementById('panel-historial');
             panelDer.scrollTop = panelDer.scrollHeight;
 
             // ============================================================
-            // 2. MOSTRAR FUERZA DE SALIDA (TOP 4 ROJOS)
+            // 3. MOSTRAR ACIERTOS PASADOS (MÁX 8) - MORADO
             // ============================================================
-            const panelFuerza = document.getElementById('panel-fuerza-container');
-            const bFuerza = document.getElementById('bolitas-fuerza');
-            const origenTexto = document.getElementById('origen-fuerza-texto');
+            const panelAciertos = document.getElementById('panel-aciertos-container');
+            const bAciertos = document.getElementById('bolitas-aciertos');
             
-            let arrayFuerza = Object.keys(contadorFuerza).map(num => {
-                return { num: parseInt(num), aciertos: contadorFuerza[num] };
+            let arrayAciertos = Object.keys(contadorAciertos).map(num => {
+                return { num: parseInt(num), aciertos: contadorAciertos[num] };
             });
-            arrayFuerza.sort((a, b) => b.aciertos - a.aciertos);
-            
-            let topFuerza = arrayFuerza.slice(0, 4);
+            arrayAciertos.sort((a, b) => b.aciertos - a.aciertos);
+            let topAciertos = arrayAciertos.slice(0, 8); // Límite aumentado a 8
 
-            if (topFuerza.length > 0) {
-                panelFuerza.style.display = 'block';
-                bFuerza.innerHTML = '';
-                
-                let totalAciertosGlobales = arrayFuerza.reduce((acc, curr) => acc + curr.aciertos, 0);
-                let textoOrigen = "Detectados en: " + topFuerza.map(t => `${t.num.toString().padStart(2,'0')} (${origenFuerza[t.num].join(', ')})`).join(' | ');
+            if (topAciertos.length > 0) {
+                panelAciertos.style.display = 'block';
+                bAciertos.innerHTML = '';
+                let totalAciertos = arrayAciertos.reduce((acc, curr) => acc + curr.aciertos, 0);
 
-                topFuerza.forEach((item, index) => {
-                    let porcentaje = (item.aciertos / totalAciertosGlobales) * 100;
-                    let size = 35 + ((porcentaje / 100) * 40); 
+                topAciertos.forEach((item, index) => {
+                    let porcentaje = (item.aciertos / totalAciertos) * 100;
+                    let size = 30 + ((porcentaje / 100) * 30); // Un poco más pequeñas
                     
                     let bolita = document.createElement('div');
-                    bolita.className = 'bolita-fuerza';
+                    bolita.className = 'bolita-acierto';
+                    bolita.style.width = `${size}px`; 
+                    bolita.style.height = `${size}px`;
+                    bolita.style.fontSize = `${size * 0.4}px`;
+                    bolita.innerText = item.num.toString().padStart(2, '0');
+                    
+                    let span = document.createElement('span'); 
+                    span.className = 'porcentaje';
+                    span.innerText = `${porcentaje.toFixed(1)}%`; 
+                    bolita.appendChild(span);
+
+                    bAciertos.appendChild(bolita);
+                });
+            } else {
+                panelAciertos.style.display = 'none';
+            }
+
+            // ============================================================
+            // 4. MOSTRAR POTENCIAL DE SALIDA (PREDICCIÓN) - ROJO
+            // ============================================================
+            const panelPrediccion = document.getElementById('panel-prediccion-container');
+            const bPrediccion = document.getElementById('bolitas-prediccion');
+            const origenTexto = document.getElementById('origen-prediccion-texto');
+            
+            let arrayPrediccion = Object.keys(contadorPrediccion).map(num => {
+                return { num: parseInt(num), fuerza: contadorPrediccion[num] };
+            });
+            arrayPrediccion.sort((a, b) => b.fuerza - a.fuerza);
+            let topPrediccion = arrayPrediccion.slice(0, 4); // Top 4 para predicción
+
+            if (topPrediccion.length > 0) {
+                panelPrediccion.style.display = 'block';
+                bPrediccion.innerHTML = '';
+                let totalFuerza = arrayPrediccion.reduce((acc, curr) => acc + curr.fuerza, 0);
+                let textoOrigen = "Fuerza detectada en: " + topPrediccion.map(t => `${t.num.toString().padStart(2,'0')} (${origenPrediccion[t.num].join(', ')})`).join(' | ');
+
+                topPrediccion.forEach((item, index) => {
+                    let porcentaje = (item.fuerza / totalFuerza) * 100;
+                    let size = 40 + ((porcentaje / 100) * 40); 
+                    
+                    let bolita = document.createElement('div');
+                    bolita.className = 'bolita-prediccion';
                     bolita.style.width = `${size}px`; 
                     bolita.style.height = `${size}px`;
                     bolita.style.fontSize = `${size * 0.35}px`;
@@ -722,11 +790,11 @@
                         bolita.style.boxShadow = `0 0 30px #ff0000, inset 0 0 10px #fff`;
                         bolita.style.border = '3px solid #fff';
                     }
-                    bFuerza.appendChild(bolita);
+                    bPrediccion.appendChild(bolita);
                 });
                 origenTexto.innerText = textoOrigen;
             } else {
-                panelFuerza.style.display = 'none';
+                panelPrediccion.style.display = 'none';
             }
         }
 
