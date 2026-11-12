@@ -21,19 +21,19 @@
         "fecha": "2026-02-02",
         "hora": "11:00 AM",
         "animal": "PATO",
-        "numero": "??"
+        "numero": "57"
     },
     {
         "fecha": "2026-02-02",
         "hora": "12:00 PM",
         "animal": "GRILLO",
-        "numero": "??"
+        "numero": "54"
     },
     {
         "fecha": "2026-02-02",
         "hora": "01:00 PM",
         "animal": "LOBO",
-        "numero": "??"
+        "numero": "66"
     },
     {
         "fecha": "2026-02-02",
@@ -51,13 +51,13 @@
         "fecha": "2026-02-02",
         "hora": "04:00 PM",
         "animal": "PUERCOESPIN",
-        "numero": "??"
+        "numero": "48"
     },
     {
         "fecha": "2026-02-02",
         "hora": "05:00 PM",
         "animal": "TIBURON",
-        "numero": "??"
+        "numero": "56"
     },
     {
         "fecha": "2026-02-02",
@@ -69,7 +69,7 @@
         "fecha": "2026-02-02",
         "hora": "07:00 PM",
         "animal": "CANARIO",
-        "numero": "??"
+        "numero": "50"
     },
     {
         "fecha": "2026-02-03",
@@ -81,19 +81,19 @@
         "fecha": "2026-02-03",
         "hora": "09:00 AM",
         "animal": "MARIPOSA",
-        "numero": "??"
+        "numero": "43"
     },
     {
         "fecha": "2026-02-03",
         "hora": "10:00 AM",
         "animal": "GAVILAN",
-        "numero": "??"
+        "numero": "64"
     },
     {
         "fecha": "2026-02-03",
         "hora": "11:00 AM",
         "animal": "PANTERA",
-        "numero": "??"
+        "numero": "59"
     },
     {
         "fecha": "2026-02-03",
@@ -111,7 +111,7 @@
         "fecha": "2026-02-03",
         "hora": "02:00 PM",
         "animal": "PELICANO",
-        "numero": "??"
+        "numero": "51"
     },
     {
         "fecha": "2026-02-03",
@@ -129,7 +129,7 @@
         "fecha": "2026-02-03",
         "hora": "05:00 PM",
         "animal": "TORTUGA",
-        "numero": "??"
+        "numero": "37"
     },
     {
         "fecha": "2026-02-03",
@@ -141,7 +141,7 @@
         "fecha": "2026-02-03",
         "hora": "07:00 PM",
         "animal": "BUFALO",
-        "numero": "??"
+        "numero": "38"
     },
     {
         "fecha": "2026-02-04",
@@ -153,19 +153,19 @@
         "fecha": "2026-02-04",
         "hora": "09:00 AM",
         "animal": "PELICANO",
-        "numero": "??"
+        "numero": "51"
     },
     {
         "fecha": "2026-02-04",
         "hora": "10:00 AM",
         "animal": "CONEJO",
-        "numero": "??"
+        "numero": "69"
     },
     {
         "fecha": "2026-02-04",
         "hora": "11:00 AM",
         "animal": "PULPO",
-        "numero": "??"
+        "numero": "52"
     },
     {
         "fecha": "2026-02-04",
@@ -177,7 +177,7 @@
         "fecha": "2026-02-04",
         "hora": "01:00 PM",
         "animal": "CARACOL",
-        "numero": "??"
+        "numero": "53"
     },
     {
         "fecha": "2026-02-04",
@@ -189,7 +189,7 @@
         "fecha": "2026-02-04",
         "hora": "03:00 PM",
         "animal": "TIBURON",
-        "numero": "??"
+        "numero": "56"
     },
     {
         "fecha": "2026-02-04",
@@ -201,7 +201,7 @@
         "fecha": "2026-02-04",
         "hora": "05:00 PM",
         "animal": "PUMA",
-        "numero": "??"
+        "numero": "46"
     },
     {
         "fecha": "2026-02-04",
@@ -219,7 +219,7 @@
         "fecha": "2026-02-05",
         "hora": "08:00 AM",
         "animal": "PELICANO",
-        "numero": "??"
+        "numero": "51"
     },
     {
         "fecha": "2026-02-05",
@@ -243,37 +243,37 @@
         "fecha": "2026-02-05",
         "hora": "12:00 PM",
         "animal": "CANGURO",
-        "numero": "??"
+        "numero": "41"
     },
     {
         "fecha": "2026-02-05",
         "hora": "01:00 PM",
         "animal": "PATO",
-        "numero": "??"
+        "numero": "57"
     },
     {
         "fecha": "2026-02-05",
         "hora": "02:00 PM",
         "animal": "CANARIO",
-        "numero": "??"
+        "numero": "50"
     },
     {
         "fecha": "2026-02-05",
         "hora": "03:00 PM",
         "animal": "TURPIAL",
-        "numero": "??"
+        "numero": "74"
     },
     {
         "fecha": "2026-02-05",
         "hora": "04:00 PM",
         "animal": "CARACOL",
-        "numero": "??"
+        "numero": "53"
     },
     {
         "fecha": "2026-02-05",
         "hora": "05:00 PM",
         "animal": "CACHICAMO",
-        "numero": "??"
+        "numero": "62"
     },
     {
         "fecha": "2026-02-05",
@@ -303,7 +303,7 @@
         "fecha": "2026-02-06",
         "hora": "10:00 AM",
         "animal": "GRILLO",
-        "numero": "??"
+        "numero": "54"
     },
     {
         "fecha": "2026-02-06",
@@ -315,25 +315,25 @@
         "fecha": "2026-02-06",
         "hora": "12:00 PM",
         "animal": "BISONTE",
-        "numero": "??"
+        "numero": "70"
     },
     {
         "fecha": "2026-02-06",
         "hora": "01:00 PM",
         "animal": "PANDA",
-        "numero": "??"
+        "numero": "61"
     },
     {
         "fecha": "2026-02-06",
         "hora": "02:00 PM",
         "animal": "CHIGUIRE",
-        "numero": "??"
+        "numero": "44"
     },
     {
         "fecha": "2026-02-06",
         "hora": "03:00 PM",
         "animal": "PELICANO",
-        "numero": "??"
+        "numero": "51"
     },
     {
         "fecha": "2026-02-06",
@@ -15183,7 +15183,7 @@
         "fecha": "2026-11-10",
         "hora": "04:00 PM",
         "animal": "OSOHORMIGUERO",
-        "numero": "??"
+        "numero": "55"
     },
     {
         "fecha": "2026-11-10",
