@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal (Predicción y Deuda Estadística)</title>
+    <title>JARVIS - Fractal Galaxia (Predicción y Deuda Estadística)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -130,7 +130,7 @@
 <body>
 
     <div class="header-bar">
-        <h1>🎡 RULETA X N° (Predicción y Deuda Estadística)</h1>
+        <h1>🌀 GALAXIA FRACTAL (Predicción y Deuda Estadística)</h1>
         <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
     </div>
 
@@ -159,11 +159,11 @@
     <div class="canvas-container" id="canvas-container">
         <div class="panel-izquierdo">
             <div class="leyenda-fractal">
-                <h4>Guía de Doble Capa</h4>
-                <p><strong>Centro (Fríos):</strong> Alta presión estadística.</p>
-                <p><strong>Periferia (Calientes):</strong> Números ya gastados.</p>
-                <p><strong>Líneas Verdes:</strong> Atracción histórica.</p>
-                <p><span class="bullet" style="background:#ffd700;"></span> <span class="highlight-line">Línea Gruesa:</span> Secuencia de Búsqueda.</p>
+                <h4>Guía de Galaxia Espiral</h4>
+                <p><strong>Centro (Fríos):</strong> Números pequeños, poca frecuencia, "peso" bajo.</p>
+                <p><strong>Periferia (Calientes):</strong> Números grandes, alta frecuencia, en racha.</p>
+                <p><strong>Espiral:</strong> Los números viajan del centro (pasado) a la periferia (futuro).</p>
+                <p><span class="bullet" style="background:#ffd700;"></span> <span class="highlight-line">Línea Gruesa:</span> Secuencia de Búsqueda (Rastro de cometa).</p>
                 <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
                 <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
                 <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
@@ -262,19 +262,12 @@
             if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
         }
 
-        // ============================================================
-        // NUEVA LÓGICA DE INPUT: Dispara solo al presionar Coma
-        // ============================================================
         document.getElementById('input-numero').addEventListener('input', function(e) {
             if (modoSecuenciaActivo) {
                 const valor = e.target.value;
-                
-                // Condición: Si el último caracter ingresado es una coma
                 if (valor.endsWith(',')) {
                     if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
-                    // Pequeño delay para que el usuario termine de escribir si pegó texto
                     temporizadorSecuencia = setTimeout(() => {
-                        // Limpiamos la coma final para procesar el número
                         let textoLimpio = valor.slice(0, -1).trim();
                         if (textoLimpio !== '') {
                             generarMapaFractal();
@@ -424,10 +417,13 @@
             } catch (error) {
                 console.error(error); textResult.style.display = 'block';
                 textResult.innerHTML = `<p class="mensaje-error">Error al cargar los datos. Recargando...</p>`;
-                manejarErrorGlobal(); // Llamada al salvavidas
+                manejarErrorGlobal();
             }
         }
 
+        // ============================================================
+        // NUEVA LÓGICA DE MAPA FRACTAL (GALAXIA ESPIRAL)
+        // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
             const canvasContainer = document.getElementById('canvas-container');
@@ -437,9 +433,7 @@
             
             if (inputVal === '') { alert("Ingresa al menos un número para generar el mapa."); return; }
 
-            // Limpiamos comas al final para el procesamiento
             let inputLimpio = inputVal.replace(/,\s*$/, '');
-
             let numerosBusqueda = inputLimpio.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
             if (numerosBusqueda.length === 0) { alert("No se detectaron números válidos (0-99)."); return; }
 
@@ -519,35 +513,75 @@
                 actualizarPanelIzquierdo(numeroPrincipal, recomendadosFractal, recomendadosInmediatos);
                 actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
 
-                const centroX = width / 2; const centroY = height / 2; const radioMax = Math.min(width, height) / 2 - 40;
-                const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
+                // =======================================================
+                // LÓGICA DE DIBUJO GALAXIA ESPIRAL
+                // =======================================================
+                
+                const centroX = width / 2; 
+                const centroY = height / 2; 
+                const radioMax = Math.min(width, height) / 2 - 60; // Margen para que no se salgan
 
+                // Ordenamos los nodos por frecuencia (los que menos salen primero)
+                // Esto asegura que los "fríos" estén en el centro.
+                const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
+                const totalNodos = numerosOrdenados.length;
+                
+                // Ángulo Dorado (137.5 grados en radianes) para la espiral de Fibonacci
+                const anguloDorado = 137.5 * (Math.PI / 180); 
+
+                // Asignar posición y tamaño
                 numerosOrdenados.forEach((nodo, index) => {
-                    let ratio = index / numerosOrdenados.length; let radio = ratio * radioMax;
-                    let angulo = index * 137.5 * (Math.PI / 180); 
+                    // El radio crece con el índice. Los primeros (fríos) están cerca del centro.
+                    let ratio = index / totalNodos; 
+                    let radio = Math.pow(ratio, 0.8) * radioMax; // pow para que el centro sea más denso
+                    
+                    // Ángulo espiral
+                    let angulo = index * anguloDorado; 
+                    
                     nodo.x = centroX + Math.cos(angulo) * radio;
                     nodo.y = centroY + Math.sin(angulo) * radio;
+                    
+                    // Tamaño: Fríos pequeños (min 8), Calientes grandes (max 45)
+                    let frecuenciaNormalizada = Math.min(nodo.count / 20, 1); // Asumiendo que 20+ salidas es muy caliente
+                    nodo.size = 8 + (frecuenciaNormalizada * 37); 
                 });
 
-                ctx.clearRect(0, 0, width, height); ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, width, height);
+                ctx.clearRect(0, 0, width, height); 
+                ctx.fillStyle = '#050505'; // Fondo muy oscuro, casi negro
+                ctx.fillRect(0, 0, width, height);
 
+                // 1. Dibujar Aristas (Líneas de conexión)
                 ctx.lineWidth = 0.5;
                 for (let key in aristas) {
-                    let [n1, n2] = key.split('-').map(Number); let weight = aristas[key];
+                    let [n1, n2] = key.split('-').map(Number); 
+                    let weight = aristas[key];
                     if (nodos[n1] && nodos[n2]) {
-                        let alpha = Math.min(weight / 10, 0.5); 
+                        let alpha = Math.min(weight / 15, 0.4); 
+                        
+                        // Si la línea involucra un número buscado, la hacemos brillante
                         if (numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2)) {
-                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.2})`; ctx.lineWidth = 1.5;
+                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.3})`; 
+                            ctx.lineWidth = 1.5;
                         } else {
-                            ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; ctx.lineWidth = 0.5;
+                            // Líneas normales: verdosas tenues
+                            ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; 
+                            ctx.lineWidth = 0.5;
                         }
-                        ctx.beginPath(); ctx.moveTo(nodos[n1].x, nodos[n1].y); ctx.lineTo(nodos[n2].x, nodos[n2].y); ctx.stroke();
+                        ctx.beginPath(); 
+                        ctx.moveTo(nodos[n1].x, nodos[n1].y); 
+                        ctx.lineTo(nodos[n2].x, nodos[n2].y); 
+                        ctx.stroke();
                     }
                 }
 
+                // 2. Dibujar la Secuencia de Búsqueda (Rastro de Cometa)
                 if (numerosBusqueda.length > 1) {
-                    ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-                    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 15;
+                    ctx.strokeStyle = '#ffd700'; 
+                    ctx.lineWidth = 6; 
+                    ctx.lineCap = 'round'; 
+                    ctx.lineJoin = 'round';
+                    ctx.shadowColor = '#ffd700'; 
+                    ctx.shadowBlur = 20;
                     ctx.beginPath();
                     for (let i = 0; i < numerosBusqueda.length; i++) {
                         let num = numerosBusqueda[i];
@@ -556,33 +590,57 @@
                             else ctx.lineTo(nodos[num].x, nodos[num].y);
                         }
                     }
-                    ctx.stroke(); ctx.shadowBlur = 0; ctx.lineWidth = 1;
+                    ctx.stroke(); 
+                    ctx.shadowBlur = 0; 
+                    ctx.lineWidth = 1;
                 }
 
+                // 3. Dibujar los Nodos (Esferas)
                 numerosOrdenados.forEach(nodo => {
-                    let size = 15 + (nodo.count / 5); 
+                    let size = nodo.size;
                     let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
                     let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
                     let isBusqueda = numerosBusqueda.includes(nodo.id);
 
-                    ctx.beginPath(); ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
+                    ctx.beginPath(); 
+                    ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
                     
-                    if (isBusqueda) {
-                        ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 3;
-                    } else if (isFractal) {
-                        ctx.fillStyle = `#ffcc00`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
-                    } else if (isInmediato) {
-                        ctx.fillStyle = `#00ffcc`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
-                    } else {
-                        let intensity = Math.min(nodo.count * 5, 255);
-                        ctx.fillStyle = nodo.count === 0 ? 'rgba(30, 30, 30, 0.8)' : `rgba(50, 50, 50, 0.8)`;
-                        ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`; ctx.lineWidth = 2;
-                    }
-                    ctx.fill(); ctx.stroke();
+                    // Configuración de brillo (Glow)
+                    ctx.shadowBlur = 0;
+                    ctx.shadowColor = 'transparent';
 
+                    if (isBusqueda) {
+                        ctx.fillStyle = `rgba(255, 0, 204, 0.95)`; 
+                        ctx.strokeStyle = `#fff`; 
+                        ctx.lineWidth = 3;
+                        ctx.shadowColor = '#ff00cc'; ctx.shadowBlur = 25;
+                    } else if (isFractal) {
+                        ctx.fillStyle = `#ffcc00`; 
+                        ctx.strokeStyle = `#fff`; 
+                        ctx.lineWidth = 2;
+                        ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 15;
+                    } else if (isInmediato) {
+                        ctx.fillStyle = `#00ffcc`; 
+                        ctx.strokeStyle = `#fff`; 
+                        ctx.lineWidth = 2;
+                        ctx.shadowColor = '#00ffcc'; ctx.shadowBlur = 15;
+                    } else {
+                        // Nodos normales: más brillantes si son más "calientes" (grandes)
+                        let brillo = Math.min(nodo.count * 10, 150);
+                        ctx.fillStyle = nodo.count === 0 ? 'rgba(20, 20, 20, 0.9)' : `rgba(${brillo}, ${brillo}, ${brillo}, 0.9)`;
+                        ctx.strokeStyle = `rgba(100, 100, 100, 0.5)`; 
+                        ctx.lineWidth = 1;
+                    }
+                    
+                    ctx.fill(); 
+                    ctx.stroke();
+
+                    // Texto del número
+                    ctx.shadowBlur = 0; // Quitar sombra al texto para que sea legible
                     ctx.fillStyle = (isFractal || isInmediato || isBusqueda) ? '#000' : '#fff'; 
                     ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
-                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.textAlign = 'center'; 
+                    ctx.textBaseline = 'middle';
                     let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
                     ctx.fillText(textNum, nodo.x, nodo.y);
                 });
@@ -590,29 +648,21 @@
             } catch (error) {
                 console.error(error); 
                 alert("Ha ocurrido un error inesperado al generar el mapa. El sistema se reiniciará para proteger la integridad de los datos.");
-                manejarErrorGlobal(); // Llamada al salvavidas
+                manejarErrorGlobal();
             }
         }
 
-        // ============================================================
-        // FUNCIÓN SALVAVIDAS: Manejo de Errores Global
-        // ============================================================
         function manejarErrorGlobal() {
-            // Intentamos recargar la página para ver si el error es transitorio
             setTimeout(() => {
-                // Usamos una variable de sesión para contar cuántas veces hemos intentado recargar
                 let intentos = parseInt(sessionStorage.getItem('jarvis_reload_attempts') || '0');
-                
                 if (intentos < 1) {
-                    // Primer intento: Recargar la página
                     sessionStorage.setItem('jarvis_reload_attempts', intentos + 1);
                     window.location.reload();
                 } else {
-                    // Segundo intento fallido: Enviar al inicio y limpiar la sesión
                     sessionStorage.removeItem('jarvis_reload_attempts');
-                    window.location.href = 'index.html'; // Asume que index.html está en la misma carpeta
+                    window.location.href = 'index.html';
                 }
-            }, 1000); // Espera 1 segundo para que el usuario lea el error
+            }, 1000);
         }
 
         function actualizarPanelIzquierdo(numActual, fractales, inmediatos) {
@@ -820,8 +870,6 @@
         window.onload = function() {
             vistaActual = 'lotto';
             dibujarVistaActual();
-            
-            // Limpiamos el contador de errores al cargar la página exitosamente
             sessionStorage.removeItem('jarvis_reload_attempts');
         };
     </script>
