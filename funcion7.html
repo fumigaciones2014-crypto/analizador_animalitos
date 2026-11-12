@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Fractal Galaxia (Predicción y Deuda Estadística)</title>
+    <title>JARVIS - Espiral Fractal (Predicción y Deuda Estadística)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -130,7 +130,7 @@
 <body>
 
     <div class="header-bar">
-        <h1>🌀 GALAXIA FRACTAL (Predicción y Deuda Estadística)</h1>
+        <h1>🌀 ESPIRAL FRACTAL (Predicción y Deuda Estadística)</h1>
         <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
     </div>
 
@@ -143,7 +143,6 @@
         </select>
 
         <label>Número(s):</label>
-        <!-- Placeholder actualizado para indicar el uso de comas -->
         <input type="text" id="input-numero" placeholder="Ej: 26, 33, 31," maxlength="50">
         
         <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar Vecinos</button>
@@ -159,9 +158,9 @@
     <div class="canvas-container" id="canvas-container">
         <div class="panel-izquierdo">
             <div class="leyenda-fractal">
-                <h4>Guía de Galaxia Espiral</h4>
-                <p><strong>Centro (Fríos):</strong> Números pequeños, poca frecuencia, "peso" bajo.</p>
-                <p><strong>Periferia (Calientes):</strong> Números grandes, alta frecuencia, en racha.</p>
+                <h4>Guía de Espiral Fractal</h4>
+                <p><strong>Centro (Fríos):</strong> Números pequeños, alta presión estadística.</p>
+                <p><strong>Periferia (Calientes):</strong> Números grandes, en racha, ya gastados.</p>
                 <p><strong>Espiral:</strong> Los números viajan del centro (pasado) a la periferia (futuro).</p>
                 <p><span class="bullet" style="background:#ffd700;"></span> <span class="highlight-line">Línea Gruesa:</span> Secuencia de Búsqueda (Rastro de cometa).</p>
                 <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
@@ -422,7 +421,7 @@
         }
 
         // ============================================================
-        // NUEVA LÓGICA DE MAPA FRACTAL (GALAXIA ESPIRAL)
+        // NUEVA LÓGICA DE MAPA FRACTAL (ESPIRAL DE FERMAT)
         // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
@@ -514,56 +513,86 @@
                 actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
 
                 // =======================================================
-                // LÓGICA DE DIBUJO GALAXIA ESPIRAL
+                // DIBUJO DE LA ESPIRAL (Basado en la imagen de referencia)
                 // =======================================================
                 
                 const centroX = width / 2; 
                 const centroY = height / 2; 
-                const radioMax = Math.min(width, height) / 2 - 60; // Margen para que no se salgan
+                const radioMax = Math.min(width, height) / 2 - 50; 
 
-                // Ordenamos los nodos por frecuencia (los que menos salen primero)
-                // Esto asegura que los "fríos" estén en el centro.
-                const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
-                const totalNodos = numerosOrdenados.length;
+                // Crear una lista de todos los números posibles (Lotto: 0 al 36 + "00")
+                // Para Guacharo son más, pero el algoritmo se adapta.
+                let numerosUniverso = [];
+                if (vistaActual === 'lotto') {
+                    numerosUniverso = Array.from({length: 37}, (_, i) => i); // 0 al 36
+                } else {
+                    // Para Guacharo asumimos un rango más amplio, o usamos los que existan en los datos
+                    numerosUniverso = Object.keys(nodos).map(Number).sort((a,b) => a-b);
+                }
+
+                // Ordenamos los números para que la espiral tenga sentido (por frecuencia, los más fríos primero)
+                numerosUniverso.sort((a, b) => {
+                    let freqA = nodos[a] ? nodos[a].count : 0;
+                    let freqB = nodos[b] ? nodos[b].count : 0;
+                    return freqA - freqB;
+                });
+
+                const totalNodos = numerosUniverso.length;
                 
-                // Ángulo Dorado (137.5 grados en radianes) para la espiral de Fibonacci
+                // Ángulo Dorado para la espiral perfecta (137.5 grados en radianes)
                 const anguloDorado = 137.5 * (Math.PI / 180); 
 
                 // Asignar posición y tamaño
-                numerosOrdenados.forEach((nodo, index) => {
-                    // El radio crece con el índice. Los primeros (fríos) están cerca del centro.
+                numerosUniverso.forEach((num, index) => {
+                    if (!nodos[num]) return; // Si el número no existe en los datos, lo saltamos
+
+                    // Fórmula de Espiral de Fermat: R = c * sqrt(n)
+                    // Esto asegura que los puntos se distribuyan uniformemente en el área del círculo
                     let ratio = index / totalNodos; 
-                    let radio = Math.pow(ratio, 0.8) * radioMax; // pow para que el centro sea más denso
+                    let radio = Math.sqrt(ratio) * radioMax; 
                     
-                    // Ángulo espiral
                     let angulo = index * anguloDorado; 
                     
-                    nodo.x = centroX + Math.cos(angulo) * radio;
-                    nodo.y = centroY + Math.sin(angulo) * radio;
+                    nodos[num].x = centroX + Math.cos(angulo) * radio;
+                    nodos[num].y = centroY + Math.sin(angulo) * radio;
                     
-                    // Tamaño: Fríos pequeños (min 8), Calientes grandes (max 45)
-                    let frecuenciaNormalizada = Math.min(nodo.count / 20, 1); // Asumiendo que 20+ salidas es muy caliente
-                    nodo.size = 8 + (frecuenciaNormalizada * 37); 
+                    // Tamaño Armónico: Crece del centro a la periferia, pero con un límite
+                    // Queremos que los del centro sean pequeños y los del borde un poco más grandes
+                    let frecuenciaNormalizada = Math.min(nodos[num].count / 15, 1); 
+                    
+                    // Tamaño base (min 6, max 28) - Ajustado para que no se vean gigantes
+                    let baseSize = 6 + (frecuenciaNormalizada * 12); 
+                    
+                    // Ajuste extra para Lotto: los números del 0-36 deben ser legibles
+                    if (vistaActual === 'lotto') {
+                        baseSize = Math.max(baseSize, 14); // Tamaño mínimo legible
+                    }
+                    
+                    nodos[num].size = baseSize;
                 });
 
                 ctx.clearRect(0, 0, width, height); 
-                ctx.fillStyle = '#050505'; // Fondo muy oscuro, casi negro
+                ctx.fillStyle = '#050505'; // Fondo muy oscuro
                 ctx.fillRect(0, 0, width, height);
 
                 // 1. Dibujar Aristas (Líneas de conexión)
+                // Para evitar el desastre visual del centro, solo dibujamos líneas de alta frecuencia o que involucren al objetivo
                 ctx.lineWidth = 0.5;
                 for (let key in aristas) {
                     let [n1, n2] = key.split('-').map(Number); 
                     let weight = aristas[key];
-                    if (nodos[n1] && nodos[n2]) {
-                        let alpha = Math.min(weight / 15, 0.4); 
+                    
+                    // FILTRO: Solo dibujar si la conexión es fuerte o involucra al número buscado
+                    let esFuerte = weight > 3;
+                    let involucraBusqueda = numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2);
+                    
+                    if ((esFuerte || involucraBusqueda) && nodos[n1] && nodos[n2]) {
+                        let alpha = Math.min(weight / 20, 0.3); 
                         
-                        // Si la línea involucra un número buscado, la hacemos brillante
-                        if (numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2)) {
-                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.3})`; 
-                            ctx.lineWidth = 1.5;
+                        if (involucraBusqueda) {
+                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.4})`; 
+                            ctx.lineWidth = 2;
                         } else {
-                            // Líneas normales: verdosas tenues
                             ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; 
                             ctx.lineWidth = 0.5;
                         }
@@ -574,14 +603,14 @@
                     }
                 }
 
-                // 2. Dibujar la Secuencia de Búsqueda (Rastro de Cometa)
+                // 2. Dibujar la Secuencia de Búsqueda (Rastro Dorado)
                 if (numerosBusqueda.length > 1) {
                     ctx.strokeStyle = '#ffd700'; 
-                    ctx.lineWidth = 6; 
+                    ctx.lineWidth = 5; 
                     ctx.lineCap = 'round'; 
                     ctx.lineJoin = 'round';
                     ctx.shadowColor = '#ffd700'; 
-                    ctx.shadowBlur = 20;
+                    ctx.shadowBlur = 15;
                     ctx.beginPath();
                     for (let i = 0; i < numerosBusqueda.length; i++) {
                         let num = numerosBusqueda[i];
@@ -595,8 +624,12 @@
                     ctx.lineWidth = 1;
                 }
 
-                // 3. Dibujar los Nodos (Esferas)
-                numerosOrdenados.forEach(nodo => {
+                // 3. Dibujar los Nodos (Puntos de la Espiral)
+                // Volvemos a iterar para dibujar encima de las líneas
+                numerosUniverso.forEach(num => {
+                    if (!nodos[num]) return;
+                    
+                    let nodo = nodos[num];
                     let size = nodo.size;
                     let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
                     let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
@@ -605,30 +638,29 @@
                     ctx.beginPath(); 
                     ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
                     
-                    // Configuración de brillo (Glow)
                     ctx.shadowBlur = 0;
                     ctx.shadowColor = 'transparent';
 
                     if (isBusqueda) {
                         ctx.fillStyle = `rgba(255, 0, 204, 0.95)`; 
                         ctx.strokeStyle = `#fff`; 
-                        ctx.lineWidth = 3;
-                        ctx.shadowColor = '#ff00cc'; ctx.shadowBlur = 25;
+                        ctx.lineWidth = 2;
+                        ctx.shadowColor = '#ff00cc'; ctx.shadowBlur = 15;
                     } else if (isFractal) {
                         ctx.fillStyle = `#ffcc00`; 
                         ctx.strokeStyle = `#fff`; 
                         ctx.lineWidth = 2;
-                        ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 10;
                     } else if (isInmediato) {
                         ctx.fillStyle = `#00ffcc`; 
                         ctx.strokeStyle = `#fff`; 
                         ctx.lineWidth = 2;
-                        ctx.shadowColor = '#00ffcc'; ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#00ffcc'; ctx.shadowBlur = 10;
                     } else {
-                        // Nodos normales: más brillantes si son más "calientes" (grandes)
-                        let brillo = Math.min(nodo.count * 10, 150);
-                        ctx.fillStyle = nodo.count === 0 ? 'rgba(20, 20, 20, 0.9)' : `rgba(${brillo}, ${brillo}, ${brillo}, 0.9)`;
-                        ctx.strokeStyle = `rgba(100, 100, 100, 0.5)`; 
+                        // Estilo para números normales: degradado sutil basado en la posición
+                        let brillo = Math.max(50, Math.min(nodo.count * 15, 180));
+                        ctx.fillStyle = `rgb(${brillo}, ${brillo}, ${brillo})`;
+                        ctx.strokeStyle = `rgba(100, 100, 100, 0.8)`; 
                         ctx.lineWidth = 1;
                     }
                     
@@ -636,9 +668,11 @@
                     ctx.stroke();
 
                     // Texto del número
-                    ctx.shadowBlur = 0; // Quitar sombra al texto para que sea legible
+                    ctx.shadowBlur = 0; 
                     ctx.fillStyle = (isFractal || isInmediato || isBusqueda) ? '#000' : '#fff'; 
-                    ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
+                    // Ajuste de fuente para que quepa en el círculo
+                    let fontSize = Math.max(10, size * 0.7);
+                    ctx.font = `bold ${fontSize}px Arial`;
                     ctx.textAlign = 'center'; 
                     ctx.textBaseline = 'middle';
                     let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
