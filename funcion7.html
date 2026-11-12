@@ -35,7 +35,7 @@
         
         .canvas-container { display: none; justify-content: center; align-items: stretch; gap: 20px; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 20px; margin: 0 auto; max-width: 1400px; width: 100%; box-sizing: border-box; }
         
-        .panel-izquierdo { display: flex; flex-direction: column; gap: 15px; width: 320px; flex-shrink: 0; } /* Aumentado un poco para el grid 5x2 */
+        .panel-izquierdo { display: flex; flex-direction: column; gap: 15px; width: 320px; flex-shrink: 0; }
         
         .panel-derecho { display: flex; flex-direction: column; width: 280px; flex-shrink: 0; background: rgba(20, 20, 20, 0.95); border-radius: 8px; border: 1px solid #444; padding: 10px; overflow-y: auto; max-height: 850px; }
         .panel-derecho h4 { margin: 0 0 10px 0; color: #ffcc00; font-size: 1rem; text-align: center; border-bottom: 1px solid #333; padding-bottom: 5px; }
@@ -77,7 +77,6 @@
         .porcentaje { position: absolute; bottom: -18px; font-size: 0.7rem; color: #aaa; white-space: nowrap; }
         .origen-fuerza { font-size: 0.75rem; color: #ff8888; margin-top: 10px; text-align: center; display: block; width: 100%; line-height: 1.2;}
 
-        /* NUEVO GRID PARA EL TOP 10 (5 columnas x 2 filas) */
         .grid-top-10 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; justify-items: center; margin-bottom: 10px; }
 
         .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; min-width: 300px;}
@@ -109,7 +108,7 @@
             .panel-izquierdo, .panel-derecho { width: 100%; max-width: 600px; flex-direction: row; flex-wrap: wrap; justify-content: center; max-height: none; overflow-y: visible; }
             .leyenda-fractal, .panel-recomendados { flex: 1; min-width: 280px; }
             .historial-item { width: 100%; }
-            .grid-top-10 { grid-template-columns: repeat(5, 1fr); } /* Mantiene 5 columnas en tablet */
+            .grid-top-10 { grid-template-columns: repeat(5, 1fr); }
         }
         @media (max-width: 768px) {
             .header-bar { flex-direction: column; text-align: center; gap: 10px; }
@@ -124,7 +123,7 @@
             .grid-guacharo { gap: 2px; }
             .grid-guacharo .casilla { font-size: 0.65rem; }
             .panel-izquierdo, .panel-derecho { flex-direction: column; }
-            .grid-top-10 { grid-template-columns: repeat(5, 1fr); gap: 4px; } /* Se ajusta en móvil */
+            .grid-top-10 { grid-template-columns: repeat(5, 1fr); gap: 4px; }
         }
     </style>
 </head>
@@ -144,7 +143,8 @@
         </select>
 
         <label>Número(s):</label>
-        <input type="text" id="input-numero" placeholder="Ej: 26,33,31" maxlength="50">
+        <!-- Placeholder actualizado para indicar el uso de comas -->
+        <input type="text" id="input-numero" placeholder="Ej: 26, 33, 31," maxlength="50">
         
         <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar Vecinos</button>
         
@@ -186,7 +186,6 @@
 
                 <div id="panel-prediccion-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
                     <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida (Top 10)</h4>
-                    <!-- Aquí va el nuevo grid de 5x2 -->
                     <div class="grid-top-10" id="bolitas-prediccion"></div>
                     <span class="origen-fuerza" id="origen-prediccion-texto"></span>
                 </div>
@@ -242,7 +241,7 @@
             if (modoSecuenciaActivo) {
                 btn.classList.add('activo');
                 btn.innerHTML = "✅ Secuencias ON";
-                input.placeholder = "Ej: 26,33,31";
+                input.placeholder = "Ej: 26,33,31,";
             } else {
                 btn.classList.remove('activo');
                 btn.innerHTML = "🔗 Secuencias Vecinos";
@@ -263,16 +262,25 @@
             if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
         }
 
+        // ============================================================
+        // NUEVA LÓGICA DE INPUT: Dispara solo al presionar Coma
+        // ============================================================
         document.getElementById('input-numero').addEventListener('input', function(e) {
             if (modoSecuenciaActivo) {
-                if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
-                temporizadorSecuencia = setTimeout(() => {
-                    if (e.target.value.trim() !== '') {
-                        generarMapaFractal();
-                    } else {
-                        resetSecuencia();
-                    }
-                }, 600);
+                const valor = e.target.value;
+                
+                // Condición: Si el último caracter ingresado es una coma
+                if (valor.endsWith(',')) {
+                    if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
+                    // Pequeño delay para que el usuario termine de escribir si pegó texto
+                    temporizadorSecuencia = setTimeout(() => {
+                        // Limpiamos la coma final para procesar el número
+                        let textoLimpio = valor.slice(0, -1).trim();
+                        if (textoLimpio !== '') {
+                            generarMapaFractal();
+                        }
+                    }, 300);
+                }
             }
         });
 
@@ -415,7 +423,8 @@
 
             } catch (error) {
                 console.error(error); textResult.style.display = 'block';
-                textResult.innerHTML = `<p class="mensaje-error">Error al cargar los datos.</p>`;
+                textResult.innerHTML = `<p class="mensaje-error">Error al cargar los datos. Recargando...</p>`;
+                manejarErrorGlobal(); // Llamada al salvavidas
             }
         }
 
@@ -428,7 +437,10 @@
             
             if (inputVal === '') { alert("Ingresa al menos un número para generar el mapa."); return; }
 
-            let numerosBusqueda = inputVal.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
+            // Limpiamos comas al final para el procesamiento
+            let inputLimpio = inputVal.replace(/,\s*$/, '');
+
+            let numerosBusqueda = inputLimpio.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
             if (numerosBusqueda.length === 0) { alert("No se detectaron números válidos (0-99)."); return; }
 
             canvasContainer.style.display = 'flex';
@@ -453,7 +465,7 @@
                     }
                 });
 
-                if (historialDatos.length === 0) { alert("No hay datos válidos."); return; }
+                if (historialDatos.length === 0) { throw new Error("No hay datos válidos."); }
 
                 const VENTANA = 5;
                 const nodos = {}; const aristas = {}; const adyacentes = {}; 
@@ -576,8 +588,31 @@
                 });
 
             } catch (error) {
-                console.error(error); alert("Error al generar el mapa fractal.");
+                console.error(error); 
+                alert("Ha ocurrido un error inesperado al generar el mapa. El sistema se reiniciará para proteger la integridad de los datos.");
+                manejarErrorGlobal(); // Llamada al salvavidas
             }
+        }
+
+        // ============================================================
+        // FUNCIÓN SALVAVIDAS: Manejo de Errores Global
+        // ============================================================
+        function manejarErrorGlobal() {
+            // Intentamos recargar la página para ver si el error es transitorio
+            setTimeout(() => {
+                // Usamos una variable de sesión para contar cuántas veces hemos intentado recargar
+                let intentos = parseInt(sessionStorage.getItem('jarvis_reload_attempts') || '0');
+                
+                if (intentos < 1) {
+                    // Primer intento: Recargar la página
+                    sessionStorage.setItem('jarvis_reload_attempts', intentos + 1);
+                    window.location.reload();
+                } else {
+                    // Segundo intento fallido: Enviar al inicio y limpiar la sesión
+                    sessionStorage.removeItem('jarvis_reload_attempts');
+                    window.location.href = 'index.html'; // Asume que index.html está en la misma carpeta
+                }
+            }, 1000); // Espera 1 segundo para que el usuario lea el error
         }
 
         function actualizarPanelIzquierdo(numActual, fractales, inmediatos) {
@@ -616,9 +651,6 @@
             crearBolitas(inmediatos, bInmediatas, 'bolita-inmediata');
         }
 
-        // ============================================================
-        // LÓGICA DE HISTORIAL, ACIERTOS Y DEUDA ESTADÍSTICA (PREDICCIÓN TOP 10)
-        // ============================================================
         function actualizarHistorialYFuerza(numActual, fractalesActuales, inmediatosActuales, todosLosNumeros) {
             const historialCont = document.getElementById('historial-contenido');
             
@@ -641,7 +673,6 @@
             let contadorPrediccion = {};
             let origenPrediccion = {};
 
-            // 1. Renderizar Historial y evaluar ACIERTOS PASADOS
             historialSecuencia.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'historial-item';
@@ -686,7 +717,6 @@
                 historialCont.appendChild(itemDiv);
             });
             
-            // 2. Calcular DEUDA ESTADÍSTICA (Números más repetidos en TODAS las bases)
             historialSecuencia.forEach((item) => {
                 const numerosDeEstaBase = [
                     ...item.fractales.map(f => f.num),
@@ -703,9 +733,6 @@
             const panelDer = document.getElementById('panel-historial');
             panelDer.scrollTop = panelDer.scrollHeight;
 
-            // ============================================================
-            // 3. MOSTRAR ACIERTOS PASADOS (MÁX 8) - MORADO
-            // ============================================================
             const panelAciertos = document.getElementById('panel-aciertos-container');
             const bAciertos = document.getElementById('bolitas-aciertos');
             
@@ -713,7 +740,7 @@
                 return { num: parseInt(num), aciertos: contadorAciertos[num] };
             });
             arrayAciertos.sort((a, b) => b.aciertos - a.aciertos);
-            let topAciertos = arrayAciertos.slice(0, 8); // Límite 8
+            let topAciertos = arrayAciertos.slice(0, 8); 
 
             if (topAciertos.length > 0) {
                 panelAciertos.style.display = 'block';
@@ -742,19 +769,14 @@
                 panelAciertos.style.display = 'none';
             }
 
-            // ============================================================
-            // 4. MOSTRAR DEUDA ESTADÍSTICA (PREDICCIÓN TOP 10) - ROJO
-            // ============================================================
             const panelPrediccion = document.getElementById('panel-prediccion-container');
-            const bPrediccion = document.getElementById('bolitas-prediccion'); // Ahora es un grid
+            const bPrediccion = document.getElementById('bolitas-prediccion'); 
             const origenTexto = document.getElementById('origen-prediccion-texto');
             
             let arrayPrediccion = Object.keys(contadorPrediccion).map(num => {
                 return { num: parseInt(num), fuerza: contadorPrediccion[num] };
             });
-            // Ordenamos de mayor a menor fuerza
             arrayPrediccion.sort((a, b) => b.fuerza - a.fuerza);
-            // AMPLIADO A TOP 10
             let topPrediccion = arrayPrediccion.slice(0, 10);
 
             if (topPrediccion.length > 0) {
@@ -762,13 +784,10 @@
                 bPrediccion.innerHTML = '';
                 let totalFuerza = arrayPrediccion.reduce((acc, curr) => acc + curr.fuerza, 0);
                 
-                // Texto resumido (puede ser largo con 10, lo hacemos un poco más compacto)
                 let textoOrigen = "Trazabilidad: " + topPrediccion.map(t => `${t.num.toString().padStart(2,'0')} (${origenPrediccion[t.num].length})`).join(' | ');
 
                 topPrediccion.forEach((item, index) => {
                     let porcentaje = (item.fuerza / totalFuerza) * 100;
-                    
-                    // Ajustamos el tamaño para que quepan bien en el grid de 5x2
                     let size = 35 + ((porcentaje / 100) * 15); 
                     
                     let bolita = document.createElement('div');
@@ -778,15 +797,13 @@
                     bolita.style.fontSize = `${size * 0.35}px`;
                     bolita.innerText = item.num.toString().padStart(2, '0');
                     
-                    // El porcentaje se muestra abajo
                     let span = document.createElement('span'); 
                     span.className = 'porcentaje';
-                    span.style.bottom = '-16px'; // Ajuste fino para el grid
+                    span.style.bottom = '-16px'; 
                     span.style.fontSize = '0.65rem';
                     span.innerText = `${porcentaje.toFixed(1)}%`; 
                     bolita.appendChild(span);
 
-                    // El primero se resalta un poco más
                     if (index === 0) {
                         bolita.style.boxShadow = `0 0 25px #ff0000, inset 0 0 10px #fff`;
                         bolita.style.border = '3px solid #fff';
@@ -803,6 +820,9 @@
         window.onload = function() {
             vistaActual = 'lotto';
             dibujarVistaActual();
+            
+            // Limpiamos el contador de errores al cargar la página exitosamente
+            sessionStorage.removeItem('jarvis_reload_attempts');
         };
     </script>
 </body>
