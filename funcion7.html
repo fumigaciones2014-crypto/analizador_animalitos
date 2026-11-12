@@ -421,7 +421,7 @@
         }
 
         // ============================================================
-        // NUEVA LÓGICA DE MAPA FRACTAL (ESPIRAL DE FERMAT)
+        // NUEVA LÓGICA DE MAPA FRACTAL (ESPIRAL DE FERMAT + ESCALA +50%)
         // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
@@ -513,24 +513,21 @@
                 actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
 
                 // =======================================================
-                // DIBUJO DE LA ESPIRAL (Basado en la imagen de referencia)
+                // DIBUJO DE LA ESPIRAL CON INCREMENTO DEL 50%
                 // =======================================================
                 
                 const centroX = width / 2; 
                 const centroY = height / 2; 
-                const radioMax = Math.min(width, height) / 2 - 50; 
+                // Reducimos un poco el radioMax para que las esferas gigantes no se corten en el borde
+                const radioMax = (Math.min(width, height) / 2) - 70; 
 
-                // Crear una lista de todos los números posibles (Lotto: 0 al 36 + "00")
-                // Para Guacharo son más, pero el algoritmo se adapta.
                 let numerosUniverso = [];
                 if (vistaActual === 'lotto') {
-                    numerosUniverso = Array.from({length: 37}, (_, i) => i); // 0 al 36
+                    numerosUniverso = Array.from({length: 37}, (_, i) => i); 
                 } else {
-                    // Para Guacharo asumimos un rango más amplio, o usamos los que existan en los datos
                     numerosUniverso = Object.keys(nodos).map(Number).sort((a,b) => a-b);
                 }
 
-                // Ordenamos los números para que la espiral tenga sentido (por frecuencia, los más fríos primero)
                 numerosUniverso.sort((a, b) => {
                     let freqA = nodos[a] ? nodos[a].count : 0;
                     let freqB = nodos[b] ? nodos[b].count : 0;
@@ -538,16 +535,12 @@
                 });
 
                 const totalNodos = numerosUniverso.length;
-                
-                // Ángulo Dorado para la espiral perfecta (137.5 grados en radianes)
                 const anguloDorado = 137.5 * (Math.PI / 180); 
 
-                // Asignar posición y tamaño
                 numerosUniverso.forEach((num, index) => {
-                    if (!nodos[num]) return; // Si el número no existe en los datos, lo saltamos
+                    if (!nodos[num]) return; 
 
-                    // Fórmula de Espiral de Fermat: R = c * sqrt(n)
-                    // Esto asegura que los puntos se distribuyan uniformemente en el área del círculo
+                    // Fórmula de Espiral de Fermat
                     let ratio = index / totalNodos; 
                     let radio = Math.sqrt(ratio) * radioMax; 
                     
@@ -556,33 +549,35 @@
                     nodos[num].x = centroX + Math.cos(angulo) * radio;
                     nodos[num].y = centroY + Math.sin(angulo) * radio;
                     
-                    // Tamaño Armónico: Crece del centro a la periferia, pero con un límite
-                    // Queremos que los del centro sean pequeños y los del borde un poco más grandes
+                    // ----------------------------------------------------
+                    // NUEVA LÓGICA DE TAMAÑO: +50% EN EL BORDE EXTERIOR
+                    // ----------------------------------------------------
                     let frecuenciaNormalizada = Math.min(nodos[num].count / 15, 1); 
-                    
-                    // Tamaño base (min 6, max 28) - Ajustado para que no se vean gigantes
                     let baseSize = 6 + (frecuenciaNormalizada * 12); 
                     
-                    // Ajuste extra para Lotto: los números del 0-36 deben ser legibles
+                    // Si es Lotto, tamaño mínimo legible
                     if (vistaActual === 'lotto') {
-                        baseSize = Math.max(baseSize, 14); // Tamaño mínimo legible
+                        baseSize = Math.max(baseSize, 14); 
                     }
+
+                    // FACTOR DE EXPANSIÓN (+50% máximo)
+                    // ratio va de 0 (centro) a 1 (borde)
+                    // El factor va de 1.0 a 1.5 (es decir, un 50% más grande)
+                    let factorExpansion = 1.0 + (ratio * 0.5); 
                     
-                    nodos[num].size = baseSize;
+                    nodos[num].size = baseSize * factorExpansion;
                 });
 
                 ctx.clearRect(0, 0, width, height); 
-                ctx.fillStyle = '#050505'; // Fondo muy oscuro
+                ctx.fillStyle = '#050505'; 
                 ctx.fillRect(0, 0, width, height);
 
                 // 1. Dibujar Aristas (Líneas de conexión)
-                // Para evitar el desastre visual del centro, solo dibujamos líneas de alta frecuencia o que involucren al objetivo
                 ctx.lineWidth = 0.5;
                 for (let key in aristas) {
                     let [n1, n2] = key.split('-').map(Number); 
                     let weight = aristas[key];
                     
-                    // FILTRO: Solo dibujar si la conexión es fuerte o involucra al número buscado
                     let esFuerte = weight > 3;
                     let involucraBusqueda = numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2);
                     
@@ -625,7 +620,6 @@
                 }
 
                 // 3. Dibujar los Nodos (Puntos de la Espiral)
-                // Volvemos a iterar para dibujar encima de las líneas
                 numerosUniverso.forEach(num => {
                     if (!nodos[num]) return;
                     
@@ -657,7 +651,6 @@
                         ctx.lineWidth = 2;
                         ctx.shadowColor = '#00ffcc'; ctx.shadowBlur = 10;
                     } else {
-                        // Estilo para números normales: degradado sutil basado en la posición
                         let brillo = Math.max(50, Math.min(nodo.count * 15, 180));
                         ctx.fillStyle = `rgb(${brillo}, ${brillo}, ${brillo})`;
                         ctx.strokeStyle = `rgba(100, 100, 100, 0.8)`; 
@@ -670,7 +663,7 @@
                     // Texto del número
                     ctx.shadowBlur = 0; 
                     ctx.fillStyle = (isFractal || isInmediato || isBusqueda) ? '#000' : '#fff'; 
-                    // Ajuste de fuente para que quepa en el círculo
+                    // La fuente se adapta al tamaño de la esfera
                     let fontSize = Math.max(10, size * 0.7);
                     ctx.font = `bold ${fontSize}px Arial`;
                     ctx.textAlign = 'center'; 
