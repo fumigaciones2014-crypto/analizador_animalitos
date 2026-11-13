@@ -5,61 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JARVIS - Fractal V3 (Satélites Neón Top 10)</title>
     <style>
-        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; overflow: hidden; }
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; overflow: hidden; }
         
-        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; flex-shrink: 0;}
-        h1 { color: #b0bec5; margin: 0; font-size: 1.8rem; text-shadow: 0 0 10px rgba(176,190,197,0.5); }
-        .btn-regresar { background-color: #546e7a; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 15px; flex-shrink: 0; flex-wrap: wrap; gap: 10px;}
+        h1 { color: #b0bec5; margin: 0; font-size: 1.5rem; text-shadow: 0 0 10px rgba(176,190,197,0.5); }
+        .btn-regresar { background-color: #546e7a; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; font-size: 0.9rem;}
         
-        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap; flex-shrink: 0;}
-        .controles label { font-weight: bold; color: #ccc; }
-        .controles select, .controles input { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
-        .controles input { width: 180px; text-align: center; }
+        .controles { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap; flex-shrink: 0;}
+        .controles label { font-weight: bold; color: #ccc; font-size: 0.9rem;}
+        .controles select, .controles input { padding: 8px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 14px; }
+        .controles input { width: 120px; text-align: center; }
         
-        .btn-buscar { background-color: #455a64; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        .btn-secuencia { background-color: #555; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; border: 1px solid #777; }
+        .btn-buscar { background-color: #455a64; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .btn-secuencia { background-color: #555; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.3s; border: 1px solid #777; }
         .btn-secuencia.activo { background-color: #00c853; border-color: #69f0ae; box-shadow: 0 0 15px rgba(0, 200, 83, 0.6); }
-        .btn-reset { background-color: #d32f2f; color: white; border: none; padding: 10px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        .btn-fractal { background-color: #8e24aa; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; margin-left: auto; }
+        .btn-reset { background-color: #d32f2f; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .btn-fractal { background-color: #8e24aa; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; margin-left: auto; }
 
-        .canvas-container { display: none; position: relative; justify-content: center; align-items: stretch; gap: 20px; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 20px; margin: 0 auto; flex-grow: 1; width: 100%; box-sizing: border-box; overflow: hidden;}
+        /* Contenedor principal (Ajustado para Android) */
+        .canvas-container { display: none; position: relative; justify-content: center; align-items: stretch; gap: 15px; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 15px; margin: 0 auto; flex-grow: 1; width: 100%; box-sizing: border-box; overflow: hidden;}
         
-        .panel-izquierdo { position: relative; z-index: 10; display: flex; flex-direction: column; gap: 15px; width: 320px; flex-shrink: 0; }
-        .panel-derecho { position: relative; z-index: 10; display: flex; flex-direction: column; width: 280px; flex-shrink: 0; background: rgba(20, 20, 20, 0.95); border-radius: 8px; border: 1px solid #444; padding: 10px; overflow-y: auto; }
+        .panel-izquierdo { position: relative; z-index: 10; display: flex; flex-direction: column; gap: 15px; width: 300px; flex-shrink: 0; }
+        .panel-derecho { position: relative; z-index: 10; display: flex; flex-direction: column; width: 260px; flex-shrink: 0; background: rgba(20, 20, 20, 0.95); border-radius: 8px; border: 1px solid #444; padding: 10px; overflow-y: auto; }
         
-        .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; min-height: 400px;}
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: grab; }
         canvas:active { cursor: grabbing; }
 
         .historial-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #555; }
         .historial-numero { text-align: center; font-size: 1.2rem; font-weight: bold; color: #00ffcc; margin-bottom: 5px; background: #222; border-radius: 5px; }
         .bolitas-grid-historial { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 5px; }
-        .bolita-mini { width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-weight: bold; font-size: 0.8rem; position: relative; }
+        .bolita-mini { width: 25px; height: 25px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-weight: bold; font-size: 0.75rem; position: relative; }
         .bolita-mini.amarilla { background-color: #ffcc00; color: #000; }
         .bolita-mini.verde { background-color: #00ffcc; color: #000; }
 
-        .leyenda-fractal { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; font-size: 0.9rem; color: #ccc; }
-        .leyenda-fractal h4 { margin: 0 0 10px 0; color: #00ffcc; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;}
-        .leyenda-fractal p { margin: 8px 0; }
-        .bullet { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+        .leyenda-fractal { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; font-size: 0.85rem; color: #ccc; }
+        .leyenda-fractal h4 { margin: 0 0 10px 0; color: #00ffcc; font-size: 1rem; border-bottom: 1px solid #333; padding-bottom: 5px;}
+        .leyenda-fractal p { margin: 6px 0; }
+        .bullet { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
         .panel-recomendados { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; display: flex; flex-direction: column; align-items: center; }
-        .bolitas-grid { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 80px; margin-bottom: 15px; }
+        .bolitas-grid { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 60px; margin-bottom: 15px; }
         .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; position: relative; }
         .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; position: relative; }
-        .porcentaje { position: absolute; bottom: -18px; font-size: 0.7rem; color: #aaa; white-space: nowrap; }
+        .porcentaje { position: absolute; bottom: -18px; font-size: 0.65rem; color: #aaa; white-space: nowrap; }
 
-        .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; overflow-y: auto; }
+        .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 15px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; overflow-y: auto; flex-grow: 1;}
         .fila { display: flex; align-items: center; gap: 10px; }
-        .fila-label { width: 80px; text-align: right; font-weight: bold; color: #888; }
+        .fila-label { width: 70px; text-align: right; font-weight: bold; color: #888; font-size: 0.8rem;}
         .casillas-container { display: flex; gap: 5px; flex-grow: 1;}
-        .casilla { background-color: #555; color: white; flex: 1; text-align: center; padding: 15px 5px; border-radius: 4px; font-weight: bold; border: 1px solid #333; cursor: pointer; }
+        .casilla { background-color: #555; color: white; flex: 1; text-align: center; padding: 12px 5px; border-radius: 4px; font-weight: bold; border: 1px solid #333; cursor: pointer; font-size: 1rem;}
         .casilla.vacia { background-color: transparent !important; border: 1px dashed #333 !important; pointer-events: none; }
         .num-objetivo { background-color: #ff00cc !important; color: white !important; transform: scale(1.1); border: 2px solid #fff !important; }
         .vecino-unico { background-color: #00ffcc !important; color: #000 !important; }
         .vecino-repetido { background-color: #ffcc00 !important; color: #000 !important; border: 2px solid #fff !important; }
         .grid-guacharo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; max-width: 560px; margin: 0 auto; }
-        .grid-guacharo .casilla { padding: 10px 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
+        .grid-guacharo .casilla { padding: 8px 0; font-size: 0.75rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
+
+        /* Media Query para Android/Móvil */
+        @media (max-width: 900px) {
+            body { padding: 10px; }
+            .header-bar { flex-direction: column; align-items: stretch; text-align: center; }
+            .controles { flex-direction: column; align-items: stretch; }
+            .controles select, .controles input, .btn-buscar, .btn-fractal, .btn-secuencia, .btn-reset { width: 100%; margin-left: 0; margin-top: 5px; }
+            .canvas-container { flex-direction: column; padding: 10px; }
+            .panel-izquierdo, .panel-derecho { width: 100%; max-height: none; overflow-y: visible; }
+            .canvas-wrapper { min-height: 500px; height: 60vh; } /* Asegura altura en móvil */
+            .fila-label { display: none; } /* Ocultar etiquetas de fila en móvil para ganar espacio */
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
 </head>
@@ -94,7 +107,8 @@
                 <h4>Guía del Mapa</h4>
                 <p><strong>Estrellas:</strong> Números de la lotería actual.</p>
                 <p><strong>Satélites:</strong> Números de otras loterías.</p>
-                <p><strong style="color:#00ffff;">Mensajeros Neón:</strong> Top 10 satélites conectados rebotando.</p>
+                <p><strong style="color:#00ffff;">Mensajeros Top 4:</strong> Los más fuertes rebotando.</p>
+                <p><strong style="color:#00ffff;">Lunas Top 10:</strong> Los siguientes 6 orbitando a los Top 4.</p>
                 <p><span class="bullet" style="background:#ffd700;"></span> Secuencia de Búsqueda.</p>
                 <p><span class="bullet" style="background:#ff00cc;"></span> Objetivo.</p>
                 <p><span class="bullet" style="background:#ffcc00;"></span> Top 4 Fractal.</p>
@@ -103,9 +117,9 @@
 
             <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
                 <h4 id="titulo-actual">Análisis Actual</h4>
-                <h4 style="color: #ffcc00; font-size: 0.95rem;">Top 4 Fractal</h4>
+                <h4 style="color: #ffcc00; font-size: 0.9rem;">Top 4 Fractal</h4>
                 <div class="bolitas-grid" id="bolitas-fractal"></div>
-                <h4 style="color: #00ffcc; font-size: 0.95rem;">Vecinos Inmediatos</h4>
+                <h4 style="color: #00ffcc; font-size: 0.9rem;">Vecinos Inmediatos</h4>
                 <div class="bolitas-grid" id="bolitas-inmediatas"></div>
             </div>
         </div>
@@ -116,7 +130,7 @@
 
         <div class="panel-derecho" id="panel-historial">
             <h4>Historial de Secuencia</h4>
-            <div id="historial-contenido" style="color: #888; text-align: center; font-size: 0.9rem;">Ingresa secuencias aquí.</div>
+            <div id="historial-contenido" style="color: #888; text-align: center; font-size: 0.85rem;">Ingresa secuencias aquí.</div>
         </div>
     </div>
 
@@ -190,7 +204,7 @@
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
             document.getElementById('resultado-texto').style.display = 'none';
-            document.getElementById('panel-historial').innerHTML = '<h4>Historial de Secuencia</h4><div style="color: #888; text-align: center; font-size: 0.9rem;">Ingresa secuencias separadas por coma para ver el historial aquí.</div>';
+            document.getElementById('panel-historial').innerHTML = '<h4>Historial de Secuencia</h4><div style="color: #888; text-align: center; font-size: 0.85rem;">Ingresa secuencias separadas por coma para ver el historial aquí.</div>';
             limpiarResaltados();
             if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -260,11 +274,11 @@
         }
 
         async function buscarVecinosRuleta() {
-            // ... (Lógica de búsqueda intacta)
+            // ... (Lógica de búsqueda de vecinos original)
         }
 
         // ============================================================
-        // LÓGICA PRINCIPAL: MAPA, ZOOM Y SATÉLITES NEÓN TOP 10
+        // LÓGICA PRINCIPAL: MAPA, ZOOM Y SATÉLITES NEÓN (TOP 4 + LUNAS)
         // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
@@ -383,18 +397,17 @@
                     nodo.size = 4 + (Math.random() * 4); 
                 });
 
-                // --- DETECTAR SATÉLITES MENSAJEROS (TOP 10) ---
+                // --- DETECTAR SATÉLITES MENSAJEROS (TOP 10 CON JERARQUÍA) ---
                 mensajeros = [];
-                let conteoMensajeros = {}; // Para acumular la fuerza de cada satélite
+                let conteoMensajeros = {}; 
 
                 numerosBusqueda.forEach(numBuscado => {
                     datosUniverso.forEach((reg, idx) => {
                         if (parseInt(reg.numero) === numBuscado) {
-                            for(let i=1; i<=5; i++) { // Buscar en los siguientes 5 números
+                            for(let i=1; i<=5; i++) { 
                                 if (idx + i < datosUniverso.length) {
                                     let numSig = parseInt(datosUniverso[idx+i].numero);
                                     if (!isNaN(numSig) && numSig > maxPrimario) {
-                                        // Acumular la fuerza (si aparece varias veces, pesa más)
                                         conteoMensajeros[numSig] = (conteoMensajeros[numSig] || 0) + (6 - i); 
                                     }
                                 }
@@ -403,30 +416,46 @@
                     });
                 });
 
-                // Ordenar por fuerza y tomar el TOP 10
+                // Ordenar y tomar Top 10
                 let topMensajeros = Object.keys(conteoMensajeros).map(num => {
                     return { id: parseInt(num), fuerza: conteoMensajeros[num] };
                 }).sort((a,b) => b.fuerza - a.fuerza).slice(0, 10);
 
-                // Crear los objetos de los mensajeros con física
-                topMensajeros.forEach(m => {
+                // Asignar roles: Top 4 son "Planetas", el resto son "Lunas"
+                let planetas = topMensajeros.slice(0, 4);
+                let lunas = topMensajeros.slice(4);
+
+                // Crear Planetas (Top 4) - Tamaño aumentado 40%
+                planetas.forEach(m => {
                     mensajeros.push({
                         id: m.id,
+                        type: 'planet',
                         x: centroX + (Math.random() - 0.5) * 200,
                         y: centroY + (Math.random() - 0.5) * 200,
-                        vx: (Math.random() - 0.5) * 5, // Velocidad X
-                        vy: (Math.random() - 0.5) * 5, // Velocidad Y
-                        size: 30 // Tamaño grande para el mensajero
+                        vx: (Math.random() - 0.5) * 5, 
+                        vy: (Math.random() - 0.5) * 5, 
+                        size: 35 // Base 25 + 40% = 35
                     });
                 });
 
-                // LÍMITES DE REBOTE
-                const rectIzq = document.querySelector('.panel-izquierdo').getBoundingClientRect();
-                const rectDer = document.querySelector('.panel-derecho').getBoundingClientRect();
-                const rectCanvas = canvas.getBoundingClientRect();
+                // Crear Lunas (Top 5 al 10) - Orbitando a los Planetas
+                lunas.forEach((m, index) => {
+                    // Asignar al planeta correspondiente (0, 1, 2, 3)
+                    let planetaPadre = planetas[index % planetas.length];
+                    mensajeros.push({
+                        id: m.id,
+                        type: 'moon',
+                        padre: planetaPadre, // Referencia al objeto planeta
+                        anguloOrbita: Math.random() * Math.PI * 2,
+                        velocidadOrbita: (Math.random() * 0.05 + 0.02), // Giran rápido
+                        distanciaOrbita: 60 + (Math.random() * 20), // Distancia respecto al planeta
+                        size: 12 // Lunas más pequeñas
+                    });
+                });
 
-                limitesRebote.left = rectIzq.right - rectCanvas.left + 10;
-                limitesRebote.right = rectDer.left - rectCanvas.left - 10;
+                // LÍMITES DE REBOTE (Basados en el tamaño actual del canvas)
+                limitesRebote.left = 10;
+                limitesRebote.right = canvas.width - 10;
                 limitesRebote.top = 10; 
                 limitesRebote.bottom = canvas.height - 10;
 
@@ -461,7 +490,7 @@
                         ctx.stroke(); ctx.shadowBlur = 0; ctx.lineWidth = 1;
                     }
 
-                    // Dibujar Satélites Normales (Órbita)
+                    // Dibujar Satélites Normales (Órbita base)
                     satelites.forEach(nodo => {
                         if (nodo.padre) {
                             nodo.anguloOrbita += nodo.velocidadOrbita;
@@ -493,51 +522,74 @@
                         ctx.fillText(nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0'), nodo.x, nodo.y);
                     });
 
-                    // --- DIBUJAR MENSAJEROS NEÓN (TOP 10) CON ESTELA Y REBOTE ---
+                    // --- DIBUJAR SISTEMA DE MENSAJEROS (PLANETAS Y LUNAS) ---
                     mensajeros.forEach(m => {
-                        // Actualizar posición
-                        m.x += m.vx; m.y += m.vy;
+                        if (m.type === 'planet') {
+                            // Actualizar posición del Planeta
+                            m.x += m.vx; m.y += m.vy;
 
-                        // Rebotes
-                        if (m.x - m.size < limitesRebote.left) { m.x = limitesRebote.left + m.size; m.vx *= -1; }
-                        if (m.x + m.size > limitesRebote.right) { m.x = limitesRebote.right - m.size; m.vx *= -1; }
-                        if (m.y - m.size < limitesRebote.top) { m.y = limitesRebote.top + m.size; m.vy *= -1; }
-                        if (m.y + m.size > limitesRebote.bottom) { m.y = limitesRebote.bottom - m.size; m.vy *= -1; }
+                            // Rebotes
+                            if (m.x - m.size < limitesRebote.left) { m.x = limitesRebote.left + m.size; m.vx *= -1; }
+                            if (m.x + m.size > limitesRebote.right) { m.x = limitesRebote.right - m.size; m.vx *= -1; }
+                            if (m.y - m.size < limitesRebote.top) { m.y = limitesRebote.top + m.size; m.vy *= -1; }
+                            if (m.y + m.size > limitesRebote.bottom) { m.y = limitesRebote.bottom - m.size; m.vy *= -1; }
 
-                        // 1. Dibujar Estela (Cometa) en color Cian Neón
-                        ctx.beginPath();
-                        // La estela va en dirección opuesta a la velocidad
-                        ctx.moveTo(m.x, m.y);
-                        ctx.lineTo(m.x - m.vx * 4, m.y - m.vy * 4); 
-                        ctx.strokeStyle = `rgba(0, 255, 255, 0.4)`; 
-                        ctx.lineWidth = m.size * 1.5;
-                        ctx.lineCap = 'round';
-                        ctx.stroke();
+                            // Dibujar Estela del Planeta
+                            ctx.beginPath();
+                            ctx.moveTo(m.x, m.y);
+                            ctx.lineTo(m.x - m.vx * 4, m.y - m.vy * 4); 
+                            ctx.strokeStyle = `rgba(0, 255, 255, 0.4)`; 
+                            ctx.lineWidth = m.size * 1.5;
+                            ctx.lineCap = 'round';
+                            ctx.stroke();
 
-                        // 2. Dibujar Cuerpo del Mensajero (Cian Neón)
-                        ctx.beginPath(); 
-                        ctx.arc(m.x, m.y, m.size, 0, 2 * Math.PI);
-                        
-                        // Gradiente radial para efecto neón
-                        let grad = ctx.createRadialGradient(m.x, m.y, m.size*0.2, m.x, m.y, m.size);
-                        grad.addColorStop(0, '#ffffff'); // Centro blanco
-                        grad.addColorStop(0.5, '#00ffff'); // Cian brillante
-                        grad.addColorStop(1, 'rgba(0, 200, 200, 0.8)'); // Borde tenue
-                        
-                        ctx.fillStyle = grad;
-                        ctx.strokeStyle = `#ffffff`; 
-                        ctx.lineWidth = 2;
-                        ctx.shadowColor = '#00ffff'; 
-                        ctx.shadowBlur = 25; // Resplandor fuerte
-                        
-                        ctx.fill(); 
-                        ctx.stroke();
-                        
-                        // 3. Texto
-                        ctx.shadowBlur = 0; // Quitar sombra para el texto
-                        ctx.fillStyle = '#000'; // Texto negro para contrastar con el cian
-                        ctx.font = `bold ${m.size * 0.7}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                        ctx.fillText(m.id === 0 ? "00" : m.id.toString().padStart(2, '0'), m.x, m.y);
+                            // Dibujar Cuerpo del Planeta
+                            ctx.beginPath(); 
+                            ctx.arc(m.x, m.y, m.size, 0, 2 * Math.PI);
+                            let grad = ctx.createRadialGradient(m.x, m.y, m.size*0.2, m.x, m.y, m.size);
+                            grad.addColorStop(0, '#ffffff'); 
+                            grad.addColorStop(0.5, '#00ffff'); 
+                            grad.addColorStop(1, 'rgba(0, 200, 200, 0.8)'); 
+                            ctx.fillStyle = grad;
+                            ctx.strokeStyle = `#ffffff`; ctx.lineWidth = 2;
+                            ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 25; 
+                            ctx.fill(); ctx.stroke();
+                            
+                            ctx.shadowBlur = 0; 
+                            ctx.fillStyle = '#000'; 
+                            ctx.font = `bold ${m.size * 0.7}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(m.id === 0 ? "00" : m.id.toString().padStart(2, '0'), m.x, m.y);
+                        } 
+                        else if (m.type === 'moon') {
+                            // Actualizar órbita de la Luna
+                            m.anguloOrbita += m.velocidadOrbita;
+                            
+                            // La posición de la luna depende del Planeta padre
+                            if (m.padre) {
+                                m.x = m.padre.x + Math.cos(m.anguloOrbita) * m.distanciaOrbita;
+                                m.y = m.padre.y + Math.sin(m.anguloOrbita) * m.distanciaOrbita;
+
+                                // Dibujar Luna
+                                ctx.beginPath(); 
+                                ctx.arc(m.x, m.y, m.size, 0, 2 * Math.PI);
+                                
+                                // Estilo Neón más pequeño
+                                let gradM = ctx.createRadialGradient(m.x, m.y, m.size*0.2, m.x, m.y, m.size);
+                                gradM.addColorStop(0, '#ffffff'); 
+                                gradM.addColorStop(0.5, '#00ffff'); 
+                                gradM.addColorStop(1, 'rgba(0, 200, 200, 0.8)'); 
+                                
+                                ctx.fillStyle = gradM;
+                                ctx.strokeStyle = `#ffffff`; ctx.lineWidth = 1;
+                                ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 10;
+                                ctx.fill(); ctx.stroke();
+                                
+                                ctx.shadowBlur = 0; 
+                                ctx.fillStyle = '#000'; 
+                                ctx.font = `bold ${m.size * 0.7}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                                ctx.fillText(m.id === 0 ? "00" : m.id.toString().padStart(2, '0'), m.x, m.y);
+                            }
+                        }
                     });
 
                     animationFrameId = requestAnimationFrame(dibujarFrame);
