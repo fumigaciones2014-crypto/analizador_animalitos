@@ -92,7 +92,7 @@
         footer a { color: var(--btn-azul-claro); text-decoration: none; font-weight: bold; }
         footer a:hover { text-decoration: underline; }
 
-        /* MODALES Y OTROS (Sin cambios) */
+        /* MODALES Y OTROS */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
         .modal-content { background-color: #1e1e1e; padding: 20px; border: 2px solid var(--btn-azul-claro); border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; position: relative; }
         .close-btn { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -209,9 +209,7 @@
     <footer>
         <div class="footer-info">
             <div id="footer-reloj">📅 Fecha y Hora Actual</div>
-            <div id="footer-contador" class="contador-suscripcion" style="display: none;">
-                <!-- Aquí se inyecta el contador con JS -->
-            </div>
+            <div id="footer-contador" class="contador-suscripcion" style="display: none;"></div>
         </div>
         <a id="footer-link-resultados" href="https://loteriadehoy.com/animalitos/resultados/" target="_blank">RESULTADOS</a>
     </footer>
@@ -249,8 +247,6 @@
         let datosLotto = [], datosGuacharo = [], datosMini = [], loteriaActual = 'lotto';
         let numParaHistorial = "";
         let datosFiltradosActuales = [];
-        let usuarioActual = null;
-        let diasTotalesUsuario = 0;
         let esIlimitado = false;
 
         // ==========================================
@@ -261,12 +257,10 @@
             
             if (sesionGuardada) {
                 let sesion = JSON.parse(sesionGuardada);
-                // Verificar si la sesión ha expirado
                 if (verificarExpiracion(sesion)) {
                     iniciarApp();
                     mostrarContador(sesion);
                 } else {
-                    // Sesión expirada
                     localStorage.removeItem("jarvis_session");
                     document.getElementById('login-overlay').style.display = 'flex';
                     document.getElementById('login-expirado').style.display = 'block';
@@ -298,22 +292,18 @@
                 const usuarioValido = usuarios.find(u => u.usuario === user && u.password === pass);
 
                 if (usuarioValido) {
-                    // Determinar los días del usuario
                     let dias = usuarioValido.dias;
                     esIlimitado = (dias === "ilimitado");
-                    diasTotalesUsuario = esIlimitado ? 9999 : parseInt(dias);
+                    let diasTotales = esIlimitado ? 9999 : parseInt(dias);
 
-                    // Crear objeto de sesión
                     let sesion = {
                         usuario: user,
                         fechaInicio: new Date().getTime(),
-                        diasTotales: diasTotalesUsuario,
+                        diasTotales: diasTotales,
                         esIlimitado: esIlimitado
                     };
 
-                    // Guardar sesión
                     localStorage.setItem("jarvis_session", JSON.stringify(sesion));
-                    
                     document.getElementById('login-overlay').style.display = 'none';
                     iniciarApp();
                     mostrarContador(sesion);
@@ -324,23 +314,19 @@
                 }
             } catch (error) {
                 console.error("Error cargando user.json:", error);
-                errorDiv.innerText = "⚠️ Error de conexión al validar.";
+                errorDiv.innerText = "⚠️ Error de conexión al validar. Revisa que el user.json esté bien escrito.";
                 errorDiv.style.display = 'block';
             }
         }
 
-        // Verifica si la suscripción ya venció
         function verificarExpiracion(sesion) {
-            if (sesion.esIlimitado) return true; // Ilimitado nunca expira
-
+            if (sesion.esIlimitado) return true;
             let ahora = new Date().getTime();
             let transcurrido = ahora - sesion.fechaInicio;
             let diasTranscurridos = transcurrido / (1000 * 60 * 60 * 24);
-            
             return diasTranscurridos < sesion.diasTotales;
         }
 
-        // Muestra el contador en el footer
         function mostrarContador(sesion) {
             let contadorDiv = document.getElementById('footer-contador');
             contadorDiv.style.display = 'flex';
@@ -350,12 +336,6 @@
                 return;
             }
 
-            let ahora = new Date().getTime();
-            let transcurrido = ahora - sesion.fechaInicio;
-            let diasTranscurridos = transcurrido / (1000 * 60 * 60 * 24);
-            let diasRestantes = sesion.diasTotales - diasTranscurridos;
-
-            // Actualizar contador cada minuto
             function actualizarContador() {
                 let ahora = new Date().getTime();
                 let transcurrido = ahora - sesion.fechaInicio;
@@ -363,15 +343,11 @@
                 let diasRestantes = sesion.diasTotales - diasTranscurridos;
 
                 if (diasRestantes <= 0) {
-                    // Expirado en vivo
                     contadorDiv.innerHTML = `<span class="texto-peligro">⚠️ SUSCRIPCIÓN VENCIDA</span>`;
-                    setTimeout(() => {
-                        cerrarSesion();
-                    }, 3000);
+                    setTimeout(() => { cerrarSesion(); }, 3000);
                     return;
                 }
 
-                // Formatear días y horas
                 let diasEnteros = Math.floor(diasRestantes);
                 let horasRestantes = Math.floor((diasRestantes - diasEnteros) * 24);
                 let minutosRestantes = Math.floor(((diasRestantes - diasEnteros) * 24 - horasRestantes) * 60);
@@ -381,12 +357,11 @@
             }
 
             actualizarContador();
-            setInterval(actualizarContador, 60000); // Actualizar cada minuto
+            setInterval(actualizarContador, 60000);
         }
 
         function cerrarSesion() {
             localStorage.removeItem("jarvis_session");
-            localStorage.removeItem("jarvis_logged"); // Por compatibilidad con versión anterior
             location.reload();
         }
 
@@ -420,14 +395,10 @@
                 aplicarFiltros();
                 verificarSuerteDisponible();
             } catch (error) {
-                console.error("Error cargando los JSON:", error);
+                console.error("Error cargando los JSON de datos:", error);
             }
         }
 
-        // [Aquí van tus funciones de tabla, análisis, radar y suerte que ya tenías]
-        // Las omito por brevedad, pero debes pegarlas exactamente igual que antes.
-        
-        // Ejemplo de función que ya tenías:
         function renderizarTabla(datos) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
@@ -455,7 +426,445 @@
             });
         }
 
-        // ... (Pegar el resto de funciones: cambiarLoteria, aplicarFiltros, limpiarFiltros, analizarNumeroIndividual, etc.)
+        function cambiarLoteria(loteria) {
+            loteriaActual = loteria;
+            document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('tab-active'); btn.classList.add('tab-inactive'); });
+            document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.remove('tab-inactive');
+            document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.add('tab-active');
+            aplicarFiltros(); 
+        }
+
+        function aplicarFiltros() {
+            let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
+            let textoBusqueda = document.getElementById('input-buscar').value.trim().toUpperCase();
+            let orden = document.getElementById('select-filtro').value;
+
+            let filtrados = datosBase.filter(reg => {
+                let animal = (reg.animal || '').toUpperCase();
+                let numero = reg.numero.toString();
+                let numeroConCero = numero.padStart(2, '0');
+                return animal.includes(textoBusqueda) || numero.includes(textoBusqueda) || numeroConCero.includes(textoBusqueda);
+            });
+
+            if (orden === 'numero') {
+                filtrados.sort((a, b) => {
+                    let numA = a.numero === '??' ? 999 : parseInt(a.numero);
+                    let numB = b.numero === '??' ? 999 : parseInt(b.numero);
+                    return numA - numB;
+                });
+            }
+
+            datosFiltradosActuales = filtrados;
+            renderizarTabla(filtrados);
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('input-buscar').value = '';
+            document.getElementById('select-filtro').value = 'reciente';
+            aplicarFiltros();
+        }
+
+        // ==========================================
+        // FUNCIONES DE ANÁLISIS (OJITO, RADAR, SUERTE)
+        // ==========================================
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaStr = registro.hora;
+                let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let minuto = parseInt(horaParts[2]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (minuto / 60);
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
+            });
+
+            if (historialNumeros.length === 0) return null;
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+            if (indicesApariciones.length === 0) {
+                return { num: numeroObjetivo, subidas: 0, bajadas: 0, ciclo: 0, ultima: "No registrado", prediccion: "Sin datos", fecha_estimada: "N/A", dias_retraso: 0, top_atrayentes: [] };
+            }
+
+            let subidas = 0, bajadas = 0;
+            indicesApariciones.forEach(idx => {
+                if (idx > 0) {
+                    if (historialNumeros[idx] > historialNumeros[idx-1]) subidas++;
+                    else if (historialNumeros[idx] < historialNumeros[idx-1]) bajadas++;
+                }
+            });
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let dias = calcularDiferenciaDias(fechasHoras[indicesApariciones[i-1]].fecha, fechasHoras[indicesApariciones[i]].fecha);
+                if (dias > 0) ciclos.push(dias);
+            }
+
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            let ultimaFechaStr = `${ultimaAparicion.fecha} (${ultimaAparicion.horaStr})`;
+            let prediccion = "Neutro";
+            if (subidas > bajadas) prediccion = "MAÑANA";
+            else if (bajadas > subidas) prediccion = "TARDE";
+            let fechaEst = "N/A", diasRetraso = 0;
+            let hoy = new Date();
+            let hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+            if (promedioCiclo > 0 && ultimaFechaStr !== "No registrado") {
+                let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
+                let fechaEstimadaDate = new Date(fechaBase);
+                fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
+                fechaEst = fechaEstimadaDate.toISOString().split('T')[0];
+                diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
+            }
+
+            let numerosVecinos = [];
+            indicesApariciones.forEach(idx => {
+                if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
+                if (idx + 1 < historialNumeros.length) numerosVecinos.push(historialNumeros[idx + 1]);
+            });
+            let conteo = {};
+            numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
+            let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => [parseInt(e[0]), e[1]]);
+
+            return {
+                num: numeroObjetivo, subidas, bajadas, ciclo: promedioCiclo.toFixed(1), ultima: ultimaFechaStr,
+                prediccion, fecha_estimada: fechaEst, dias_retraso: diasRetraso, top_atrayentes: topAtrayentes
+            };
+        }
+
+        function generarMultiplesSecuencias(datosLoteria, numeroInicial, cantidadCadenas = 3) {
+            let cadenas = [];
+            let resInicial = analizarNumeroIndividual(datosLoteria, numeroInicial);
+            if (!resInicial || resInicial.top_atrayentes.length === 0) return [[numeroInicial]];
+            let opcionesIniciales = resInicial.top_atrayentes.slice(0, cantidadCadenas).map(at => at[0]);
+            
+            opcionesIniciales.forEach(opcion => {
+                let secuencia = [numeroInicial, opcion];
+                let actual = opcion;
+                while (secuencia.length < 4) {
+                    let res = analizarNumeroIndividual(datosLoteria, actual);
+                    if (!res || res.top_atrayentes.length === 0) break;
+                    let siguiente = null;
+                    for (let [numAt, _] of res.top_atrayentes) {
+                        if (!secuencia.includes(numAt)) { siguiente = numAt; break; }
+                    }
+                    if (siguiente === null) break;
+                    secuencia.push(siguiente);
+                    actual = siguiente;
+                }
+                cadenas.push(secuencia);
+            });
+            if (cadenas.length === 0) cadenas.push([numeroInicial]);
+            return cadenas;
+        }
+
+        function calcularRadarRapido(datosLoteria, numeroObjetivo) {
+            const VENTANA = 5;
+            const nodos = {}; 
+            const adyacentes = {}; 
+
+            for(let i=0; i<100; i++) {
+                nodos[i] = { count: 0, id: i };
+                adyacentes[i] = {}; 
+            }
+
+            let historial = [];
+            datosLoteria.forEach(reg => {
+                if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
+                    historial.push(parseInt(reg.numero));
+                }
+            });
+
+            historial.forEach((num, index) => {
+                if (nodos[num]) nodos[num].count++;
+                for (let i = 1; i <= VENTANA; i++) {
+                    if (index + i < historial.length) {
+                        let nextNum = historial[index + i];
+                        adyacentes[num][nextNum] = (adyacentes[num][nextNum] || 0) + 1;
+                        adyacentes[nextNum][num] = (adyacentes[nextNum][num] || 0) + 1;
+                    }
+                }
+            });
+
+            let recomendadosFractal = [];
+            if (numeroObjetivo !== null && adyacentes[numeroObjetivo]) {
+                let candidatos = [];
+                for (let adj in adyacentes[numeroObjetivo]) {
+                    let numAdj = parseInt(adj);
+                    let fuerzaConexion = adyacentes[numeroObjetivo][numAdj];
+                    let frecuenciaPropia = nodos[numAdj].count;
+                    let puntajeFrio = 100 - frecuenciaPropia; 
+                    let puntaje = puntajeFrio + (fuerzaConexion * 5); 
+                    candidatos.push({ num: numAdj, puntaje: puntaje });
+                }
+                candidatos.sort((a, b) => b.puntaje - a.puntaje);
+                recomendadosFractal = candidatos.slice(0, 4);
+            }
+
+            let recomendadosInmediatos = [];
+            let indicesApariciones = [];
+            historial.forEach((h, i) => { if (h === numeroObjetivo) indicesApariciones.push(i); });
+            
+            if (indicesApariciones.length > 0) {
+                let ultimas = indicesApariciones.slice(-5).reverse();
+                let conteoVecinos = {};
+                ultimas.forEach(idx => {
+                    if (idx - 1 >= 0) { let n = historial[idx - 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx - 2 >= 0) { let n = historial[idx - 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx + 1 < historial.length) { let n = historial[idx + 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx + 2 < historial.length) { let n = historial[idx + 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                });
+
+                let candidatosInmediatos = [];
+                for (let num in conteoVecinos) {
+                    let count = conteoVecinos[num];
+                    let puntaje = count * 10; 
+                    candidatosInmediatos.push({ num: parseInt(num), puntaje: puntaje });
+                }
+                candidatosInmediatos.sort((a, b) => b.puntaje - a.puntaje);
+                recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
+            }
+
+            return { fractal: recomendadosFractal, inmediatos: recomendadosInmediatos };
+        }
+
+        function renderizarBolitasModal(candidatos, contenedor, claseCss) {
+            if (candidatos.length === 0) return;
+            let sumaPuntajes = candidatos.reduce((acc, curr) => acc + curr.puntaje, 0);
+            const minSize = 40;
+            const maxSize = 80;
+
+            candidatos.forEach((rec, index) => {
+                let porcentaje = (rec.puntaje / sumaPuntajes) * 100;
+                let size = minSize + ((porcentaje / 100) * (maxSize - minSize));
+                if (size < minSize) size = minSize;
+
+                let bolita = document.createElement('div');
+                bolita.className = `bolita-modal ${claseCss}`;
+                bolita.style.width = `${size}px`;
+                bolita.style.height = `${size}px`;
+                bolita.style.fontSize = `${size * 0.35}px`;
+                bolita.innerText = rec.num.toString().padStart(2, '0');
+                
+                let spanPorcentaje = document.createElement('span');
+                spanPorcentaje.className = 'porcentaje-modal';
+                spanPorcentaje.innerText = `${porcentaje.toFixed(1)}%`;
+                bolita.appendChild(spanPorcentaje);
+
+                if (index === 0) {
+                    bolita.style.boxShadow = `0 0 25px ${claseCss === 'bolita-amarilla' ? '#ffcc00' : '#00ffcc'}, inset 0 0 10px #fff`;
+                    bolita.style.border = '3px solid #fff';
+                }
+                contenedor.appendChild(bolita);
+            });
+        }
+
+        function abrirAnalisis(numero, hora) {
+            if (numero === '??') return alert("Sorteo sin número registrado.");
+            let datos = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
+            let numOrig = parseInt(numero);
+            numParaHistorial = numero.toString(); 
+            let resOrig = analizarNumeroIndividual(datos, numOrig);
+            
+            document.getElementById('modal-radar-container').style.display = 'none';
+            document.getElementById('radar-contenido').innerHTML = '';
+
+            if (resOrig.ultima === "No registrado") {
+                document.getElementById('modal-ojo-titulo').innerText = `Análisis para [${numOrig}]`;
+                document.getElementById('modal-ojo-cuerpo').innerHTML = `<p style="color:#ff5555;">Este número no tiene apariciones registradas en el historial actual.</p>`;
+                document.getElementById('btn-ir-analisis').style.display = 'none';
+                document.getElementById('modal-ojo').style.display = 'flex';
+                return;
+            }
+
+            document.getElementById('btn-ir-analisis').style.display = 'block';
+            document.getElementById('modal-ojo-titulo').innerText = `Análisis Rápido para [${numOrig}] - ${hora}`;
+            
+            let html = `<div class="box-modal">
+                <b>Número [${numOrig}]:</b><br>
+                • Flancos: Subidas (${resOrig.subidas}) | Bajadas (${resOrig.bajadas})<br>
+                • Ciclo Promedio: ${resOrig.ciclo} días<br>
+                • Última Salida: ${resOrig.ultima}<br>`;
+            let colorPred = resOrig.prediccion === "MAÑANA" ? "#00ffcc" : (resOrig.prediccion === "TARDE" ? "#ffcc00" : "#ffffff");
+            html += `• Proyección: <span style="color:${colorPred}; font-weight:bold;">${resOrig.prediccion}</span><br>`;
+            if (resOrig.fecha_estimada !== "N/A") {
+                html += `• Estimado para: ${resOrig.fecha_estimada}`;
+                if (resOrig.dias_retraso > 0) html += ` <span style="color:#ff5555;">(Retrasado ${resOrig.dias_retraso} días)</span>`;
+                else if (resOrig.dias_retraso === 0) html += ` <span style="color:#ffff00;">(Para hoy)</span>`;
+            }
+            html += `</div>`;
+
+            let cadenas = generarMultiplesSecuencias(datos, numOrig, 3);
+            html += `<div class="box-modal box-cadena">
+                <b style="color:#ff00cc; font-size: 16px;">🔗 TRIPLE CADENA DE ATRACCIÓN:</b><br><br>`;
+            let colores = ["#00ffcc", "#ffcc00", "#ff6600", "#ff00cc"];
+            cadenas.forEach((sec, i) => {
+                html += `<b>Ruta ${i+1}:</b> `;
+                sec.forEach((n, j) => {
+                    html += `<span class="texto-cadena" style="color:${colores[j%4]};">[${n}]</span>`;
+                    if (j < sec.length - 1) html += ` <span style="color:#888;">➔</span> `;
+                });
+                html += `<br>`;
+            });
+            html += `</div>`;
+
+            document.getElementById('modal-ojo-cuerpo').innerHTML = html;
+
+            let radarResultados = calcularRadarRapido(datos, numOrig);
+            
+            if (radarResultados.fractal.length > 0 || radarResultados.inmediatos.length > 0) {
+                document.getElementById('modal-radar-container').style.display = 'block';
+                let radarHtml = '';
+
+                if (radarResultados.fractal.length > 0) {
+                    radarHtml += `<h4 style="color: #ffcc00; font-size: 0.9rem; margin-bottom: 5px;">Top 4 Fractal (Tendencia)</h4>`;
+                    radarHtml += `<div class="bolitas-grid-modal" id="radar-bolitas-fractal"></div>`;
+                }
+
+                if (radarResultados.inmediatos.length > 0) {
+                    radarHtml += `<h4 style="color: #00ffcc; font-size: 0.9rem; margin-top: 15px; margin-bottom: 5px;">Vecinos Inmediatos (Arrastre)</h4>`;
+                    radarHtml += `<div class="bolitas-grid-modal" id="radar-bolitas-inmediatas"></div>`;
+                }
+
+                document.getElementById('radar-contenido').innerHTML = radarHtml;
+
+                if (radarResultados.fractal.length > 0) {
+                    renderizarBolitasModal(radarResultados.fractal, document.getElementById('radar-bolitas-fractal'), 'bolita-amarilla');
+                }
+                if (radarResultados.inmediatos.length > 0) {
+                    renderizarBolitasModal(radarResultados.inmediatos, document.getElementById('radar-bolitas-inmediatas'), 'bolita-verde');
+                }
+            }
+
+            document.getElementById('modal-ojo').style.display = 'flex';
+        }
+
+        function cerrarModalOjo() {
+            document.getElementById('modal-ojo').style.display = 'none';
+        }
+
+        function irAHistorialAvanzado() {
+            window.location.href = `hist_avanzado.html?numero=${numParaHistorial}`;
+        }
+
+        // ==========================================
+        // LÓGICA DE SUERTE (CON COOKIES)
+        // ==========================================
+        const TIEMPO_ESPERA_MS = 5 * 60 * 60 * 1000; 
+        let intervaloCronometro = null;
+
+        function obtenerCookie(nombre) {
+            let name = nombre + "=";
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for(let i = 0; i <ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') { c = c.substring(1); }
+                if (c.indexOf(name) == 0) { return c.substring(name.length, c.length); }
+            }
+            return "";
+        }
+
+        function verificarSuerteDisponible() {
+            let ultimoIntento = parseInt(obtenerCookie("jarvis_suerte_time"));
+            let btn = document.getElementById('btn-agregar-manual');
+            
+            if (ultimoIntento) {
+                let ahora = new Date().getTime();
+                let tiempoTranscurrido = ahora - ultimoIntento;
+                
+                if (tiempoTranscurrido < TIEMPO_ESPERA_MS) {
+                    btn.disabled = true;
+                    let tiempoRestante = TIEMPO_ESPERA_MS - tiempoTranscurrido;
+                    iniciarCronometro(tiempoRestante, btn);
+                    return;
+                }
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = "🍀 Prueba tu Suerte";
+            if(intervaloCronometro) clearInterval(intervaloCronometro);
+        }
+
+        function iniciarCronometro(msRestantes, btn) {
+            if(intervaloCronometro) clearInterval(intervaloCronometro);
+            
+            function actualizar() {
+                if (msRestantes <= 0) {
+                    clearInterval(intervaloCronometro);
+                    btn.disabled = false;
+                    btn.innerHTML = "🍀 Prueba tu Suerte";
+                    return;
+                }
+                
+                let horas = Math.floor(msRestantes / (1000 * 60 * 60));
+                let minutos = Math.floor((msRestantes % (1000 * 60 * 60)) / (1000 * 60));
+                let segundos = Math.floor((msRestantes % (1000 * 60)) / 1000);
+                
+                let hStr = horas.toString().padStart(2, '0');
+                let mStr = minutos.toString().padStart(2, '0');
+                let sStr = segundos.toString().padStart(2, '0');
+                
+                btn.innerHTML = `⏳ Espera ${hStr}:${mStr}:${sStr}`;
+                msRestantes -= 1000;
+            }
+            
+            actualizar();
+            intervaloCronometro = setInterval(actualizar, 1000);
+        }
+
+        function probarSuerte() {
+            let ahora = new Date().getTime();
+            document.cookie = "jarvis_suerte_time=" + ahora + "; max-age=" + (60*60*24*30) + "; path=/";
+            
+            verificarSuerteDisponible();
+
+            let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
+            let puntajes = {};
+            let limiteMax = loteriaActual === 'lotto' ? 36 : (loteriaActual === 'gua' ? 99 : 75);
+            
+            for(let i=0; i<=limiteMax; i++) {
+                let stats = analizarNumeroIndividual(datosBase, i);
+                if(stats && stats.ultima !== "No registrado") {
+                    let puntaje = (stats.subidas + stats.bajadas) + (parseFloat(stats.ciclo) * 2) + (stats.dias_retraso * 5);
+                    puntajes[i] = puntaje;
+                }
+            }
+
+            let top9 = Object.entries(puntajes)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 9)
+                .map(e => parseInt(e[0]));
+
+            let num1 = top9[Math.floor(Math.random() * top9.length)];
+            let num2 = top9[Math.floor(Math.random() * top9.length)];
+            
+            while (num1 === num2 && top9.length > 1) {
+                num2 = top9[Math.floor(Math.random() * top9.length)];
+            }
+
+            document.getElementById('bola-1').innerText = num1.toString().padStart(2, '0');
+            document.getElementById('bola-2').innerText = num2.toString().padStart(2, '0');
+            document.getElementById('modal-suerte').style.display = 'flex';
+        }
+
+        function cerrarModalSuerte() {
+            document.getElementById('modal-suerte').style.display = 'none';
+        }
     </script>
 </body>
 </html>
