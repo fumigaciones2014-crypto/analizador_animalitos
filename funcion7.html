@@ -2,146 +2,211 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JARVIS - Vórtice Fractal Universal</title>
-    <!-- Librería para Zoom y Paneo -->
-    <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Fractal (Predicción y Deuda Estadística)</title>
     <style>
-        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; overflow: hidden; }
+        body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
-        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 10px; flex-shrink: 0; }
-        h1 { color: #b0bec5; margin: 0; font-size: 1.5rem; }
-        .btn-regresar { background-color: #546e7a; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { color: #b0bec5; margin: 0; font-size: 1.8rem; text-shadow: 0 0 10px rgba(176,190,197,0.5); }
+        .btn-regresar { background-color: #546e7a; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .btn-regresar:hover { background-color: #78909c; box-shadow: 0 0 15px rgba(176,190,197,0.4); }
         
-        .controles { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap; flex-shrink: 0; z-index: 100;}
-        .controles select, .controles input { padding: 8px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; }
+        .controles { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; flex-wrap: wrap;}
+        .controles label { font-weight: bold; color: #ccc; }
+        .controles select, .controles input { padding: 10px; border-radius: 5px; border: 1px solid #555; background-color: #333; color: white; font-weight: bold; outline: none; font-size: 16px; }
+        .controles input { width: 180px; text-align: center; }
         
-        .btn-buscar { background-color: #455a64; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        .btn-secuencia { background-color: #555; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; border: 1px solid #777; }
+        .btn-buscar { background-color: #455a64; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-buscar:hover { background-color: #607d8b; box-shadow: 0 0 10px rgba(176,190,197,0.3); }
+        
+        .btn-secuencia { background-color: #555; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; border: 1px solid #777; }
         .btn-secuencia.activo { background-color: #00c853; border-color: #69f0ae; box-shadow: 0 0 15px rgba(0, 200, 83, 0.6); }
-        .btn-reset { background-color: #d32f2f; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        .btn-fractal { background-color: #8e24aa; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-left: auto; box-shadow: 0 0 10px rgba(142, 36, 170, 0.5); }
+        .btn-secuencia:hover { background-color: #777; }
+        .btn-secuencia.activo:hover { background-color: #00e676; }
+        
+        .btn-reset { background-color: #d32f2f; color: white; border: none; padding: 10px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-reset:hover { background-color: #f44336; box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
 
-        /* Contenedor del mapa con zoom */
-        .canvas-viewport { display: block; position: relative; width: 100%; flex-grow: 1; background: #000; border: 2px solid #333; border-radius: 12px; overflow: hidden; margin: 0 auto; cursor: grab; }
-        .canvas-viewport:active { cursor: grabbing; }
-        .canvas-wrapper { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
-        canvas { display: block; }
+        .btn-fractal { background-color: #8e24aa; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; margin-left: auto; }
+        .btn-fractal:hover { background-color: #ab47bc; box-shadow: 0 0 10px rgba(171, 71, 188, 0.5); }
 
-        /* Paneles flotantes */
-        .floating-panel { position: absolute; background: rgba(15, 15, 15, 0.9); border: 1px solid #444; border-radius: 8px; padding: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.8); z-index: 50; pointer-events: auto; }
-        .panel-izquierdo { top: 10px; left: 10px; width: 250px; max-height: 90%; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .panel-derecho { top: 10px; right: 10px; width: 220px; max-height: 90%; overflow-y: auto; }
-        .panel-inferior { bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; border-radius: 30px; padding: 5px 15px; border: 1px solid #555; }
+        .ruleta-container { display: flex; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
         
-        .leyenda-fractal { font-size: 0.8rem; color: #ccc; }
-        .leyenda-fractal h4 { margin: 0 0 5px 0; color: #00ffcc; font-size: 0.9rem; border-bottom: 1px solid #333; padding-bottom: 3px;}
-        .leyenda-fractal p { margin: 4px 0; line-height: 1.2;}
-        .bullet { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+        .canvas-container { display: none; justify-content: center; align-items: stretch; gap: 20px; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 20px; margin: 0 auto; max-width: 1400px; width: 100%; box-sizing: border-box; }
+        
+        .panel-izquierdo { display: flex; flex-direction: column; gap: 15px; width: 320px; flex-shrink: 0; }
+        
+        .panel-derecho { display: flex; flex-direction: column; width: 280px; flex-shrink: 0; background: rgba(20, 20, 20, 0.95); border-radius: 8px; border: 1px solid #444; padding: 10px; overflow-y: auto; max-height: 850px; }
+        .panel-derecho h4 { margin: 0 0 10px 0; color: #ffcc00; font-size: 1rem; text-align: center; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        
+        .historial-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #555; }
+        .historial-item:last-child { border-bottom: none; }
+        .historial-numero { text-align: center; font-size: 1.2rem; font-weight: bold; color: #00ffcc; margin-bottom: 5px; background: #222; border-radius: 5px; padding: 2px;}
+        
+        .bolitas-grid-historial { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-bottom: 5px; }
+        .bolita-mini { width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-weight: bold; font-size: 0.8rem; position: relative; }
+        .bolita-mini.amarilla { background-color: #ffcc00; color: #000; border: 1px solid #fff;}
+        .bolita-mini.verde { background-color: #00ffcc; color: #000; border: 1px solid #fff;}
+        
+        .acierto { border: 3px solid #ff00cc !important; box-shadow: 0 0 10px #ff00cc; transform: scale(1.1); z-index: 10; }
+        .acierto::after { content: '✅'; position: absolute; top: -12px; right: -10px; font-size: 14px; }
 
-        .panel-recomendados { display: flex; flex-direction: column; align-items: center; }
-        .panel-recomendados h4 { margin: 0 0 5px 0; color: #ffcc00; font-size: 0.9rem; text-align: center;}
-        
-        .bolitas-grid { display: flex; justify-content: center; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 40px; margin-bottom: 5px; }
-        .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 1px solid #fff; position: relative; }
-        .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 1px solid #fff; position: relative; }
-        
-        .grid-top-10 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 100%; justify-items: center; }
-        .bolita-prediccion { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ff0000; color: #fff; font-weight: bold; border: 1px solid #fff; }
-        
-        .historial-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #555; }
-        .historial-numero { text-align: center; font-size: 0.9rem; font-weight: bold; color: #00ffcc; margin-bottom: 3px; background: #222; border-radius: 3px; }
-        .bolitas-grid-historial { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; margin-bottom: 3px; }
-        .bolita-mini { width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-weight: bold; font-size: 0.65rem; position: relative; }
-        .bolita-mini.amarilla { background-color: #ffcc00; color: #000; }
-        .bolita-mini.verde { background-color: #00ffcc; color: #000; }
+        .leyenda-fractal { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; font-size: 0.9rem; box-shadow: 0 0 10px rgba(0,0,0,0.5); color: #ccc; }
+        .leyenda-fractal h4 { margin: 0 0 10px 0; color: #00ffcc; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 5px;}
+        .leyenda-fractal p { margin: 8px 0; line-height: 1.3;}
+        .leyenda-fractal .highlight-yellow { color: #ffcc00; font-weight: bold; }
+        .leyenda-fractal .highlight-green { color: #00ffcc; font-weight: bold; }
+        .leyenda-fractal .highlight-magenta { color: #ff00cc; font-weight: bold; }
+        .leyenda-fractal .highlight-line { color: #ffd700; font-weight: bold; }
+        .leyenda-fractal .highlight-red { color: #ff0000; font-weight: bold; }
+        .leyenda-fractal .highlight-purple { color: #b388ff; font-weight: bold; }
+        .leyenda-fractal .bullet { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
-        .btn-zoom { background: #333; color: white; border: 1px solid #666; border-radius: 50%; width: 35px; height: 35px; font-size: 18px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .panel-recomendados { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
+        .panel-recomendados h4 { margin: 0 0 15px 0; color: #ffcc00; font-size: 1.1rem; text-align: center;}
         
-        .ruleta-container { display: none; flex-direction: column; gap: 8px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;}
+        .bolitas-grid { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 80px; margin-bottom: 15px; }
+
+        .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); transition: all 0.3s ease; position: relative; }
+        .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); transition: all 0.3s ease; position: relative; }
+        
+        .bolita-prediccion { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ff0000; color: #fff; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); transition: all 0.3s ease; position: relative; }
+        .bolita-acierto { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #b388ff; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(179, 136, 255, 0.8); transition: all 0.3s ease; position: relative; }
+        
+        .porcentaje { position: absolute; bottom: -18px; font-size: 0.7rem; color: #aaa; white-space: nowrap; }
+        .origen-fuerza { font-size: 0.75rem; color: #ff8888; margin-top: 10px; text-align: center; display: block; width: 100%; line-height: 1.2;}
+
+        .grid-top-10 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; justify-items: center; margin-bottom: 10px; }
+
+        .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; min-width: 300px;}
+        canvas { background: #000; border-radius: 8px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); width: 100%; height: auto; max-width: 800px;}
+
+        .resultado-texto { background: #222; padding: 20px; border-radius: 8px; border: 1px solid #444; max-width: 600px; margin: 20px auto 0; width: 100%; box-sizing: border-box; text-align: center;}
+        .badge-info { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: bold; margin: 5px;}
+        .b-unico { background-color: #00ffcc; color: #000;}
+        .b-repetido { background-color: #ffcc00; color: #000;}
+        .b-objetivo { background-color: #ff00cc; color: white;}
+        .mensaje-error { color: #ff5555; text-align: center; font-size: 1.1rem; margin-top: 20px;}
+
         .fila { display: flex; align-items: center; gap: 10px; }
         .fila-label { width: 80px; text-align: right; font-weight: bold; color: #888; font-size: 0.9rem;}
         .casillas-container { display: flex; gap: 5px; flex-grow: 1;}
-        .casilla { background-color: #555; color: white; flex: 1; text-align: center; padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; border: 1px solid #333; cursor: pointer; }
-        .casilla.vacia { background-color: transparent !important; border: 1px dashed #333 !important; color: transparent !important; pointer-events: none; }
+        .casilla { background-color: #555; color: white; flex: 1; text-align: center; padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; border: 1px solid #333; transition: all 0.3s; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .casilla:hover { background-color: #6d6d6d; transform: translateY(-2px); }
+        .casilla:active { transform: scale(0.95); background-color: #4a4a4a; }
+        .casilla.vacia { background-color: transparent !important; border: 1px dashed #333 !important; color: transparent !important; cursor: default; pointer-events: none; }
         .num-objetivo { background-color: #ff00cc !important; color: white !important; box-shadow: 0 0 15px #ff00cc; transform: scale(1.1); z-index: 10; border: 2px solid #fff !important; }
         .vecino-unico { background-color: #00ffcc !important; color: #000 !important; box-shadow: 0 0 10px #00ffcc; }
         .vecino-repetido { background-color: #ffcc00 !important; color: #000 !important; box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff !important; transform: scale(1.05); z-index: 9; }
 
         .grid-guacharo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; width: 100%; max-width: 560px; margin: 0 auto; }
         .grid-guacharo .casilla { padding: 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
+
+        @media (max-width: 1150px) {
+            .canvas-container { flex-direction: column; align-items: center; }
+            .panel-izquierdo, .panel-derecho { width: 100%; max-width: 600px; flex-direction: row; flex-wrap: wrap; justify-content: center; max-height: none; overflow-y: visible; }
+            .leyenda-fractal, .panel-recomendados { flex: 1; min-width: 280px; }
+            .historial-item { width: 100%; }
+            .grid-top-10 { grid-template-columns: repeat(5, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .header-bar { flex-direction: column; text-align: center; gap: 10px; }
+            h1 { font-size: 1.3rem; }
+            .btn-regresar { width: 100%; }
+            .controles { flex-direction: column; align-items: stretch; }
+            .controles select, .controles input, .btn-buscar, .btn-fractal, .btn-secuencia, .btn-reset { width: 100%; margin-left: 0; margin-top: 5px; }
+            .fila-label { width: 50px; font-size: 0.7rem;}
+            .casilla { padding: 10px 2px; font-size: 1rem; }
+            .ruleta-container { padding: 10px; gap: 5px;}
+            .casillas-container { gap: 3px;}
+            .grid-guacharo { gap: 2px; }
+            .grid-guacharo .casilla { font-size: 0.65rem; }
+            .panel-izquierdo, .panel-derecho { flex-direction: column; }
+            .grid-top-10 { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+        }
     </style>
 </head>
 <body>
 
     <div class="header-bar">
-        <h1>🌀 VÓRTICE FRACTAL (Universo Completo)</h1>
-        <a href="index.html" class="btn-regresar">⬅ Regresar</a>
+        <h1>🎡 RULETA X N° (Predicción y Deuda Estadística)</h1>
+        <a href="index.html" class="btn-regresar">⬅ Regresar al Inicio</a>
     </div>
 
     <div class="controles">
         <label>Lotería:</label>
         <select id="combo-loteria" onchange="cambiarVista()">
-            <option value="TODAS">TODAS (Cruce Global)</option>
             <option value="mapeo_lotto.json">Lotto Activo</option>
             <option value="mapeo_gua.json">Guacharo</option>
             <option value="mapeo_mini.json">Guacharito Millonario</option>
         </select>
 
         <label>Número(s):</label>
+        <!-- Placeholder actualizado para indicar el uso de comas -->
         <input type="text" id="input-numero" placeholder="Ej: 26, 33, 31," maxlength="50">
         
-        <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar</button>
-        <button id="btn-secuencia" class="btn-secuencia" onclick="toggleSecuencia()">🔗 Secuencias OFF</button>
-        <button class="btn-reset" onclick="resetSecuencia()">🔄 Reset</button>
+        <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar Vecinos</button>
         
-        <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Vórtice</button>
-    </div>
-
-    <!-- Contenedor del mapa con Zoom y Paneo -->
-    <div class="canvas-viewport" id="canvas-viewport">
-        <div class="canvas-wrapper" id="canvas-wrapper">
-            <!-- Canvas grande para que el zoom sea nítido -->
-            <canvas id="fractal-canvas" width="1600" height="1600"></canvas>
-        </div>
+        <button id="btn-secuencia" class="btn-secuencia" onclick="toggleSecuencia()">🔗 Secuencias Vecinos</button>
+        <button id="btn-reset" class="btn-reset" onclick="resetSecuencia()">🔄 Reset</button>
         
-        <!-- Paneles flotantes -->
-        <div class="floating-panel panel-izquierdo" id="panel-izquierdo" style="display: none;">
-            <div class="leyenda-fractal">
-                <h4>Guía del Vórtice</h4>
-                <p><strong>Centro Vacío:</strong> El ojo del huracán.</p>
-                <p><strong>Espiral:</strong> Números fríos (pequeños) hacia calientes (grandes).</p>
-                <p><span class="bullet" style="background:#ffd700;"></span> Secuencia</p>
-                <p><span class="bullet" style="background:#ff00cc;"></span> Objetivo</p>
-            </div>
-            <div class="panel-recomendados" id="panel-recomendados">
-                <h4 id="titulo-actual">Análisis</h4>
-                <h4 style="color: #ffcc00; font-size: 0.9rem;">Top 4 Fractal</h4>
-                <div class="bolitas-grid" id="bolitas-fractal"></div>
-                <h4 style="color: #00ffcc; font-size: 0.9rem;">Vecinos Inmediatos</h4>
-                <div class="bolitas-grid" id="bolitas-inmediatas"></div>
-            </div>
-        </div>
-
-        <div class="floating-panel panel-derecho" id="panel-derecho" style="display: none;">
-            <h4 style="margin: 0 0 10px 0; color: #ffcc00; font-size: 0.9rem; text-align: center; border-bottom: 1px solid #333; padding-bottom: 5px;">Historial</h4>
-            <div id="historial-contenido"></div>
-        </div>
-
-        <div class="floating-panel panel-inferior">
-            <div class="controles-zoom">
-                <button class="btn-zoom" onclick="zoomIn()">+</button>
-                <button class="btn-zoom" onclick="zoomOut()">-</button>
-                <button class="btn-zoom" onclick="resetZoom()" style="font-size: 12px;">⟲</button>
-            </div>
-        </div>
+        <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Mapa Fractal</button>
     </div>
 
     <div class="ruleta-container" id="ruleta-container"></div>
 
+    <div class="canvas-container" id="canvas-container">
+        <div class="panel-izquierdo">
+            <div class="leyenda-fractal">
+                <h4>Guía de Doble Capa</h4>
+                <p><strong>Centro (Fríos):</strong> Alta presión estadística.</p>
+                <p><strong>Periferia (Calientes):</strong> Números ya gastados.</p>
+                <p><strong>Líneas Verdes:</strong> Atracción histórica.</p>
+                <p><span class="bullet" style="background:#ffd700;"></span> <span class="highlight-line">Línea Gruesa:</span> Secuencia de Búsqueda.</p>
+                <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
+                <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
+                <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
+                <p><span class="bullet" style="background:#b388ff;"></span> <span class="highlight-purple">Morado:</span> Aciertos (Máx 8).</p>
+                <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Potencial de Salida (Top 10).</p>
+            </div>
+
+            <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
+                <h4 id="titulo-actual">Análisis Actual</h4>
+                <h4 style="color: #ffcc00; font-size: 0.95rem; margin-bottom: 5px;">Top 4 Fractal</h4>
+                <div class="bolitas-grid" id="bolitas-fractal"></div>
+                
+                <h4 style="color: #00ffcc; font-size: 0.95rem; margin-top: 5px;">Vecinos Inmediatos</h4>
+                <div class="bolitas-grid" id="bolitas-inmediatas"></div>
+
+                <div id="panel-aciertos-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
+                    <h4 style="color: #b388ff; font-size: 0.95rem; margin-top: 5px;">Aciertos Confirmados</h4>
+                    <div class="bolitas-grid" id="bolitas-aciertos"></div>
+                </div>
+
+                <div id="panel-prediccion-container" style="display: none; width: 100%; border-top: 1px dashed #555; margin-top: 10px; padding-top: 10px;">
+                    <h4 style="color: #ff0000; font-size: 0.95rem; margin-top: 5px;">Potencial de Salida (Top 10)</h4>
+                    <div class="grid-top-10" id="bolitas-prediccion"></div>
+                    <span class="origen-fuerza" id="origen-prediccion-texto"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="fractal-canvas" width="800" height="800"></canvas>
+        </div>
+
+        <div class="panel-derecho" id="panel-historial">
+            <h4>Historial de Secuencia</h4>
+            <div id="historial-contenido" style="color: #888; text-align: center; font-size: 0.9rem;">
+                Ingresa secuencias separadas por coma para ver el historial aquí.
+            </div>
+        </div>
+    </div>
+
+    <div class="resultado-texto" id="resultado-texto" style="display: none;"></div>
+
     <script>
-        // Configuración de Ruletas
         const FILAS_RULETA_LOTTO = [
             { id: "fila_1", nums: [12, 35, 3, 26, 0, 32, 15] },
             { id: "fila_2", nums: [28, 19] }, { id: "fila_3", nums: [7, 4] }, { id: "fila_4", nums: [29, 21] },
@@ -161,54 +226,80 @@
             [60, 35, 10, 74, 43, 29, 40, 3, 58, 32, 14, 22], [45, 59, 62, 71, 8, 36, 54, 67, 63, 5, "", ""]
         ];
 
-        let vistaActual = 'todas';
+        let vistaActual = 'lotto';
         let datosGlobales = []; 
-        let panzoomInstance = null;
-
-        window.onload = function() {
-            const element = document.getElementById('canvas-wrapper');
-            panzoomInstance = Panzoom(element, {
-                maxScale: 6,
-                minScale: 0.5,
-                contain: 'outside',
-                cursor: 'grab'
-            });
-            element.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
-            cambiarVista();
-        };
-
-        function zoomIn() { panzoomInstance.zoomIn(); }
-        function zoomOut() { panzoomInstance.zoomOut(); }
-        function resetZoom() { panzoomInstance.reset(); }
+        let modoSecuenciaActivo = false;
+        let temporizadorSecuencia = null;
+        
+        let historialSecuencia = []; 
 
         function toggleSecuencia() {
+            modoSecuenciaActivo = !modoSecuenciaActivo;
             const btn = document.getElementById('btn-secuencia');
-            btn.classList.toggle('activo');
-            btn.innerHTML = btn.classList.contains('activo') ? "✅ Secuencias ON" : "🔗 Secuencias OFF";
+            const input = document.getElementById('input-numero');
+            
+            if (modoSecuenciaActivo) {
+                btn.classList.add('activo');
+                btn.innerHTML = "✅ Secuencias ON";
+                input.placeholder = "Ej: 26,33,31,";
+            } else {
+                btn.classList.remove('activo');
+                btn.innerHTML = "🔗 Secuencias Vecinos";
+                input.placeholder = "Ej: 25";
+            }
         }
 
         function resetSecuencia() {
-            document.getElementById('input-numero').value = '';
-            document.getElementById('canvas-viewport').style.display = 'none';
+            const input = document.getElementById('input-numero');
+            input.value = '';
+            input.style.boxShadow = 'none';
+            historialSecuencia = []; 
+            document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
-            document.getElementById('panel-izquierdo').style.display = 'none';
-            document.getElementById('panel-derecho').style.display = 'none';
+            document.getElementById('resultado-texto').style.display = 'none';
+            document.getElementById('panel-historial').innerHTML = '<h4>Historial de Secuencia</h4><div style="color: #888; text-align: center; font-size: 0.9rem;">Ingresa secuencias separadas por coma para ver el historial aquí.</div>';
             limpiarResaltados();
+            if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
         }
+
+        // ============================================================
+        // NUEVA LÓGICA DE INPUT: Dispara solo al presionar Coma
+        // ============================================================
+        document.getElementById('input-numero').addEventListener('input', function(e) {
+            if (modoSecuenciaActivo) {
+                const valor = e.target.value;
+                
+                // Condición: Si el último caracter ingresado es una coma
+                if (valor.endsWith(',')) {
+                    if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
+                    // Pequeño delay para que el usuario termine de escribir si pegó texto
+                    temporizadorSecuencia = setTimeout(() => {
+                        // Limpiamos la coma final para procesar el número
+                        let textoLimpio = valor.slice(0, -1).trim();
+                        if (textoLimpio !== '') {
+                            generarMapaFractal();
+                        }
+                    }, 300);
+                }
+            }
+        });
 
         function cambiarVista() {
             const sel = document.getElementById('combo-loteria').value;
-            vistaActual = (sel === 'mapeo_lotto.json') ? 'lotto' : (sel === 'TODAS' ? 'todas' : 'guacharo');
-            document.getElementById('canvas-viewport').style.display = 'none';
+            vistaActual = (sel === 'mapeo_lotto.json') ? 'lotto' : 'guacharo';
+            document.getElementById('resultado-texto').style.display = 'none';
+            document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
             datosGlobales = []; 
             dibujarVistaActual();
         }
 
         function dibujarVistaActual() {
-            if (vistaActual === 'lotto') dibujarRuletaLotto();
-            else if (vistaActual === 'guacharo') dibujarRuletaGuacharo();
-            else document.getElementById('ruleta-container').innerHTML = '<p style="text-align:center; color:#aaa; padding: 50px;">Modo Cruce Global Activado.<br>Presiona "Generar Vórtice".</p>';
+            if (vistaActual === 'lotto') {
+                dibujarRuletaLotto();
+            } else {
+                dibujarRuletaGuacharo();
+            }
         }
 
         function dibujarRuletaLotto() {
@@ -249,156 +340,490 @@
         }
 
         function seleccionarNumeroDesdeRuleta(num) {
-            document.getElementById('input-numero').value = num;
+            const inputNum = document.getElementById('input-numero');
+            inputNum.value = num;
+            inputNum.style.transition = 'box-shadow 0.3s'; inputNum.style.boxShadow = '0 0 15px #ff00cc';
+            setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
+            buscarVecinosRuleta();
         }
 
         function limpiarResaltados() {
-            document.querySelectorAll('.casilla').forEach(c => c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido'));
+            document.querySelectorAll('.casilla').forEach(c => {
+                c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido');
+            });
         }
 
-        // ============================================================
-        // DIBUJO DEL VÓRTICE (EL HUECO EN EL CENTRO Y TAMAÑOS PROGRESIVOS)
-        // ============================================================
+        function pintarObjetivo(num) {
+            const id = (vistaActual === 'lotto') ? `casilla-${num}` : `g-casilla-${num}`;
+            const el = document.getElementById(id); if (el) el.classList.add('num-objetivo');
+        }
+
+        function pintarVecino(num, repetido) {
+            const id = (vistaActual === 'lotto') ? `casilla-${num}` : `g-casilla-${num}`;
+            const el = document.getElementById(id); if (el) el.classList.add(repetido ? 'vecino-repetido' : 'vecino-unico');
+        }
+
+        async function buscarVecinosRuleta() {
+            const inputVal = document.getElementById('input-numero').value.trim();
+            const loteriaFile = document.getElementById('combo-loteria').value;
+            const textResult = document.getElementById('resultado-texto');
+
+            if (inputVal === '') { alert("Por favor, ingresa al menos un número válido."); return; }
+            
+            let primerNumero = inputVal.split(',')[0].trim();
+            if (isNaN(primerNumero)) { alert("El primer número no es válido."); return; }
+
+            document.getElementById('canvas-container').style.display = 'none';
+            document.getElementById('ruleta-container').style.display = 'flex';
+            limpiarResaltados();
+            let numeroObjetivo = parseInt(primerNumero);
+
+            try {
+                const res = await fetch(loteriaFile);
+                const datos = await res.json(); datosGlobales = datos; 
+
+                let historial = [];
+                datos.forEach((reg) => {
+                    if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
+                        historial.push({ num: parseInt(reg.numero), fecha: reg.fecha, hora: reg.hora });
+                    }
+                });
+
+                let indicesApariciones = [];
+                historial.forEach((h, i) => { if (h.num === numeroObjetivo) indicesApariciones.push(i); });
+
+                if (indicesApariciones.length === 0) {
+                    textResult.style.display = 'block';
+                    textResult.innerHTML = `<p class="mensaje-error">El número ${numeroObjetivo} no tiene apariciones registradas.</p>`;
+                    return;
+                }
+
+                let ultimasApariciones = indicesApariciones.slice(-5).reverse();
+                let vecinosAntes = []; let vecinosDespues = []; let contadorVecinos = {};
+
+                ultimasApariciones.forEach(idx => {
+                    if (idx - 1 >= 0) { let n = historial[idx - 1].num; vecinosAntes.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
+                    if (idx - 2 >= 0) { let n = historial[idx - 2].num; vecinosAntes.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
+                    if (idx + 1 < historial.length) { let n = historial[idx + 1].num; vecinosDespues.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
+                    if (idx + 2 < historial.length) { let n = historial[idx + 2].num; vecinosDespues.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
+                });
+
+                pintarObjetivo(numeroObjetivo);
+                let todosVecinosUnicos = [...new Set([...vecinosAntes, ...vecinosDespues])];
+                todosVecinosUnicos.forEach(num => { pintarVecino(num, contadorVecinos[num] > 1); });
+
+                textResult.style.display = 'block';
+                let htmlInfo = `<h3>Análisis para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
+                if (inputVal.includes(',')) { htmlInfo += `<p style="color:#ffd700; font-weight:bold;">⚠️ Modo Secuencia: Análisis del primer número en ruleta.</p>`; }
+                htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Se analizaron las últimas <b>${ultimasApariciones.length}</b> apariciones.</p>`;
+                htmlInfo += `<div style="background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:15px; text-align:left; font-size:0.9rem;">`;
+                ultimasApariciones.forEach((idx, i) => { htmlInfo += `<b>Aparición ${i+1}:</b> ${historial[idx].fecha} (${historial[idx].hora})<br>`; });
+                htmlInfo += `</div>`;
+                textResult.innerHTML = htmlInfo;
+
+            } catch (error) {
+                console.error(error); textResult.style.display = 'block';
+                textResult.innerHTML = `<p class="mensaje-error">Error al cargar los datos. Recargando...</p>`;
+                manejarErrorGlobal(); // Llamada al salvavidas
+            }
+        }
+
         async function generarMapaFractal() {
-            const viewport = document.getElementById('canvas-viewport');
+            const loteriaFile = document.getElementById('combo-loteria').value;
+            const canvasContainer = document.getElementById('canvas-container');
             const ruletaContainer = document.getElementById('ruleta-container');
+            const textResult = document.getElementById('resultado-texto');
             const inputVal = document.getElementById('input-numero').value.trim();
             
-            // Extraer números de búsqueda
-            let numerosBusqueda = [];
-            if (inputVal !== '') {
-                let inputLimpio = inputVal.replace(/,\s*$/, '');
-                numerosBusqueda = inputLimpio.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
-            }
+            if (inputVal === '') { alert("Ingresa al menos un número para generar el mapa."); return; }
 
-            viewport.style.display = 'block';
+            // Limpiamos comas al final para el procesamiento
+            let inputLimpio = inputVal.replace(/,\s*$/, '');
+
+            let numerosBusqueda = inputLimpio.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
+            if (numerosBusqueda.length === 0) { alert("No se detectaron números válidos (0-99)."); return; }
+
+            canvasContainer.style.display = 'flex';
             ruletaContainer.style.display = 'none';
-            document.getElementById('panel-izquierdo').style.display = 'flex';
-            document.getElementById('panel-derecho').style.display = 'flex';
+            textResult.style.display = 'none';
             
+            const numeroPrincipal = numerosBusqueda[numerosBusqueda.length - 1];
+
             const canvas = document.getElementById('fractal-canvas');
             const ctx = canvas.getContext('2d');
             const width = canvas.width; const height = canvas.height;
-            const centroX = width / 2; const centroY = height / 2;
 
             try {
-                // Cargar TODOS los datos
-                const archivos = ['mapeo_lotto.json', 'mapeo_gua.json', 'mapeo_mini.json'];
-                let datosCombinados = [];
-                for (let file of archivos) {
-                    const res = await fetch(file);
-                    if (res.ok) {
-                        const data = await res.json();
-                        datosCombinados = datosCombinados.concat(data);
-                    }
+                if (datosGlobales.length === 0) {
+                    const res = await fetch(loteriaFile); datosGlobales = await res.json();
                 }
-                datosGlobales = datosCombinados;
 
-                // Calcular la frecuencia (peso) de cada número
-                const nodos = {}; 
-                for(let i=0; i<100; i++) { nodos[i] = { count: 0, x: 0, y: 0, id: i, size: 0 }; }
-
+                let historialDatos = [];
                 datosGlobales.forEach(reg => {
                     if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
-                        let num = parseInt(reg.numero);
-                        if(nodos[num]) nodos[num].count++;
+                        historialDatos.push(parseInt(reg.numero));
                     }
                 });
 
-                // --- CONFIGURACIÓN DEL VÓRTICE ---
-                ctx.clearRect(0, 0, width, height); 
-                ctx.fillStyle = '#000000'; // Fondo Negro Absoluto
-                ctx.fillRect(0, 0, width, height);
+                if (historialDatos.length === 0) { throw new Error("No hay datos válidos."); }
 
-                // Ordenamos los números de menor a mayor frecuencia (los fríos primero)
+                const VENTANA = 5;
+                const nodos = {}; const aristas = {}; const adyacentes = {}; 
+                for(let i=0; i<100; i++) { nodos[i] = { count: 0, x: 0, y: 0, id: i }; adyacentes[i] = {}; }
+
+                historialDatos.forEach((num, index) => {
+                    if (nodos[num]) nodos[num].count++;
+                    for (let i = 1; i <= VENTANA; i++) {
+                        if (index + i < historialDatos.length) {
+                            let nextNum = historialDatos[index + i];
+                            let key = num < nextNum ? `${num}-${nextNum}` : `${nextNum}-${num}`;
+                            aristas[key] = (aristas[key] || 0) + 1;
+                            adyacentes[num][nextNum] = (adyacentes[num][nextNum] || 0) + 1;
+                            adyacentes[nextNum][num] = (adyacentes[nextNum][num] || 0) + 1;
+                        }
+                    }
+                });
+
+                let recomendadosFractal = []; let recomendadosInmediatos = [];
+                
+                if (adyacentes[numeroPrincipal]) {
+                    let candidatos = [];
+                    for (let adj in adyacentes[numeroPrincipal]) {
+                        let numAdj = parseInt(adj);
+                        let fuerzaConexion = adyacentes[numeroPrincipal][numAdj];
+                        let frecuenciaPropia = nodos[numAdj].count;
+                        let puntaje = (100 - frecuenciaPropia) + (fuerzaConexion * 5); 
+                        candidatos.push({ num: numAdj, puntaje: puntaje });
+                    }
+                    candidatos.sort((a, b) => b.puntaje - a.puntaje);
+                    recomendadosFractal = candidatos.slice(0, 4);
+                }
+
+                let indicesApariciones = [];
+                historialDatos.forEach((h, i) => { if (h === numeroPrincipal) indicesApariciones.push(i); });
+                if (indicesApariciones.length > 0) {
+                    let ultimas = indicesApariciones.slice(-5).reverse();
+                    let conteoVecinos = {};
+                    ultimas.forEach(idx => {
+                        if (idx - 1 >= 0) { let n = historialDatos[idx - 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx - 2 >= 0) { let n = historialDatos[idx - 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx + 1 < historialDatos.length) { let n = historialDatos[idx + 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                        if (idx + 2 < historialDatos.length) { let n = historialDatos[idx + 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    });
+                    let candidatosInmediatos = [];
+                    for (let num in conteoVecinos) { candidatosInmediatos.push({ num: parseInt(num), puntaje: conteoVecinos[num] * 10 }); }
+                    candidatosInmediatos.sort((a, b) => b.puntaje - a.puntaje);
+                    recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
+                }
+
+                actualizarPanelIzquierdo(numeroPrincipal, recomendadosFractal, recomendadosInmediatos);
+                actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
+
+                const centroX = width / 2; const centroY = height / 2; const radioMax = Math.min(width, height) / 2 - 40;
                 const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
-                const totalNodos = 100; 
-                
-                const anguloDorado = 137.5 * (Math.PI / 180);
-                
-                // 1. EL HUECO DEL CENTRO (Ojo del huracán)
-                // Empezamos el radio a un 20% del radio total, no en 0.
-                const radioHueco = Math.min(width, height) * 0.15; 
-                const radioMax = Math.min(width, height) / 2 - 100; 
 
-                // 2. CALCULAR POSICIONES Y TAMAÑOS
                 numerosOrdenados.forEach((nodo, index) => {
-                    // Fórmula matemática para distribuir en espiral
-                    let ratio = index / totalNodos; 
-                    // La raíz cuadrada hace que se junten más en el centro (efecto remolino)
-                    let radio = radioHueco + (Math.sqrt(ratio) * (radioMax - radioHueco)); 
-                    
-                    let angulo = index * anguloDorado; 
-                    
+                    let ratio = index / numerosOrdenados.length; let radio = ratio * radioMax;
+                    let angulo = index * 137.5 * (Math.PI / 180); 
                     nodo.x = centroX + Math.cos(angulo) * radio;
                     nodo.y = centroY + Math.sin(angulo) * radio;
-                    
-                    // TAMAÑO PROGRESIVO (Como en la imagen 2)
-                    // Va de 4px en el centro a 45px en el borde.
-                    let factorTamano = Math.pow(ratio, 0.8); // Curva de crecimiento
-                    nodo.size = 4 + (factorTamano * 45); 
                 });
 
-                // 3. DIBUJAR LAS ESFERAS
-                numerosOrdenados.forEach((nodo, index) => {
-                    let size = nodo.size;
-                    let isBusqueda = numerosBusqueda.includes(nodo.id);
-                    let ratio = index / totalNodos;
+                ctx.clearRect(0, 0, width, height); ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, width, height);
 
-                    ctx.beginPath(); 
-                    ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
-                    
-                    ctx.shadowBlur = 0;
-                    ctx.shadowColor = 'transparent';
-
-                    if (isBusqueda) {
-                        // El número buscado resalta en rosa neón y es un poco más grande
-                        ctx.fillStyle = `rgba(255, 0, 204, 1)`; 
-                        ctx.strokeStyle = `#fff`; 
-                        ctx.lineWidth = 3;
-                        ctx.shadowColor = '#ff00cc'; ctx.shadowBlur = 20;
-                    } else {
-                        // Degradado de color según la posición (Azul centro -> Rojo borde)
-                        // Esto crea un efecto visual muy limpio y profesional.
-                        let r = Math.min(255, Math.floor(ratio * 255 * 2)); // Aumenta rojo
-                        let g = Math.min(255, Math.floor(ratio * 255));     // Aumenta verde
-                        let b = Math.max(0, 255 - Math.floor(ratio * 255 * 2)); // Baja azul
-                        
-                        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`; 
-                        ctx.strokeStyle = `rgba(255, 255, 255, 0.3)`; 
-                        ctx.lineWidth = 1;
+                ctx.lineWidth = 0.5;
+                for (let key in aristas) {
+                    let [n1, n2] = key.split('-').map(Number); let weight = aristas[key];
+                    if (nodos[n1] && nodos[n2]) {
+                        let alpha = Math.min(weight / 10, 0.5); 
+                        if (numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2)) {
+                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.2})`; ctx.lineWidth = 1.5;
+                        } else {
+                            ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; ctx.lineWidth = 0.5;
+                        }
+                        ctx.beginPath(); ctx.moveTo(nodos[n1].x, nodos[n1].y); ctx.lineTo(nodos[n2].x, nodos[n2].y); ctx.stroke();
                     }
-                    
-                    ctx.fill(); 
-                    ctx.stroke();
-
-                    // Dibujar el número dentro de la esfera (Solo si es lo suficientemente grande)
-                    if (size > 12) {
-                        ctx.shadowBlur = 0; 
-                        ctx.fillStyle = isBusqueda ? '#000' : '#fff'; 
-                        ctx.font = `bold ${Math.max(8, size * 0.5)}px Arial`;
-                        ctx.textAlign = 'center'; 
-                        ctx.textBaseline = 'middle';
-                        let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
-                        ctx.fillText(textNum, nodo.x, nodo.y);
-                    }
-                });
-
-                // Si hay números buscados, actualizamos los paneles laterales
-                if (numerosBusqueda.length > 0) {
-                    document.getElementById('titulo-actual').innerText = `Análisis (${numerosBusqueda.join(', ')})`;
-                    // Aquí podrías llamar a tu lógica de recomendados si lo deseas
-                    document.getElementById('bolitas-fractal').innerHTML = '<span style="color:#aaa;font-size:0.8rem;">Analizando...</span>';
-                } else {
-                    document.getElementById('titulo-actual').innerText = "Universo Completo";
-                    document.getElementById('bolitas-fractal').innerHTML = '<span style="color:#aaa;font-size:0.8rem;">Ingresa un número</span>';
                 }
+
+                if (numerosBusqueda.length > 1) {
+                    ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 15;
+                    ctx.beginPath();
+                    for (let i = 0; i < numerosBusqueda.length; i++) {
+                        let num = numerosBusqueda[i];
+                        if (nodos[num]) {
+                            if (i === 0) ctx.moveTo(nodos[num].x, nodos[num].y);
+                            else ctx.lineTo(nodos[num].x, nodos[num].y);
+                        }
+                    }
+                    ctx.stroke(); ctx.shadowBlur = 0; ctx.lineWidth = 1;
+                }
+
+                numerosOrdenados.forEach(nodo => {
+                    let size = 15 + (nodo.count / 5); 
+                    let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
+                    let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
+                    let isBusqueda = numerosBusqueda.includes(nodo.id);
+
+                    ctx.beginPath(); ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
+                    
+                    if (isBusqueda) {
+                        ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 3;
+                    } else if (isFractal) {
+                        ctx.fillStyle = `#ffcc00`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
+                    } else if (isInmediato) {
+                        ctx.fillStyle = `#00ffcc`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
+                    } else {
+                        let intensity = Math.min(nodo.count * 5, 255);
+                        ctx.fillStyle = nodo.count === 0 ? 'rgba(30, 30, 30, 0.8)' : `rgba(50, 50, 50, 0.8)`;
+                        ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`; ctx.lineWidth = 2;
+                    }
+                    ctx.fill(); ctx.stroke();
+
+                    ctx.fillStyle = (isFractal || isInmediato || isBusqueda) ? '#000' : '#fff'; 
+                    ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
+                    ctx.fillText(textNum, nodo.x, nodo.y);
+                });
 
             } catch (error) {
                 console.error(error); 
-                alert("Error al generar el mapa. Asegúrate de tener los archivos JSON en la misma carpeta.");
+                alert("Ha ocurrido un error inesperado al generar el mapa. El sistema se reiniciará para proteger la integridad de los datos.");
+                manejarErrorGlobal(); // Llamada al salvavidas
             }
         }
+
+        // ============================================================
+        // FUNCIÓN SALVAVIDAS: Manejo de Errores Global
+        // ============================================================
+        function manejarErrorGlobal() {
+            // Intentamos recargar la página para ver si el error es transitorio
+            setTimeout(() => {
+                // Usamos una variable de sesión para contar cuántas veces hemos intentado recargar
+                let intentos = parseInt(sessionStorage.getItem('jarvis_reload_attempts') || '0');
+                
+                if (intentos < 1) {
+                    // Primer intento: Recargar la página
+                    sessionStorage.setItem('jarvis_reload_attempts', intentos + 1);
+                    window.location.reload();
+                } else {
+                    // Segundo intento fallido: Enviar al inicio y limpiar la sesión
+                    sessionStorage.removeItem('jarvis_reload_attempts');
+                    window.location.href = 'index.html'; // Asume que index.html está en la misma carpeta
+                }
+            }, 1000); // Espera 1 segundo para que el usuario lea el error
+        }
+
+        function actualizarPanelIzquierdo(numActual, fractales, inmediatos) {
+            const panel = document.getElementById('panel-recomendados');
+            const bFractal = document.getElementById('bolitas-fractal');
+            const bInmediatas = document.getElementById('bolitas-inmediatas');
+            const titulo = document.getElementById('titulo-actual');
+
+            panel.style.display = 'flex';
+            bFractal.innerHTML = ''; bInmediatas.innerHTML = '';
+            titulo.innerHTML = `Análisis Actual (${numActual.toString().padStart(2, '0')})`;
+
+            const crearBolitas = (candidatos, contenedor, claseCss) => {
+                if (candidatos.length === 0) return;
+                let suma = candidatos.reduce((acc, curr) => acc + curr.puntaje, 0);
+                candidatos.forEach((rec, index) => {
+                    let porcentaje = (rec.puntaje / suma) * 100;
+                    let size = 35 + ((porcentaje / 100) * 40); 
+                    let bolita = document.createElement('div');
+                    bolita.className = claseCss;
+                    bolita.style.width = `${size}px`; bolita.style.height = `${size}px`;
+                    bolita.style.fontSize = `${size * 0.35}px`;
+                    bolita.innerText = rec.num.toString().padStart(2, '0');
+                    
+                    let span = document.createElement('span'); span.className = 'porcentaje';
+                    span.innerText = `${porcentaje.toFixed(1)}%`; bolita.appendChild(span);
+
+                    if (index === 0) {
+                        bolita.style.boxShadow = `0 0 25px ${claseCss === 'bolita-recomendada' ? '#ffcc00' : '#00ffcc'}, inset 0 0 10px #fff`;
+                        bolita.style.border = '3px solid #fff';
+                    }
+                    contenedor.appendChild(bolita);
+                });
+            };
+            crearBolitas(fractales, bFractal, 'bolita-recomendada');
+            crearBolitas(inmediatos, bInmediatas, 'bolita-inmediata');
+        }
+
+        function actualizarHistorialYFuerza(numActual, fractalesActuales, inmediatosActuales, todosLosNumeros) {
+            const historialCont = document.getElementById('historial-contenido');
+            
+            if (historialSecuencia.length === 0) {
+                historialCont.innerHTML = '';
+            }
+
+            const yaExiste = historialSecuencia.some(h => h.num === numActual);
+            if (!yaExiste) {
+                historialSecuencia.push({
+                    num: numActual,
+                    fractales: JSON.parse(JSON.stringify(fractalesActuales)),
+                    inmediatos: JSON.parse(JSON.stringify(inmediatosActuales))
+                });
+            }
+
+            historialCont.innerHTML = '';
+            
+            let contadorAciertos = {};
+            let contadorPrediccion = {};
+            let origenPrediccion = {};
+
+            historialSecuencia.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'historial-item';
+                
+                let aciertosFractal = [];
+                let aciertosInmediatos = [];
+
+                if (index < historialSecuencia.length - 1) {
+                    const numerosPosteriores = historialSecuencia.slice(index + 1).map(h => h.num);
+                    
+                    item.fractales.forEach(f => { 
+                        if (numerosPosteriores.includes(f.num)) {
+                            aciertosFractal.push(f.num); 
+                            contadorAciertos[f.num] = (contadorAciertos[f.num] || 0) + 1;
+                        }
+                    });
+                    item.inmediatos.forEach(v => { 
+                        if (numerosPosteriores.includes(v.num)) {
+                            aciertosInmediatos.push(v.num); 
+                            contadorAciertos[v.num] = (contadorAciertos[v.num] || 0) + 1;
+                        }
+                    });
+                }
+
+                let html = `<div class="historial-numero">Base: ${item.num.toString().padStart(2, '0')}</div>`;
+                
+                html += `<div class="bolitas-grid-historial">`;
+                item.fractales.forEach(f => {
+                    let isAcierto = aciertosFractal.includes(f.num) ? 'acierto' : '';
+                    html += `<div class="bolita-mini amarilla ${isAcierto}" title="Top Fractal">${f.num.toString().padStart(2, '0')}</div>`;
+                });
+                html += `</div>`;
+
+                html += `<div class="bolitas-grid-historial">`;
+                item.inmediatos.forEach(v => {
+                    let isAcierto = aciertosInmediatos.includes(v.num) ? 'acierto' : '';
+                    html += `<div class="bolita-mini verde ${isAcierto}" title="Inmediato">${v.num.toString().padStart(2, '0')}</div>`;
+                });
+                html += `</div>`;
+
+                itemDiv.innerHTML = html;
+                historialCont.appendChild(itemDiv);
+            });
+            
+            historialSecuencia.forEach((item) => {
+                const numerosDeEstaBase = [
+                    ...item.fractales.map(f => f.num),
+                    ...item.inmediatos.map(v => v.num)
+                ];
+
+                numerosDeEstaBase.forEach(num => {
+                    contadorPrediccion[num] = (contadorPrediccion[num] || 0) + 1;
+                    if (!origenPrediccion[num]) origenPrediccion[num] = [];
+                    origenPrediccion[num].push(`B${item.num}`);
+                });
+            });
+
+            const panelDer = document.getElementById('panel-historial');
+            panelDer.scrollTop = panelDer.scrollHeight;
+
+            const panelAciertos = document.getElementById('panel-aciertos-container');
+            const bAciertos = document.getElementById('bolitas-aciertos');
+            
+            let arrayAciertos = Object.keys(contadorAciertos).map(num => {
+                return { num: parseInt(num), aciertos: contadorAciertos[num] };
+            });
+            arrayAciertos.sort((a, b) => b.aciertos - a.aciertos);
+            let topAciertos = arrayAciertos.slice(0, 8); 
+
+            if (topAciertos.length > 0) {
+                panelAciertos.style.display = 'block';
+                bAciertos.innerHTML = '';
+                let totalAciertos = arrayAciertos.reduce((acc, curr) => acc + curr.aciertos, 0);
+
+                topAciertos.forEach((item, index) => {
+                    let porcentaje = (item.aciertos / totalAciertos) * 100;
+                    let size = 30 + ((porcentaje / 100) * 30); 
+                    
+                    let bolita = document.createElement('div');
+                    bolita.className = 'bolita-acierto';
+                    bolita.style.width = `${size}px`; 
+                    bolita.style.height = `${size}px`;
+                    bolita.style.fontSize = `${size * 0.4}px`;
+                    bolita.innerText = item.num.toString().padStart(2, '0');
+                    
+                    let span = document.createElement('span'); 
+                    span.className = 'porcentaje';
+                    span.innerText = `${porcentaje.toFixed(1)}%`; 
+                    bolita.appendChild(span);
+
+                    bAciertos.appendChild(bolita);
+                });
+            } else {
+                panelAciertos.style.display = 'none';
+            }
+
+            const panelPrediccion = document.getElementById('panel-prediccion-container');
+            const bPrediccion = document.getElementById('bolitas-prediccion'); 
+            const origenTexto = document.getElementById('origen-prediccion-texto');
+            
+            let arrayPrediccion = Object.keys(contadorPrediccion).map(num => {
+                return { num: parseInt(num), fuerza: contadorPrediccion[num] };
+            });
+            arrayPrediccion.sort((a, b) => b.fuerza - a.fuerza);
+            let topPrediccion = arrayPrediccion.slice(0, 10);
+
+            if (topPrediccion.length > 0) {
+                panelPrediccion.style.display = 'block';
+                bPrediccion.innerHTML = '';
+                let totalFuerza = arrayPrediccion.reduce((acc, curr) => acc + curr.fuerza, 0);
+                
+                let textoOrigen = "Trazabilidad: " + topPrediccion.map(t => `${t.num.toString().padStart(2,'0')} (${origenPrediccion[t.num].length})`).join(' | ');
+
+                topPrediccion.forEach((item, index) => {
+                    let porcentaje = (item.fuerza / totalFuerza) * 100;
+                    let size = 35 + ((porcentaje / 100) * 15); 
+                    
+                    let bolita = document.createElement('div');
+                    bolita.className = 'bolita-prediccion';
+                    bolita.style.width = `${size}px`; 
+                    bolita.style.height = `${size}px`;
+                    bolita.style.fontSize = `${size * 0.35}px`;
+                    bolita.innerText = item.num.toString().padStart(2, '0');
+                    
+                    let span = document.createElement('span'); 
+                    span.className = 'porcentaje';
+                    span.style.bottom = '-16px'; 
+                    span.style.fontSize = '0.65rem';
+                    span.innerText = `${porcentaje.toFixed(1)}%`; 
+                    bolita.appendChild(span);
+
+                    if (index === 0) {
+                        bolita.style.boxShadow = `0 0 25px #ff0000, inset 0 0 10px #fff`;
+                        bolita.style.border = '3px solid #fff';
+                        bolita.style.transform = 'scale(1.1)';
+                    }
+                    bPrediccion.appendChild(bolita);
+                });
+                origenTexto.innerText = textoOrigen;
+            } else {
+                panelPrediccion.style.display = 'none';
+            }
+        }
+
+        window.onload = function() {
+            vistaActual = 'lotto';
+            dibujarVistaActual();
+            
+            // Limpiamos el contador de errores al cargar la página exitosamente
+            sessionStorage.removeItem('jarvis_reload_attempts');
+        };
     </script>
 </body>
 </html>
