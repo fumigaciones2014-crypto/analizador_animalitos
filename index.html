@@ -11,6 +11,7 @@
             --text-verde: #00ff00; --btn-purpura: #4a148c; --btn-verde-oscuro: #1b5e20;
             --btn-azul-oscuro: #0d47a1; --btn-gris-oscuro: #424242; --btn-amarillo: #f9a825;
             --btn-azul-claro: #29b6f6; --btn-gris: #616161; --btn-verde-footer: #2e7d32;
+            --btn-naranja: #e65100; /* NUEVO COLOR NARANJA */
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-principal); color: var(--text-blanco); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -20,13 +21,20 @@
         
         .layout-container { display: grid; grid-template-columns: 1fr 300px; flex-grow: 1; overflow: hidden; }
         
-        .sidebar-right { background-color: var(--bg-panel); padding: 15px; display: flex; flex-direction: column; gap: 10px; border-left: 2px solid #333; overflow-y: auto; }
+        /* SIDEBAR ESCRITORIO */
+        .sidebar-right { 
+            background-color: var(--bg-panel); padding: 15px; display: flex; flex-direction: column; gap: 10px; 
+            border-left: 2px solid #333; overflow-y: auto; transition: transform 0.3s ease-in-out;
+        }
         .sidebar-title { text-align: center; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px; color: #ccc; }
         .btn-menu { padding: 15px 10px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; text-align: center; transition: opacity 0.2s; }
         .btn-menu:hover { opacity: 0.8; }
-        .bg-purpura { background-color: var(--btn-purpura); } .bg-verde { background-color: var(--btn-verde-oscuro); }
-        .bg-azul { background-color: var(--btn-azul-oscuro); } .bg-gris { background-color: var(--btn-gris-oscuro); }
+        .bg-purpura { background-color: var(--btn-purpura); } 
+        .bg-verde { background-color: var(--btn-verde-oscuro); }
+        .bg-azul { background-color: var(--btn-azul-oscuro); } 
+        .bg-gris { background-color: var(--btn-gris-oscuro); }
         .bg-amarillo { background-color: var(--btn-amarillo); color: #000; }
+        .bg-naranja { background-color: var(--btn-naranja); color: #fff; } /* NUEVA CLASE */
         
         main { display: flex; flex-direction: column; padding: 10px; overflow: hidden; }
         .tabs-container { display: flex; gap: 5px; margin-bottom: 10px; }
@@ -99,27 +107,66 @@
         }
         .bola-suerte small { font-size: 0.8rem; margin-top: 5px; text-transform: uppercase; color: #c8e6c9;}
 
+        /* BOTÓN TOGGLE MENÚ MÓVIL */
+        .menu-toggle-btn {
+            display: none; background-color: var(--btn-azul-claro); color: #000;
+            border: none; border-radius: 4px; padding: 10px 15px; font-weight: bold; cursor: pointer;
+        }
+
         /* RESPONSIVO */
         @media (max-width: 768px) {
-            .layout-container { display: flex; flex-direction: column; overflow-y: auto; }
-            .sidebar-right { border-left: none; border-top: 2px solid #333; flex-direction: row; flex-wrap: wrap; justify-content: center; }
-            .btn-menu { width: 45%; padding: 10px 5px; font-size: 0.8rem; }
-            .sidebar-title { width: 100%; }
+            .layout-container { display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+            
+            /* El sidebar se convierte en panel desplegable */
+            .sidebar-right { 
+                position: fixed; bottom: 0; left: 0; width: 100%; 
+                background-color: var(--bg-panel); border-left: none; border-top: 2px solid #333;
+                border-radius: 20px 20px 0 0; padding: 15px 10px 30px 10px;
+                max-height: 80vh; overflow-y: auto; z-index: 900;
+                transform: translateY(100%); /* Oculto por defecto */
+                box-shadow: 0 -10px 30px rgba(0,0,0,0.7);
+                display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            }
+            .sidebar-right.active { transform: translateY(0); } /* Mostrar */
+            
+            .sidebar-title { 
+                display: block; grid-column: 1 / -1; width: 100%; 
+                text-align: center; font-size: 1rem; color: #ffcc00; 
+                margin-bottom: 5px; padding-bottom: 10px; border-bottom: 1px solid #444;
+            }
+            .btn-menu { width: 100%; padding: 12px 5px; font-size: 0.85rem; }
+            
+            .menu-toggle-btn { display: block; } /* Mostrar botón de menú */
+            
+            main { padding-bottom: 80px; } /* Espacio para el botón de suerte */
             .toolbar { flex-direction: column; }
             .toolbar select, .toolbar input, .btn-tool { width: 100%; }
             .tab-btn { font-size: 0.8rem; padding: 8px; }
             .modal-content { width: 95%; padding: 15px; }
             .bola-suerte { width: 80px; height: 80px; font-size: 2rem; }
+            
+            /* Overlay para oscurecer el fondo al abrir menú */
+            .menu-overlay {
+                display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background-color: rgba(0,0,0,0.5); z-index: 800;
+            }
+            .menu-overlay.active { display: block; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div></div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <!-- BOTÓN PARA ABRIR MENÚ EN MÓVIL -->
+            <button class="menu-toggle-btn" onclick="toggleMenu()">☰</button>
+        </div>
         <div class="header-title">JARVIS - MULTIANALIZADOR v1.0</div>
         <button id="btn-descargas" class="btn-menu bg-azul" style="padding: 10px 20px;" onclick="window.location.href='hist_avanzado.html'">HIST_AVANZADO</button>
     </header>
+
+    <!-- OVERLAY PARA CERRAR MENÚ AL TOCAR FUERA -->
+    <div class="menu-overlay" id="menu-overlay" onclick="toggleMenu()"></div>
 
     <div class="layout-container">
         <main>
@@ -158,13 +205,17 @@
 
         <aside class="sidebar-right" id="sidebar-right">
             <div class="sidebar-title" id="sidebar-title">MENÚ DE FUNCIONES</div>
+            <!-- BOTÓN EXPLOSIVOS (PÚRPURA) -->
             <button id="btn-menu-explosivos" class="btn-menu bg-purpura" onclick="window.location.href='explosivos.html'">Explosivos</button>
-            <button id="btn-menu-patrones" class="btn-menu bg-verde" onclick="window.location.href='patrones.html'">Patrones</button>
+            <!-- BOTÓN PATRONES (AHORA PÚRPURA) -->
+            <button id="btn-menu-patrones" class="btn-menu bg-purpura" onclick="window.location.href='patrones.html'">Patrones</button>
             <button id="btn-menu-graficos" class="btn-menu bg-azul" onclick="window.location.href='graficos.html'">Gráficos</button>
             <button id="btn-menu-proyeccion" class="btn-menu bg-azul" onclick="window.location.href='proyeccion.html'">Proyección</button>
-            <button id="btn-menu-automatico" class="btn-menu bg-gris" onclick="window.location.href='automatico.html'">Modo Auto</button>
+            <!-- BOTÓN MODO AUTO (AHORA AMARILLO) -->
+            <button id="btn-menu-automatico" class="btn-menu bg-amarillo" onclick="window.location.href='automatico.html'">Modo Auto</button>
             <button id="btn-menu-atrasados" class="btn-menu bg-amarillo" onclick="window.location.href='atrasados.html'">Atrasados</button>
-            <button id="btn-menu-funcion7" class="btn-menu bg-gris" onclick="window.location.href='funcion7.html'">Ruleta x N°</button>
+            <!-- BOTÓN RULETA X N° (AHORA NARANJA) -->
+            <button id="btn-menu-funcion7" class="btn-menu bg-naranja" onclick="window.location.href='funcion7.html'">Ruleta x N°</button>
             <button id="btn-menu-funcion8" class="btn-menu bg-gris">Función_8</button>
         </aside>
     </div>
@@ -214,6 +265,14 @@
         let datosLotto = [], datosGuacharo = [], datosMini = [], loteriaActual = 'lotto';
         let numParaHistorial = "";
         let datosFiltradosActuales = [];
+
+        // --- LÓGICA DEL MENÚ MÓVIL ---
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar-right');
+            const overlay = document.getElementById('menu-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
 
         setInterval(() => {
             const ahora = new Date();
