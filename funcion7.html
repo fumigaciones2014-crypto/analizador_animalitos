@@ -143,13 +143,12 @@
         </select>
 
         <label>Número(s):</label>
-        <!-- Placeholder actualizado para indicar el uso de comas -->
         <input type="text" id="input-numero" placeholder="Ej: 26, 33, 31," maxlength="50">
         
         <button class="btn-buscar" onclick="buscarVecinosRuleta()">🔍 Buscar Vecinos</button>
         
         <button id="btn-secuencia" class="btn-secuencia" onclick="toggleSecuencia()">🔗 Secuencias Vecinos</button>
-        <button id="btn-reset" class="btn-reset" onclick="resetSecuencia()">🔄 Reset</button>
+        <button class="btn-reset" class="btn-reset" onclick="resetSecuencia()">🔄 Reset</button>
         
         <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Mapa Fractal</button>
     </div>
@@ -232,6 +231,7 @@
         let temporizadorSecuencia = null;
         
         let historialSecuencia = []; 
+        let animationFrameId = null; // Variable para controlar el bucle de animación
 
         function toggleSecuencia() {
             modoSecuenciaActivo = !modoSecuenciaActivo;
@@ -260,21 +260,15 @@
             document.getElementById('panel-historial').innerHTML = '<h4>Historial de Secuencia</h4><div style="color: #888; text-align: center; font-size: 0.9rem;">Ingresa secuencias separadas por coma para ver el historial aquí.</div>';
             limpiarResaltados();
             if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId); // Detener animación
         }
 
-        // ============================================================
-        // NUEVA LÓGICA DE INPUT: Dispara solo al presionar Coma
-        // ============================================================
         document.getElementById('input-numero').addEventListener('input', function(e) {
             if (modoSecuenciaActivo) {
                 const valor = e.target.value;
-                
-                // Condición: Si el último caracter ingresado es una coma
                 if (valor.endsWith(',')) {
                     if (temporizadorSecuencia) clearTimeout(temporizadorSecuencia);
-                    // Pequeño delay para que el usuario termine de escribir si pegó texto
                     temporizadorSecuencia = setTimeout(() => {
-                        // Limpiamos la coma final para procesar el número
                         let textoLimpio = valor.slice(0, -1).trim();
                         if (textoLimpio !== '') {
                             generarMapaFractal();
@@ -424,10 +418,13 @@
             } catch (error) {
                 console.error(error); textResult.style.display = 'block';
                 textResult.innerHTML = `<p class="mensaje-error">Error al cargar los datos. Recargando...</p>`;
-                manejarErrorGlobal(); // Llamada al salvavidas
+                manejarErrorGlobal();
             }
         }
 
+        // ============================================================
+        // NUEVO DIBUJO: ESPIRAL CON SATÉLITES ORBITANDO
+        // ============================================================
         async function generarMapaFractal() {
             const loteriaFile = document.getElementById('combo-loteria').value;
             const canvasContainer = document.getElementById('canvas-container');
@@ -437,9 +434,7 @@
             
             if (inputVal === '') { alert("Ingresa al menos un número para generar el mapa."); return; }
 
-            // Limpiamos comas al final para el procesamiento
             let inputLimpio = inputVal.replace(/,\s*$/, '');
-
             let numerosBusqueda = inputLimpio.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 0 && n <= 99);
             if (numerosBusqueda.length === 0) { alert("No se detectaron números válidos (0-99)."); return; }
 
@@ -452,8 +447,12 @@
             const canvas = document.getElementById('fractal-canvas');
             const ctx = canvas.getContext('2d');
             const width = canvas.width; const height = canvas.height;
+            const centroX = width / 2; const centroY = height / 2;
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId); // Detener animación anterior
 
             try {
+                // 1. CÁLCULOS CON LA LOTERÍA ACTUAL (Lógica Original)
                 if (datosGlobales.length === 0) {
                     const res = await fetch(loteriaFile); datosGlobales = await res.json();
                 }
@@ -465,11 +464,14 @@
                     }
                 });
 
-                if (historialDatos.length === 0) { throw new Error("No hay datos válidos."); }
-
                 const VENTANA = 5;
                 const nodos = {}; const aristas = {}; const adyacentes = {}; 
-                for(let i=0; i<100; i++) { nodos[i] = { count: 0, x: 0, y: 0, id: i }; adyacentes[i] = {}; }
+                for(let i=0; i<100; i++) { nodos[i] = { count: 0, x: 0, y: 0, id: i, isPrimary: false }; adyacentes[i] = {}; }
+
+                // Definir cuáles son las estrellas principales según la lotería
+                let maxPrimario = 36; // Lotto
+                if (loteriaFile.includes('gua')) maxPrimario = 75;
+                if (loteriaFile.includes('mini')) maxPrimario = 99;
 
                 historialDatos.forEach((num, index) => {
                     if (nodos[num]) nodos[num].count++;
@@ -519,100 +521,160 @@
                 actualizarPanelIzquierdo(numeroPrincipal, recomendadosFractal, recomendadosInmediatos);
                 actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
 
-                const centroX = width / 2; const centroY = height / 2; const radioMax = Math.min(width, height) / 2 - 40;
+                // =======================================================
+                // 2. CONFIGURACIÓN DEL DIBUJO Y LA ANIMACIÓN
+                // =======================================================
+                const radioMax = Math.min(width, height) / 2 - 60; // Margen para que no toque los bordes
                 const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
 
-                numerosOrdenados.forEach((nodo, index) => {
-                    let ratio = index / numerosOrdenados.length; let radio = ratio * radioMax;
-                    let angulo = index * 137.5 * (Math.PI / 180); 
+                // Separar en Estrellas (Primarios) y Satélites
+                const primarios = numerosOrdenados.filter(n => n.id <= maxPrimario);
+                const satelites = numerosOrdenados.filter(n => n.id > maxPrimario);
+
+                // Posicionar Estrellas (Espiral)
+                const anguloDorado = 137.5 * (Math.PI / 180);
+                const radioHueco = 20; // Hueco en el centro
+
+                primarios.forEach((nodo, index) => {
+                    let ratio = index / primarios.length; 
+                    let radio = radioHueco + (Math.sqrt(ratio) * (radioMax - radioHueco)); 
+                    let angulo = index * anguloDorado; 
+                    
                     nodo.x = centroX + Math.cos(angulo) * radio;
                     nodo.y = centroY + Math.sin(angulo) * radio;
+                    nodo.size = 15 + (ratio * 15); // Tamaño controlado
+                    nodo.isPrimary = true;
                 });
 
-                ctx.clearRect(0, 0, width, height); ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, width, height);
+                // Asignar órbitas a los Satélites (Cerca de una estrella aleatoria)
+                satelites.forEach((nodo) => {
+                    let padre = primarios[Math.floor(Math.random() * primarios.length)];
+                    nodo.padre = padre;
+                    nodo.anguloOrbita = Math.random() * Math.PI * 2;
+                    nodo.velocidadOrbita = (Math.random() * 0.02 + 0.01); // Velocidad de rotación
+                    nodo.distanciaOrbita = padre.size + (Math.random() * 30) + 15; // Distancia al padre
+                    nodo.size = 4 + (Math.random() * 4); // Tamaño pequeño de satélite
+                });
 
-                ctx.lineWidth = 0.5;
-                for (let key in aristas) {
-                    let [n1, n2] = key.split('-').map(Number); let weight = aristas[key];
-                    if (nodos[n1] && nodos[n2]) {
-                        let alpha = Math.min(weight / 10, 0.5); 
-                        if (numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2)) {
-                            ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.2})`; ctx.lineWidth = 1.5;
+                // Función de dibujo que se repetirá en bucle
+                const dibujarFrame = () => {
+                    ctx.clearRect(0, 0, width, height); 
+                    ctx.fillStyle = '#0a0a0a'; 
+                    ctx.fillRect(0, 0, width, height);
+
+                    // Dibujar Aristas (Solo entre estrellas principales)
+                    ctx.lineWidth = 0.5;
+                    for (let key in aristas) {
+                        let [n1, n2] = key.split('-').map(Number); let weight = aristas[key];
+                        if (nodos[n1] && nodos[n2] && nodos[n1].isPrimary && nodos[n2].isPrimary) {
+                            let alpha = Math.min(weight / 10, 0.5); 
+                            if (numerosBusqueda.includes(n1) || numerosBusqueda.includes(n2)) {
+                                ctx.strokeStyle = `rgba(255, 0, 204, ${alpha + 0.2})`; ctx.lineWidth = 1.5;
+                            } else {
+                                ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; ctx.lineWidth = 0.5;
+                            }
+                            ctx.beginPath(); ctx.moveTo(nodos[n1].x, nodos[n1].y); ctx.lineTo(nodos[n2].x, nodos[n2].y); ctx.stroke();
+                        }
+                    }
+
+                    // Dibujar Secuencia de Búsqueda
+                    if (numerosBusqueda.length > 1) {
+                        ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                        ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 15;
+                        ctx.beginPath();
+                        for (let i = 0; i < numerosBusqueda.length; i++) {
+                            let num = numerosBusqueda[i];
+                            if (nodos[num]) {
+                                if (i === 0) ctx.moveTo(nodos[num].x, nodos[num].y);
+                                else ctx.lineTo(nodos[num].x, nodos[num].y);
+                            }
+                        }
+                        ctx.stroke(); ctx.shadowBlur = 0; ctx.lineWidth = 1;
+                    }
+
+                    // Dibujar Satélites (Actualizando su posición orbital)
+                    satelites.forEach(nodo => {
+                        if (nodo.padre) {
+                            // Actualizar ángulo de órbita
+                            nodo.anguloOrbita += nodo.velocidadOrbita;
+                            // Calcular nueva posición
+                            nodo.x = nodo.padre.x + Math.cos(nodo.anguloOrbita) * nodo.distanciaOrbita;
+                            nodo.y = nodo.padre.y + Math.sin(nodo.anguloOrbita) * nodo.distanciaOrbita;
+
+                            ctx.beginPath(); ctx.arc(nodo.x, nodo.y, nodo.size, 0, 2 * Math.PI);
+                            ctx.fillStyle = `rgba(100, 150, 200, 0.6)`; // Color azulado tenue para satélites
+                            ctx.strokeStyle = `rgba(150, 200, 255, 0.8)`; ctx.lineWidth = 1;
+                            ctx.fill(); ctx.stroke();
+                            
+                            // Texto del satélite
+                            ctx.fillStyle = '#fff'; 
+                            ctx.font = `bold ${Math.max(4, nodo.size * 1.2)}px Arial`;
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
+                            ctx.fillText(textNum, nodo.x, nodo.y);
+                        }
+                    });
+
+                    // Dibujar Estrellas Principales
+                    primarios.forEach(nodo => {
+                        let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
+                        let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
+                        let isBusqueda = numerosBusqueda.includes(nodo.id);
+
+                        ctx.beginPath(); ctx.arc(nodo.x, nodo.y, nodo.size, 0, 2 * Math.PI);
+                        
+                        ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+
+                        if (isBusqueda) {
+                            ctx.fillStyle = `rgba(255, 0, 204, 0.95)`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 3;
+                            ctx.shadowColor = '#ff00cc'; ctx.shadowBlur = 15;
+                        } else if (isFractal) {
+                            ctx.fillStyle = `#ffcc00`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
+                            ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 10;
+                        } else if (isInmediato) {
+                            ctx.fillStyle = `#00ffcc`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
+                            ctx.shadowColor = '#00ffcc'; ctx.shadowBlur = 10;
                         } else {
-                            ctx.strokeStyle = `rgba(0, 255, 204, ${alpha})`; ctx.lineWidth = 0.5;
+                            let intensity = Math.min(nodo.count * 5, 255);
+                            ctx.fillStyle = nodo.count === 0 ? 'rgba(30, 30, 30, 0.8)' : `rgba(50, 50, 50, 0.8)`;
+                            ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`; ctx.lineWidth = 2;
                         }
-                        ctx.beginPath(); ctx.moveTo(nodos[n1].x, nodos[n1].y); ctx.lineTo(nodos[n2].x, nodos[n2].y); ctx.stroke();
-                    }
-                }
+                        ctx.fill(); ctx.stroke();
 
-                if (numerosBusqueda.length > 1) {
-                    ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-                    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 15;
-                    ctx.beginPath();
-                    for (let i = 0; i < numerosBusqueda.length; i++) {
-                        let num = numerosBusqueda[i];
-                        if (nodos[num]) {
-                            if (i === 0) ctx.moveTo(nodos[num].x, nodos[num].y);
-                            else ctx.lineTo(nodos[num].x, nodos[num].y);
-                        }
-                    }
-                    ctx.stroke(); ctx.shadowBlur = 0; ctx.lineWidth = 1;
-                }
+                        // Texto de la estrella
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = (isFractal || isInmediato || isBusqueda) ? '#000' : '#fff'; 
+                        ctx.font = `bold ${Math.max(10, nodo.size * 0.6)}px Arial`;
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
+                        ctx.fillText(textNum, nodo.x, nodo.y);
+                    });
 
-                numerosOrdenados.forEach(nodo => {
-                    let size = 15 + (nodo.count / 5); 
-                    let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
-                    let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
-                    let isBusqueda = numerosBusqueda.includes(nodo.id);
+                    // Solicitar el siguiente frame
+                    animationFrameId = requestAnimationFrame(dibujarFrame);
+                };
 
-                    ctx.beginPath(); ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
-                    
-                    if (isBusqueda) {
-                        ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 3;
-                    } else if (isFractal) {
-                        ctx.fillStyle = `#ffcc00`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
-                    } else if (isInmediato) {
-                        ctx.fillStyle = `#00ffcc`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
-                    } else {
-                        let intensity = Math.min(nodo.count * 5, 255);
-                        ctx.fillStyle = nodo.count === 0 ? 'rgba(30, 30, 30, 0.8)' : `rgba(50, 50, 50, 0.8)`;
-                        ctx.strokeStyle = `rgb(${intensity}, 255, ${intensity})`; ctx.lineWidth = 2;
-                    }
-                    ctx.fill(); ctx.stroke();
-
-                    ctx.fillStyle = (isFractal || isInmediato || isBusqueda) ? '#000' : '#fff'; 
-                    ctx.font = `bold ${Math.max(10, size * 0.8)}px Arial`;
-                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    let textNum = nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0');
-                    ctx.fillText(textNum, nodo.x, nodo.y);
-                });
+                // Iniciar la animación
+                dibujarFrame();
 
             } catch (error) {
                 console.error(error); 
-                alert("Ha ocurrido un error inesperado al generar el mapa. El sistema se reiniciará para proteger la integridad de los datos.");
-                manejarErrorGlobal(); // Llamada al salvavidas
+                alert("Ha ocurrido un error inesperado al generar el mapa.");
+                manejarErrorGlobal(); 
             }
         }
 
-        // ============================================================
-        // FUNCIÓN SALVAVIDAS: Manejo de Errores Global
-        // ============================================================
         function manejarErrorGlobal() {
-            // Intentamos recargar la página para ver si el error es transitorio
             setTimeout(() => {
-                // Usamos una variable de sesión para contar cuántas veces hemos intentado recargar
                 let intentos = parseInt(sessionStorage.getItem('jarvis_reload_attempts') || '0');
-                
                 if (intentos < 1) {
-                    // Primer intento: Recargar la página
                     sessionStorage.setItem('jarvis_reload_attempts', intentos + 1);
                     window.location.reload();
                 } else {
-                    // Segundo intento fallido: Enviar al inicio y limpiar la sesión
                     sessionStorage.removeItem('jarvis_reload_attempts');
-                    window.location.href = 'index.html'; // Asume que index.html está en la misma carpeta
+                    window.location.href = 'index.html';
                 }
-            }, 1000); // Espera 1 segundo para que el usuario lea el error
+            }, 1000); 
         }
 
         function actualizarPanelIzquierdo(numActual, fractales, inmediatos) {
@@ -820,8 +882,6 @@
         window.onload = function() {
             vistaActual = 'lotto';
             dibujarVistaActual();
-            
-            // Limpiamos el contador de errores al cargar la página exitosamente
             sessionStorage.removeItem('jarvis_reload_attempts');
         };
     </script>
