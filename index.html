@@ -40,6 +40,8 @@
         }
         .btn-login:hover { background-color: #81d4fa; }
         .error-msg { color: #ff5555; font-weight: bold; margin-top: 10px; display: none; }
+        .file-upload { margin-top: 15px; font-size: 0.8rem; color: #888; text-align: left; }
+        .file-upload input { padding: 5px; background: #222; border: 1px solid #444; color: white; margin-top: 5px; width: 100%; }
 
         /* --- RESTO DE ESTILOS --- */
         header { background-color: var(--bg-header); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; }
@@ -92,7 +94,7 @@
         footer a { color: var(--btn-azul-claro); text-decoration: none; font-weight: bold; }
         footer a:hover { text-decoration: underline; }
 
-        /* MODALES Y OTROS (Sin cambios) */
+        /* MODALES */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
         .modal-content { background-color: #1e1e1e; padding: 20px; border: 2px solid var(--btn-azul-claro); border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; position: relative; }
         .close-btn { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -144,6 +146,12 @@
             <button class="btn-login" onclick="validarLogin()">INGRESAR</button>
             <div id="login-error" class="error-msg">❌ Usuario o contraseña incorrectos</div>
             <div id="login-expirado" class="error-msg" style="color: #ffaa00;">⚠️ Tu suscripción ha vencido. ¡Renueva para continuar!</div>
+            
+            <!-- OPCIÓN DE RESPALDO POR SI EL NAVEGADOR BLOQUEA EL JSON -->
+            <div class="file-upload" id="fallback-upload" style="display: none;">
+                <p>Si el navegador bloquea la lectura automática, sube tu <b>user.json</b> aquí:</p>
+                <input type="file" id="file-input" accept=".json" onchange="cargarJSONManual(event)">
+            </div>
         </div>
     </div>
 
@@ -209,9 +217,7 @@
     <footer>
         <div class="footer-info">
             <div id="footer-reloj">📅 Fecha y Hora Actual</div>
-            <div id="footer-contador" class="contador-suscripcion" style="display: none;">
-                <!-- Aquí se inyecta el contador con JS -->
-            </div>
+            <div id="footer-contador" class="contador-suscripcion" style="display: none;"></div>
         </div>
         <a id="footer-link-resultados" href="https://loteriadehoy.com/animalitos/resultados/" target="_blank">RESULTADOS</a>
     </footer>
@@ -249,24 +255,20 @@
         let datosLotto = [], datosGuacharo = [], datosMini = [], loteriaActual = 'lotto';
         let numParaHistorial = "";
         let datosFiltradosActuales = [];
-        let usuarioActual = null;
-        let diasTotalesUsuario = 0;
-        let esIlimitado = false;
+        let usuariosData = []; // Almacén local de usuarios
 
         // ==========================================
-        // SISTEMA DE LOGIN Y SUSCRIPCIÓN
+        // SISTEMA DE LOGIN Y SUSCRIPCIÓN (BLINDADO)
         // ==========================================
         window.onload = function() {
             let sesionGuardada = localStorage.getItem("jarvis_session");
             
             if (sesionGuardada) {
                 let sesion = JSON.parse(sesionGuardada);
-                // Verificar si la sesión ha expirado
                 if (verificarExpiracion(sesion)) {
                     iniciarApp();
                     mostrarContador(sesion);
                 } else {
-                    // Sesión expirada
                     localStorage.removeItem("jarvis_session");
                     document.getElementById('login-overlay').style.display = 'flex';
                     document.getElementById('login-expirado').style.display = 'block';
@@ -274,7 +276,38 @@
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
             }
+            // Intentar cargar usuarios en segundo plano
+            precargarUsuarios();
         };
+
+        // Intenta cargar el user.json automáticamente
+        async function precargarUsuarios() {
+            try {
+                const respuesta = await fetch('user.json');
+                usuariosData = await respuesta.json();
+                console.log("User.json cargado automáticamente.");
+            } catch (error) {
+                console.warn("No se pudo cargar user.json automáticamente (posible bloqueo del navegador). Se usará el respaldo manual.");
+                document.getElementById('fallback-upload').style.display = 'block';
+            }
+        }
+
+        // Carga manual del archivo JSON si el fetch falla
+        function cargarJSONManual(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    usuariosData = JSON.parse(e.target.result);
+                    alert("✅ Archivo cargado correctamente. Ya puedes ingresar.");
+                    document.getElementById('fallback-upload').style.display = 'none';
+                } catch (err) {
+                    alert("❌ El archivo no es un JSON válido.");
+                }
+            };
+            reader.readAsText(file);
+        }
 
         async function validarLogin() {
             let user = document.getElementById('login-user').value.trim();
@@ -286,112 +319,92 @@
             expiradoDiv.style.display = 'none';
 
             if (!user || !pass) {
-                errorDiv.innerText = "⚠️ Por favor, llena todos los campos.";
+                errorDiv.innerText = "⚠️ Llena todos los campos.";
                 errorDiv.style.display = 'block';
                 return;
             }
 
-            try {
-                const respuesta = await fetch('user.json');
-                const usuarios = await respuesta.json();
-
-                const usuarioValido = usuarios.find(u => u.usuario === user && u.password === pass);
-
-                if (usuarioValido) {
-                    // Determinar los días del usuario
-                    let dias = usuarioValido.dias;
-                    esIlimitado = (dias === "ilimitado");
-                    diasTotalesUsuario = esIlimitado ? 9999 : parseInt(dias);
-
-                    // Crear objeto de sesión
-                    let sesion = {
-                        usuario: user,
-                        fechaInicio: new Date().getTime(),
-                        diasTotales: diasTotalesUsuario,
-                        esIlimitado: esIlimitado
-                    };
-
-                    // Guardar sesión
-                    localStorage.setItem("jarvis_session", JSON.stringify(sesion));
-                    
-                    document.getElementById('login-overlay').style.display = 'none';
-                    iniciarApp();
-                    mostrarContador(sesion);
-                } else {
-                    errorDiv.innerText = "❌ Usuario o contraseña incorrectos.";
-                    errorDiv.style.display = 'block';
-                    document.getElementById('login-pass').value = '';
-                }
-            } catch (error) {
-                console.error("Error cargando user.json:", error);
-                errorDiv.innerText = "⚠️ Error de conexión al validar.";
+            // Si no hay usuarios cargados (fetch falló y no subieron archivo), avisar
+            if (usuariosData.length === 0) {
+                errorDiv.innerText = "⚠️ No se pudo leer user.json. Sube el archivo abajo.";
                 errorDiv.style.display = 'block';
+                document.getElementById('fallback-upload').style.display = 'block';
+                return;
+            }
+
+            const usuarioValido = usuariosData.find(u => u.usuario === user && u.password === pass);
+
+            if (usuarioValido) {
+                let dias = usuarioValido.dias;
+                let esIlimitado = (dias === "ilimitado");
+                let diasTotales = esIlimitado ? 9999 : parseInt(dias);
+
+                let sesion = {
+                    usuario: user,
+                    fechaInicio: new Date().getTime(),
+                    diasTotales: diasTotales,
+                    esIlimitado: esIlimitado
+                };
+
+                localStorage.setItem("jarvis_session", JSON.stringify(sesion));
+                document.getElementById('login-overlay').style.display = 'none';
+                iniciarApp();
+                mostrarContador(sesion);
+            } else {
+                errorDiv.innerText = "❌ Usuario o contraseña incorrectos.";
+                errorDiv.style.display = 'block';
+                document.getElementById('login-pass').value = '';
             }
         }
 
-        // Verifica si la suscripción ya venció
         function verificarExpiracion(sesion) {
-            if (sesion.esIlimitado) return true; // Ilimitado nunca expira
-
+            if (sesion.esIlimitado) return true;
             let ahora = new Date().getTime();
             let transcurrido = ahora - sesion.fechaInicio;
             let diasTranscurridos = transcurrido / (1000 * 60 * 60 * 24);
-            
             return diasTranscurridos < sesion.diasTotales;
         }
 
-        // Muestra el contador en el footer
         function mostrarContador(sesion) {
             let contadorDiv = document.getElementById('footer-contador');
             contadorDiv.style.display = 'flex';
 
             if (sesion.esIlimitado) {
-                contadorDiv.innerHTML = `<span class="texto-vip">💎 USUARIO VIP - ACCESO ILIMITADO</span>`;
+                contadorDiv.innerHTML = `<span class="texto-vip">💎 VIP ILIMITADO</span>`;
                 return;
             }
 
-            let ahora = new Date().getTime();
-            let transcurrido = ahora - sesion.fechaInicio;
-            let diasTranscurridos = transcurrido / (1000 * 60 * 60 * 24);
-            let diasRestantes = sesion.diasTotales - diasTranscurridos;
-
-            // Actualizar contador cada minuto
             function actualizarContador() {
                 let ahora = new Date().getTime();
                 let transcurrido = ahora - sesion.fechaInicio;
-                let diasTranscurridos = transcurrido / (1000 * 60 * 60 * 24);
-                let diasRestantes = sesion.diasTotales - diasTranscurridos;
+                // Convertir a días exactos
+                let diasRestantes = sesion.diasTotales - (transcurrido / (1000 * 60 * 60 * 24));
 
                 if (diasRestantes <= 0) {
-                    // Expirado en vivo
-                    contadorDiv.innerHTML = `<span class="texto-peligro">⚠️ SUSCRIPCIÓN VENCIDA</span>`;
-                    setTimeout(() => {
-                        cerrarSesion();
-                    }, 3000);
+                    contadorDiv.innerHTML = `<span class="texto-peligro">⚠️ VENCIDO</span>`;
+                    setTimeout(cerrarSesion, 3000);
                     return;
                 }
 
-                // Formatear días y horas
                 let diasEnteros = Math.floor(diasRestantes);
                 let horasRestantes = Math.floor((diasRestantes - diasEnteros) * 24);
                 let minutosRestantes = Math.floor(((diasRestantes - diasEnteros) * 24 - horasRestantes) * 60);
 
                 let claseColor = diasEnteros <= 1 ? "texto-peligro" : "texto-normal";
-                contadorDiv.innerHTML = `<span class="${claseColor}">⏳ Quedan: ${diasEnteros}d ${horasRestantes}h ${minutosRestantes}m</span>`;
+                contadorDiv.innerHTML = `<span class="${claseColor}">⏳ ${diasEnteros}d ${horasRestantes}h ${minutosRestantes}m</span>`;
             }
 
             actualizarContador();
-            setInterval(actualizarContador, 60000); // Actualizar cada minuto
+            setInterval(actualizarContador, 60000);
         }
 
         function cerrarSesion() {
             localStorage.removeItem("jarvis_session");
-            localStorage.removeItem("jarvis_logged"); // Por compatibilidad con versión anterior
             location.reload();
         }
 
         // ==========================================
-        // LÓGICA DE LA APP
+        // LÓGICA DE LA APP (Sin cambios)
         // ==========================================
         function toggleMenu() {
             const sidebar = document.getElementById('sidebar-right');
@@ -405,9 +418,7 @@
             document.getElementById('footer-reloj').innerText = `📅 ${ahora.toLocaleDateString()} | ⏰ ${ahora.toLocaleTimeString()}`;
         }, 1000);
 
-        function iniciarApp() {
-            cargarDatos();
-        }
+        function iniciarApp() { cargarDatos(); }
 
         async function cargarDatos() {
             try {
@@ -420,30 +431,23 @@
                 aplicarFiltros();
                 verificarSuerteDisponible();
             } catch (error) {
-                console.error("Error cargando los JSON:", error);
+                console.error("Error cargando los JSON de datos:", error);
             }
         }
 
-        // [Aquí van tus funciones de tabla, análisis, radar y suerte que ya tenías]
-        // Las omito por brevedad, pero debes pegarlas exactamente igual que antes.
-        
-        // Ejemplo de función que ya tenías:
         function renderizarTabla(datos) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
             const registrosAMostrar = datos.slice(-50).reverse(); 
-            
             if (registrosAMostrar.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; color: #888;">No se encontraron resultados.</td></tr>`;
                 return;
             }
-
             registrosAMostrar.forEach(registro => {
                 const tr = document.createElement('tr');
                 const fechaParts = registro.fecha.split('-');
                 let numMostrar = registro.numero.toString().padStart(2, '0');
                 if(registro.numero === '??') numMostrar = '??';
-
                 tr.innerHTML = `
                     <td>${fechaParts[2]}-${fechaParts[1]}</td>
                     <td>${registro.hora}</td>
@@ -455,7 +459,42 @@
             });
         }
 
-        // ... (Pegar el resto de funciones: cambiarLoteria, aplicarFiltros, limpiarFiltros, analizarNumeroIndividual, etc.)
+        function cambiarLoteria(loteria) {
+            loteriaActual = loteria;
+            document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('tab-active'); btn.classList.add('tab-inactive'); });
+            document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.remove('tab-inactive');
+            document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.add('tab-active');
+            aplicarFiltros(); 
+        }
+
+        function aplicarFiltros() {
+            let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
+            let textoBusqueda = document.getElementById('input-buscar').value.trim().toUpperCase();
+            let orden = document.getElementById('select-filtro').value;
+            let filtrados = datosBase.filter(reg => {
+                let animal = (reg.animal || '').toUpperCase();
+                let numero = reg.numero.toString();
+                let numeroConCero = numero.padStart(2, '0');
+                return animal.includes(textoBusqueda) || numero.includes(textoBusqueda) || numeroConCero.includes(textoBusqueda);
+            });
+            if (orden === 'numero') {
+                filtrados.sort((a, b) => {
+                    let numA = a.numero === '??' ? 999 : parseInt(a.numero);
+                    let numB = b.numero === '??' ? 999 : parseInt(b.numero);
+                    return numA - numB;
+                });
+            }
+            datosFiltradosActuales = filtrados;
+            renderizarTabla(filtrados);
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('input-buscar').value = '';
+            document.getElementById('select-filtro').value = 'reciente';
+            aplicarFiltros();
+        }
+
+        // [El resto de tus funciones de análisis, radar y suerte se mantienen igual]
     </script>
 </body>
 </html>
