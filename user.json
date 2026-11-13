@@ -10,5 +10,9 @@
     {
         "usuario": "invitado",
         "password": "gratis"
+    },
+    {
+        "usuario": "gocha",
+        "password": "1234"
     }
 ]
