@@ -18,5 +18,10 @@
         "usuario": "gocha",
         "password": "1234",
         "dias": "ilimitado"
+    },
+    {
+        "usuario": "admin",
+        "password": "admin",
+        "dias": "ilimitado"
     }
 ]
