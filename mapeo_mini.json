@@ -15838,5 +15838,17 @@
         "hora": "05:00 PM",
         "animal": "PAUJIL",
         "numero": "94"
+    },
+    {
+        "fecha": "2026-11-12",
+        "hora": "06:00 PM",
+        "animal": "AVESTRUZ",
+        "numero": "67"
+    },
+    {
+        "fecha": "2026-11-12",
+        "hora": "07:00 PM",
+        "animal": "CAMALEON",
+        "numero": "60"
     }
 ]

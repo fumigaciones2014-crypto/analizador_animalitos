@@ -15844,5 +15844,11 @@
         "hora": "06:00 PM",
         "animal": "GATO",
         "numero": "11"
+    },
+    {
+        "fecha": "2026-11-12",
+        "hora": "07:00 PM",
+        "animal": "IGUANA",
+        "numero": "24"
     }
 ]
