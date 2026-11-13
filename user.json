@@ -1,18 +1,22 @@
 [
     {
         "usuario": "admin",
-        "password": "16227008"
+        "password": "16227008",
+        "dias": "ilimitado"
     },
     {
         "usuario": "jarvis",
-        "password": "user10902080"
+        "password": "user10902080",
+        "dias": "7"
     },
     {
         "usuario": "invitado",
-        "password": "gratis"
+        "password": "gratis",
+        "dias": "ilimitado"
     },
     {
         "usuario": "gocha",
         "password": "1234"
+        "dias": "ilimitado"
     }
 ]
