@@ -22,12 +22,27 @@
         .btn-reset { background-color: #d32f2f; color: white; border: none; padding: 10px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; }
         .btn-fractal { background-color: #8e24aa; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; margin-left: auto; }
 
-        .canvas-container { display: none; position: relative; justify-content: center; align-items: stretch; gap: 20px; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 20px; margin: 0 auto; flex-grow: 1; width: 100%; box-sizing: border-box; overflow: hidden;}
+        /* CONTENEDOR PRINCIPAL CON SCROLL */
+        .main-scroll-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            gap: 15px;
+            padding-right: 5px;
+        }
+        .main-scroll-container::-webkit-scrollbar { width: 8px; }
+        .main-scroll-container::-webkit-scrollbar-track { background: #111; border-radius: 4px; }
+        .main-scroll-container::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        .main-scroll-container::-webkit-scrollbar-thumb:hover { background: #666; }
+
+        .canvas-container { display: none; position: relative; justify-content: center; align-items: stretch; gap: 20px; background: #0a0a0a; border: 2px solid #333; border-radius: 12px; padding: 20px; margin: 0 auto; width: 100%; box-sizing: border-box; min-height: 500px; }
         
         .panel-izquierdo { position: relative; z-index: 10; display: flex; flex-direction: column; gap: 15px; width: 320px; flex-shrink: 0; }
         .panel-derecho { position: relative; z-index: 10; display: flex; flex-direction: column; width: 280px; flex-shrink: 0; background: rgba(20, 20, 20, 0.95); border-radius: 8px; border: 1px solid #444; padding: 10px; overflow-y: auto; }
         
-        .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        .canvas-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; min-height: 400px; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: grab; }
         canvas:active { cursor: grabbing; }
 
@@ -92,44 +107,55 @@
             }
             .btn-fractal { margin-left: 0; }
             
+            /* Contenedor principal con scroll */
+            .main-scroll-container {
+                overflow-y: auto;
+                height: calc(100vh - 130px);
+                gap: 8px;
+            }
+
             /* Ajustar canvas-container para móvil */
             .canvas-container { 
                 flex-direction: column; 
                 padding: 8px; 
                 gap: 8px;
-                overflow-y: auto;
-                height: calc(100vh - 140px);
+                min-height: 600px;
             }
             
             /* Paneles laterales se convierten en filas superiores compactas */
             .panel-izquierdo { 
                 width: 100%; 
-                flex-direction: row; 
-                flex-wrap: wrap; 
+                flex-direction: column; 
                 gap: 6px;
                 order: 1;
             }
             .leyenda-fractal { 
-                flex: 1 1 45%; 
                 padding: 8px; 
                 font-size: 0.65rem;
             }
             .leyenda-fractal h4 { font-size: 0.75rem; margin-bottom: 4px; }
             .leyenda-fractal p { margin: 3px 0; }
             
+            /* REDUCCIÓN DE ALTURA PARA TOP 4 FRACTAL Y VECINOS INMEDIATOS */
             .panel-recomendados { 
-                flex: 1 1 45%; 
-                padding: 8px; 
+                padding: 6px 8px; 
                 min-width: 0;
             }
-            .panel-recomendados h4 { font-size: 0.75rem; }
-            .bolitas-grid { min-height: 40px; gap: 4px; margin-bottom: 8px; }
-            .bolita-recomendada, .bolita-inmediata { font-size: 0.65rem !important; }
-            .porcentaje { font-size: 0.5rem; bottom: -12px; }
+            .panel-recomendados h4 { font-size: 0.7rem; margin: 2px 0; }
+            .bolitas-grid { 
+                min-height: 30px; 
+                gap: 4px; 
+                margin-bottom: 6px; 
+            }
+            .bolita-recomendada, .bolita-inmediata { 
+                font-size: 0.6rem !important; 
+                border-width: 1.5px;
+            }
+            .porcentaje { font-size: 0.45rem; bottom: -10px; }
             
             .panel-derecho { 
                 width: 100%; 
-                max-height: 120px; 
+                max-height: 100px; 
                 order: 3;
                 padding: 6px;
             }
@@ -137,11 +163,11 @@
             .historial-numero { font-size: 0.85rem; }
             .bolita-mini { width: 22px; height: 22px; font-size: 0.6rem; }
             
-            /* Canvas wrapper ocupa el espacio central */
+            /* Canvas wrapper ocupa el espacio central - altura reducida 20% */
             .canvas-wrapper { 
                 width: 100%; 
-                height: 55vh; 
-                min-height: 300px;
+                height: 44vh; 
+                min-height: 280px;
                 order: 2;
                 flex-shrink: 0;
             }
@@ -160,7 +186,7 @@
             .controles select, .controles input { font-size: 0.75rem; padding: 5px; }
             .btn-buscar, .btn-secuencia, .btn-reset, .btn-fractal { font-size: 0.7rem; padding: 5px 8px; }
             .leyenda-fractal { font-size: 0.6rem; }
-            .canvas-wrapper { height: 50vh; min-height: 250px; }
+            .canvas-wrapper { height: 40vh; min-height: 250px; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
@@ -188,37 +214,40 @@
         <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Mapa Fractal</button>
     </div>
 
-    <div class="ruleta-container" id="ruleta-container"></div>
+    <!-- CONTENEDOR CON SCROLL PARA MÓVIL Y WINDOWS -->
+    <div class="main-scroll-container">
+        <div class="ruleta-container" id="ruleta-container"></div>
 
-    <div class="canvas-container" id="canvas-container">
-        <div class="panel-izquierdo">
-            <div class="leyenda-fractal">
-                <h4>Guía del Mapa</h4>
-                <p><strong>Estrellas:</strong> Números de la lotería actual.</p>
-                <p><strong>Satélites:</strong> Números de otras loterías.</p>
-                <p><strong style="color:#00ffff;">Mensajeros Neón:</strong> Top 10 satélites conectados rebotando.</p>
-                <p><span class="bullet" style="background:#ffd700;"></span> Secuencia de Búsqueda.</p>
-                <p><span class="bullet" style="background:#ff00cc;"></span> Objetivo.</p>
-                <p><span class="bullet" style="background:#ffcc00;"></span> Top 4 Fractal.</p>
-                <p><span class="bullet" style="background:#00ffcc;"></span> Vecinos Inmediatos.</p>
+        <div class="canvas-container" id="canvas-container">
+            <div class="panel-izquierdo">
+                <div class="leyenda-fractal">
+                    <h4>Guía del Mapa</h4>
+                    <p><strong>Estrellas:</strong> Números de la lotería actual.</p>
+                    <p><strong>Satélites:</strong> Números de otras loterías.</p>
+                    <p><strong style="color:#00ffff;">Mensajeros Neón:</strong> Top 10 satélites conectados rebotando.</p>
+                    <p><span class="bullet" style="background:#ffd700;"></span> Secuencia de Búsqueda.</p>
+                    <p><span class="bullet" style="background:#ff00cc;"></span> Objetivo.</p>
+                    <p><span class="bullet" style="background:#ffcc00;"></span> Top 4 Fractal.</p>
+                    <p><span class="bullet" style="background:#00ffcc;"></span> Vecinos Inmediatos.</p>
+                </div>
+
+                <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
+                    <h4 id="titulo-actual">Análisis Actual</h4>
+                    <h4 style="color: #ffcc00; font-size: 0.95rem;">Top 4 Fractal</h4>
+                    <div class="bolitas-grid" id="bolitas-fractal"></div>
+                    <h4 style="color: #00ffcc; font-size: 0.95rem;">Vecinos Inmediatos</h4>
+                    <div class="bolitas-grid" id="bolitas-inmediatas"></div>
+                </div>
             </div>
 
-            <div class="panel-recomendados" id="panel-recomendados" style="display: none;">
-                <h4 id="titulo-actual">Análisis Actual</h4>
-                <h4 style="color: #ffcc00; font-size: 0.95rem;">Top 4 Fractal</h4>
-                <div class="bolitas-grid" id="bolitas-fractal"></div>
-                <h4 style="color: #00ffcc; font-size: 0.95rem;">Vecinos Inmediatos</h4>
-                <div class="bolitas-grid" id="bolitas-inmediatas"></div>
+            <div class="canvas-wrapper">
+                <canvas id="fractal-canvas"></canvas>
             </div>
-        </div>
 
-        <div class="canvas-wrapper">
-            <canvas id="fractal-canvas"></canvas>
-        </div>
-
-        <div class="panel-derecho" id="panel-historial">
-            <h4>Historial de Secuencia</h4>
-            <div id="historial-contenido" style="color: #888; text-align: center; font-size: 0.9rem;">Ingresa secuencias aquí.</div>
+            <div class="panel-derecho" id="panel-historial">
+                <h4>Historial de Secuencia</h4>
+                <div id="historial-contenido" style="color: #888; text-align: center; font-size: 0.9rem;">Ingresa secuencias aquí.</div>
+            </div>
         </div>
     </div>
 
@@ -248,6 +277,7 @@
 
         let mensajeros = [];
         let limitesRebote = { top: 0, bottom: 0, left: 0, right: 0 };
+        let esAndroid = /Android/i.test(navigator.userAgent);
 
         window.onload = function() {
             vistaActual = 'lotto';
@@ -264,7 +294,6 @@
             
             ajustarCanvasSize();
             window.addEventListener('resize', ajustarCanvasSize);
-            // Ajustar al cambiar orientación en móvil
             window.addEventListener('orientationchange', () => {
                 setTimeout(ajustarCanvasSize, 300);
             });
@@ -462,13 +491,15 @@
                 actualizarPanelIzquierdo(numeroPrincipal, recomendadosFractal, recomendadosInmediatos);
                 actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
 
-                const radioMax = Math.min(width, height) / 2 - 60; 
+                // REDUCCIÓN DEL DIBUJO EN 20% PARA ANDROID
+                let factorEscala = esAndroid ? 0.8 : 1.0;
+                const radioMax = (Math.min(width, height) / 2 - 60) * factorEscala; 
                 const numerosOrdenados = Object.values(nodos).sort((a, b) => a.count - b.count);
                 const primarios = numerosOrdenados.filter(n => n.id <= maxPrimario);
                 const satelites = numerosOrdenados.filter(n => n.id > maxPrimario);
 
                 const anguloDorado = 137.5 * (Math.PI / 180);
-                const radioHueco = 20; 
+                const radioHueco = 20 * factorEscala; 
 
                 primarios.forEach((nodo, index) => {
                     let ratio = index / primarios.length; 
@@ -476,7 +507,9 @@
                     let angulo = index * anguloDorado; 
                     nodo.x = centroX + Math.cos(angulo) * radio;
                     nodo.y = centroY + Math.sin(angulo) * radio;
-                    nodo.size = 15 + (ratio * 15);
+                    // REDUCCIÓN DE TAMAÑO DE ESFERAS EN 10% PARA ANDROID
+                    let tamanoBase = 15 + (ratio * 15);
+                    nodo.size = esAndroid ? tamanoBase * 0.9 : tamanoBase;
                     nodo.isPrimary = true;
                 });
 
@@ -486,7 +519,9 @@
                     nodo.anguloOrbita = Math.random() * Math.PI * 2;
                     nodo.velocidadOrbita = (Math.random() * 0.02 + 0.01);
                     nodo.distanciaOrbita = padre.size + (Math.random() * 30) + 15;
-                    nodo.size = 6 + (Math.random() * 5); // Un poco más grandes para que se vea el número
+                    // REDUCCIÓN DE TAMAÑO DE ESFERAS EN 10% PARA ANDROID
+                    let tamanoSat = 6 + (Math.random() * 5);
+                    nodo.size = esAndroid ? tamanoSat * 0.9 : tamanoSat;
                 });
 
                 // --- DETECTAR SATÉLITES MENSAJEROS (TOP 10) ---
@@ -519,16 +554,12 @@
                         y: centroY + (Math.random() - 0.5) * 200,
                         vx: (Math.random() - 0.5) * 5, 
                         vy: (Math.random() - 0.5) * 5, 
-                        size: 30 
+                        // REDUCCIÓN DE TAMAÑO DE MENSAJEROS EN ANDROID
+                        size: esAndroid ? 27 : 30 
                     });
                 });
 
-                // LÍMITES DE REBOTE - ajustado para que funcionen bien en móvil también
-                const rectIzq = document.querySelector('.panel-izquierdo').getBoundingClientRect();
-                const rectDer = document.querySelector('.panel-derecho').getBoundingClientRect();
-                const rectCanvas = canvas.getBoundingClientRect();
-
-                // En móvil los paneles cambian de posición, así que usamos límites relativos al canvas
+                // LÍMITES DE REBOTE
                 limitesRebote.left = 20;
                 limitesRebote.right = canvas.width - 20;
                 limitesRebote.top = 20; 
@@ -572,14 +603,12 @@
                             nodo.x = nodo.padre.x + Math.cos(nodo.anguloOrbita) * nodo.distanciaOrbita;
                             nodo.y = nodo.padre.y + Math.sin(nodo.anguloOrbita) * nodo.distanciaOrbita;
                             
-                            // Dibujar círculo del satélite
                             ctx.beginPath(); ctx.arc(nodo.x, nodo.y, nodo.size, 0, 2 * Math.PI);
                             ctx.fillStyle = `rgba(100, 150, 200, 0.7)`; 
                             ctx.strokeStyle = `rgba(150, 200, 255, 0.9)`; 
                             ctx.lineWidth = 1;
                             ctx.fill(); ctx.stroke();
                             
-                            // Dibujar número del satélite (visible con zoom)
                             ctx.fillStyle = '#fff';
                             ctx.font = `bold ${Math.max(5, nodo.size * 0.7)}px Arial`; 
                             ctx.textAlign = 'center'; 
@@ -608,7 +637,7 @@
                         ctx.fillText(nodo.id === 0 ? "00" : nodo.id.toString().padStart(2, '0'), nodo.x, nodo.y);
                     });
 
-                    // --- DIBUJAR MENSAJEROS NEÓN (TOP 10) CON ESTELA Y REBOTE ---
+                    // --- DIBUJAR MENSAJEROS NEÓN (TOP 10) ---
                     mensajeros.forEach(m => {
                         m.x += m.vx; m.y += m.vy;
 
@@ -617,7 +646,6 @@
                         if (m.y - m.size < limitesRebote.top) { m.y = limitesRebote.top + m.size; m.vy *= -1; }
                         if (m.y + m.size > limitesRebote.bottom) { m.y = limitesRebote.bottom - m.size; m.vy *= -1; }
 
-                        // 1. Estela
                         ctx.beginPath();
                         ctx.moveTo(m.x, m.y);
                         ctx.lineTo(m.x - m.vx * 4, m.y - m.vy * 4); 
@@ -626,7 +654,6 @@
                         ctx.lineCap = 'round';
                         ctx.stroke();
 
-                        // 2. Cuerpo
                         ctx.beginPath(); 
                         ctx.arc(m.x, m.y, m.size, 0, 2 * Math.PI);
                         
@@ -644,7 +671,6 @@
                         ctx.fill(); 
                         ctx.stroke();
                         
-                        // 3. Texto
                         ctx.shadowBlur = 0; 
                         ctx.fillStyle = '#000'; 
                         ctx.font = `bold ${m.size * 0.7}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
