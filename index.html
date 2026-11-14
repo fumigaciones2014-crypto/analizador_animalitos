@@ -77,6 +77,28 @@
         .btn-add-manual:hover { background-color: #388e3c; box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); }
         .btn-add-manual:disabled { background-color: #333; color: #888; cursor: not-allowed; box-shadow: none; }
 
+        /* --- NUEVO: CAJA DE LA SUERTE EN EL SIDEBAR --- */
+        #caja-suerte-fija {
+            display: none; /* Oculto por defecto */
+            margin-top: auto; /* Empuja hacia abajo */
+            background-color: #1a1a1a;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+        }
+        #caja-suerte-fija h3 { color: #4caf50; font-size: 0.9rem; margin-bottom: 10px; }
+        .contenedor-bolas-fijas { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        .bola-fija { 
+            width: 45px; height: 45px; border-radius: 50%; 
+            background: radial-gradient(circle at 30% 30%, #81c784, #2e7d32); 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 1.2rem; font-weight: bold; color: white; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+        #texto-espera-fijo { color: #ffcc00; font-size: 0.8rem; font-weight: bold; }
+
         /* FOOTER CON CONTADOR */
         footer { background-color: var(--bg-header); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-top: 2px solid #333; flex-wrap: wrap; gap: 10px; }
         .footer-info { display: flex; align-items: center; gap: 15px; }
@@ -130,6 +152,13 @@
             .menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 800; }
             .menu-overlay.active { display: block; }
             footer { flex-direction: column; text-align: center; gap: 10px; }
+
+            /* Adaptación Android para la caja de suerte */
+            #caja-suerte-fija {
+                grid-column: 1 / -1; /* Ocupa todo el ancho en el menú flotante */
+                margin-top: 10px;
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -202,6 +231,17 @@
             <button class="btn-menu bg-amarillo" onclick="window.location.href='atrasados.html'">Atrasados</button>
             <button class="btn-menu bg-naranja" onclick="window.location.href='funcion7.html'">Ruleta x N°</button>
             <button class="btn-menu bg-naranja" onclick="window.location.href='funcion8.html'">Ruleta x N° 2</button>
+            
+            <!-- NUEVO: CAJA DE LA SUERTE FIJA -->
+            <div id="caja-suerte-fija">
+                <h3>🍀 TU SUERTE VIGENTE</h3>
+                <div class="contenedor-bolas-fijas">
+                    <div class="bola-fija" id="suerte-fija-1">??</div>
+                    <div class="bola-fija" id="suerte-fija-2">??</div>
+                </div>
+                <div id="texto-espera-fijo">Calculando...</div>
+            </div>
+
         </aside>
     </div>
 
@@ -382,6 +422,7 @@
 
         function iniciarApp() {
             cargarDatos();
+            verificarSuerteDisponible(); // Llamamos aquí para que al cargar la app se fije el número si ya lo pidió antes
         }
 
         async function cargarDatos() {
@@ -762,10 +803,11 @@
         }
 
         // ==========================================
-        // LÓGICA DE SUERTE (CON COOKIES)
+        // LÓGICA DE SUERTE (CON COOKIES) Y FIJACIÓN
         // ==========================================
         const TIEMPO_ESPERA_MS = 5 * 60 * 60 * 1000; 
         let intervaloCronometro = null;
+        let intervaloTextoFijo = null;
 
         function obtenerCookie(nombre) {
             let name = nombre + "=";
@@ -779,10 +821,28 @@
             return "";
         }
 
+        function guardarCookie(nombre, valor, dias) {
+            let d = new Date();
+            d.setTime(d.getTime() + (dias*24*60*60*1000));
+            let expires = "expires="+ d.toUTCString();
+            document.cookie = nombre + "=" + valor + ";" + expires + ";path=/";
+        }
+
         function verificarSuerteDisponible() {
             let ultimoIntento = parseInt(obtenerCookie("jarvis_suerte_time"));
+            let num1 = obtenerCookie("jarvis_suerte_num1");
+            let num2 = obtenerCookie("jarvis_suerte_num2");
             let btn = document.getElementById('btn-agregar-manual');
+            let cajaFija = document.getElementById('caja-suerte-fija');
+            let textoEsperaFijo = document.getElementById('texto-espera-fijo');
             
+            // Si hay números guardados en cookies, los mostramos en la caja fija
+            if (num1 && num2 && ultimoIntento) {
+                document.getElementById('suerte-fija-1').innerText = num1;
+                document.getElementById('suerte-fija-2').innerText = num2;
+                cajaFija.style.display = 'block';
+            }
+
             if (ultimoIntento) {
                 let ahora = new Date().getTime();
                 let tiempoTranscurrido = ahora - ultimoIntento;
@@ -790,24 +850,30 @@
                 if (tiempoTranscurrido < TIEMPO_ESPERA_MS) {
                     btn.disabled = true;
                     let tiempoRestante = TIEMPO_ESPERA_MS - tiempoTranscurrido;
-                    iniciarCronometro(tiempoRestante, btn);
+                    iniciarCronometro(tiempoRestante, btn, textoEsperaFijo);
                     return;
                 }
             }
             
+            // Si ya pasó el tiempo, limpiamos todo
             btn.disabled = false;
             btn.innerHTML = "🍀 Prueba tu Suerte";
+            cajaFija.style.display = 'none'; // Ocultamos la caja si ya expiró
             if(intervaloCronometro) clearInterval(intervaloCronometro);
+            if(intervaloTextoFijo) clearInterval(intervaloTextoFijo);
         }
 
-        function iniciarCronometro(msRestantes, btn) {
+        function iniciarCronometro(msRestantes, btn, textoEsperaFijo) {
             if(intervaloCronometro) clearInterval(intervaloCronometro);
+            if(intervaloTextoFijo) clearInterval(intervaloTextoFijo);
             
             function actualizar() {
                 if (msRestantes <= 0) {
                     clearInterval(intervaloCronometro);
+                    clearInterval(intervaloTextoFijo);
                     btn.disabled = false;
                     btn.innerHTML = "🍀 Prueba tu Suerte";
+                    document.getElementById('caja-suerte-fija').style.display = 'none';
                     return;
                 }
                 
@@ -819,7 +885,14 @@
                 let mStr = minutos.toString().padStart(2, '0');
                 let sStr = segundos.toString().padStart(2, '0');
                 
+                // Actualiza el botón principal
                 btn.innerHTML = `⏳ Espera ${hStr}:${mStr}:${sStr}`;
+                
+                // Actualiza el texto en la caja fija
+                if (textoEsperaFijo) {
+                    textoEsperaFijo.innerHTML = `Espera ${hStr}:${mStr}:${sStr} para otro`;
+                }
+
                 msRestantes -= 1000;
             }
             
@@ -829,10 +902,7 @@
 
         function probarSuerte() {
             let ahora = new Date().getTime();
-            document.cookie = "jarvis_suerte_time=" + ahora + "; max-age=" + (60*60*24*30) + "; path=/";
             
-            verificarSuerteDisponible();
-
             let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
             let puntajes = {};
             let limiteMax = loteriaActual === 'lotto' ? 36 : (loteriaActual === 'gua' ? 99 : 75);
@@ -857,9 +927,24 @@
                 num2 = top9[Math.floor(Math.random() * top9.length)];
             }
 
-            document.getElementById('bola-1').innerText = num1.toString().padStart(2, '0');
-            document.getElementById('bola-2').innerText = num2.toString().padStart(2, '0');
+            let strNum1 = num1.toString().padStart(2, '0');
+            let strNum2 = num2.toString().padStart(2, '0');
+
+            // Guardamos en cookies para que persista por 5 horas
+            guardarCookie("jarvis_suerte_time", ahora, 1); // 1 día de vida la cookie
+            guardarCookie("jarvis_suerte_num1", strNum1, 1);
+            guardarCookie("jarvis_suerte_num2", strNum2, 1);
+            
+            // Actualizamos modal y caja fija
+            document.getElementById('bola-1').innerText = strNum1;
+            document.getElementById('bola-2').innerText = strNum2;
+            document.getElementById('suerte-fija-1').innerText = strNum1;
+            document.getElementById('suerte-fija-2').innerText = strNum2;
+            
             document.getElementById('modal-suerte').style.display = 'flex';
+            document.getElementById('caja-suerte-fija').style.display = 'block'; // Mostramos la caja fija
+
+            verificarSuerteDisponible();
         }
 
         function cerrarModalSuerte() {
