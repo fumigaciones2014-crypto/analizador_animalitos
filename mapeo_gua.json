@@ -15616,5 +15616,17 @@
         "hora": "04:00 PM",
         "animal": "CARACOL",
         "numero": "53"
+    },
+    {
+        "fecha": "2026-11-16",
+        "hora": "05:00 PM",
+        "animal": "CARNERO",
+        "numero": "01"
+    },
+    {
+        "fecha": "2026-11-16",
+        "hora": "06:00 PM",
+        "animal": "BURRO",
+        "numero": "18"
     }
 ]
