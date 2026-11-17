@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARVIS - Ruleta x N° 2<</title>
+    <title>ARVIS - Ruleta x N° 2</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -92,10 +92,25 @@
         .fila { display: flex; align-items: center; gap: 10px; }
         .fila-label { width: 80px; text-align: right; font-weight: bold; color: #888; font-size: 0.9rem;}
         .casillas-container { display: flex; gap: 5px; flex-grow: 1;}
-        .casilla { background-color: #555; color: white; flex: 1; text-align: center; padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; border: 1px solid #333; transition: all 0.3s; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .casilla { background-color: #555; color: white; flex: 1; text-align: center; padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; border: 1px solid #333; transition: all 0.3s; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; position: relative; }
         .casilla:hover { background-color: #6d6d6d; transform: translateY(-2px); }
         .casilla:active { transform: scale(0.95); background-color: #4a4a4a; }
         .casilla.vacia { background-color: transparent !important; border: 1px dashed #333 !important; color: transparent !important; cursor: default; pointer-events: none; }
+        
+        /* Badge discreto de clicks en la casilla */
+        .click-badge {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 0.65rem;
+            background: rgba(0, 0, 0, 0.65);
+            color: #00ffcc;
+            padding: 1px 4px;
+            border-radius: 3px;
+            pointer-events: none;
+            font-weight: normal;
+        }
+
         .num-objetivo { background-color: #ff00cc !important; color: white !important; box-shadow: 0 0 15px #ff00cc; transform: scale(1.1); z-index: 10; border: 2px solid #fff !important; }
         .vecino-unico { background-color: #00ffcc !important; color: #000 !important; box-shadow: 0 0 10px #00ffcc; }
         .vecino-repetido { background-color: #ffcc00 !important; color: #000 !important; box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff !important; transform: scale(1.05); z-index: 9; }
@@ -127,6 +142,14 @@
         @keyframes pulsoInmediato {
             from { box-shadow: 0 0 20px #ff0000, inset 0 0 10px #00ffcc; }
             to   { box-shadow: 0 0 35px #ff0000, inset 0 0 20px #00ffcc; }
+        }
+
+        /* Panel superior de Rojos y Zona Caliente en vista Ruleta */
+        .panel-rojos-wrapper {
+            max-width: 600px;
+            margin: 0 auto 15px auto;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .panel-rojos {
@@ -170,6 +193,43 @@
             box-shadow: 0 0 8px #ff0000;
             flex-shrink: 0;
             margin-top: 3px;
+        }
+
+        .zona-caliente-box {
+            background: rgba(255, 102, 0, 0.12);
+            border: 1px solid #ff6600;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            font-size: 0.82rem;
+            color: #ffcc80;
+        }
+        .zona-caliente-box strong {
+            color: #ff9100;
+        }
+        .tag-zona {
+            display: inline-block;
+            background: #332211;
+            border: 1px solid #ff9100;
+            color: #fff;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 0 2px;
+        }
+        .tag-zona.centro {
+            background: #ff6600;
+            color: #000;
+        }
+        .badge-prioridad-zona {
+            display: inline-block;
+            background: #ff6600;
+            color: #000;
+            font-weight: bold;
+            font-size: 0.7rem;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-left: 5px;
         }
 
         .mensaje-sin-rojo {
@@ -237,6 +297,14 @@
         <button class="btn-fractal" onclick="generarMapaFractal()">🌀 Generar Mapa Fractal</button>
     </div>
 
+    <!-- Panel de Rojos y Contador de Clicks siempre visible en vista Ruleta -->
+    <div class="panel-rojos-wrapper" id="panel-rojos-ruleta-wrapper">
+        <div class="panel-rojos" id="panel-rojos-ruleta">
+            <h4>🔥 Números Calientes & Zona de Clicks</h4>
+            <p style="color:#aaa;text-align:center;font-size:0.85rem;">Haz click en 3 números de la ruleta para activar.</p>
+        </div>
+    </div>
+
     <div class="ruleta-container" id="ruleta-container"></div>
 
     <div class="canvas-container" id="canvas-container">
@@ -295,6 +363,14 @@
     <div class="resultado-texto" id="resultado-texto" style="display: none;"></div>
 
     <script>
+        // ═══════════════════════════════════════════════════════════════
+        // ORDEN DEL CILINDRO DE RULETA EUROPEA (UN SOLO CERO)
+        // ═══════════════════════════════════════════════════════════════
+        const CILINDRO_EUROPEO = [
+            0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23,
+            10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
+        ];
+
         const FILAS_RULETA_LOTTO = [
             { id: "fila_1", nums: [12, 35, 3, 26, 0, 32, 15] },
             { id: "fila_2", nums: [28, 19] }, { id: "fila_3", nums: [7, 4] }, { id: "fila_4", nums: [29, 21] },
@@ -320,6 +396,106 @@
         let temporizadorSecuencia = null;
         
         let historialSecuencia = []; 
+
+        // ═══════════════════════════════════════════════════════════════
+        // CONTADOR DE CLICKS DEL USUARIO & DETECCIÓN DE ZONA CALIENTE
+        // ═══════════════════════════════════════════════════════════════
+        let contadorClicksUsuario = {}; // { [num]: cantidad }
+        let totalClicksUsuario = 0;
+
+        /**
+         * Devuelve los vecinos ±1 de un número según el cilindro europeo.
+         * Ejemplo: vecinosCilindroEuropeo(14) -> [20, 31]
+         * Ejemplo: vecinosCilindroEuropeo(8)  -> [30, 23]
+         */
+        function obtenerVecinosCilindroEuropeo(num) {
+            const n = parseInt(num);
+            const idx = CILINDRO_EUROPEO.indexOf(n);
+            if (idx === -1) return [];
+            const len = CILINDRO_EUROPEO.length;
+            const vecinoIzq = CILINDRO_EUROPEO[(idx - 1 + len) % len];
+            const vecinoDer = CILINDRO_EUROPEO[(idx + 1) % len];
+            return [vecinoIzq, vecinoDer];
+        }
+
+        /**
+         * Verifica si numA y numB son el mismo número o vecinos ±1 en el cilindro europeo.
+         */
+        function esMismoOVecinoCilindro(numA, numB) {
+            const a = parseInt(numA);
+            const b = parseInt(numB);
+            if (a === b) return true;
+            const vecinos = obtenerVecinosCilindroEuropeo(b);
+            return vecinos.includes(a);
+        }
+
+        /**
+         * Obtiene el número más clickeado por el usuario y su zona caliente [vecinoIzq, centro, vecinoDer].
+         * En caso de empate en clicks, prioriza el que también tenga mayor calor de sector (clicks propios + vecinos).
+         */
+        function obtenerZonaCalienteUsuario() {
+            const keys = Object.keys(contadorClicksUsuario);
+            if (keys.length === 0) return null;
+
+            let mejorNum = null;
+            let maxClicks = -1;
+            let maxCalorSector = -1;
+
+            keys.forEach(k => {
+                const n = parseInt(k);
+                const clicks = contadorClicksUsuario[n] || 0;
+                const vecinos = obtenerVecinosCilindroEuropeo(n);
+                const calorSector = clicks + vecinos.reduce((acc, v) => acc + (contadorClicksUsuario[v] || 0), 0);
+
+                if (clicks > maxClicks || (clicks === maxClicks && calorSector > maxCalorSector)) {
+                    maxClicks = clicks;
+                    maxCalorSector = calorSector;
+                    mejorNum = n;
+                }
+            });
+
+            if (mejorNum === null) return null;
+            const vecinos = obtenerVecinosCilindroEuropeo(mejorNum);
+            return {
+                centro: mejorNum,
+                clicksCentro: maxClicks,
+                vecinos: vecinos,
+                zonaCompleta: vecinos.length === 2 ? [vecinos[0], mejorNum, vecinos[1]] : [mejorNum],
+                calorSector: maxCalorSector
+            };
+        }
+
+        /**
+         * Registra un click del usuario sobre un número de la ruleta.
+         */
+        function registrarClickUsuario(num) {
+            const n = parseInt(num);
+            if (isNaN(n)) return;
+            contadorClicksUsuario[n] = (contadorClicksUsuario[n] || 0) + 1;
+            totalClicksUsuario++;
+            actualizarBadgesClicksEnRuleta();
+        }
+
+        /**
+         * Muestra discretamente la cantidad de clicks en cada casilla clickeada.
+         */
+        function actualizarBadgesClicksEnRuleta() {
+            document.querySelectorAll('.click-badge').forEach(b => b.remove());
+            Object.keys(contadorClicksUsuario).forEach(k => {
+                const n = parseInt(k);
+                const count = contadorClicksUsuario[n];
+                if (count > 0) {
+                    const id = (vistaActual === 'lotto') ? `casilla-${n}` : `g-casilla-${n}`;
+                    const el = document.getElementById(id);
+                    if (el) {
+                        const badge = document.createElement('span');
+                        badge.className = 'click-badge';
+                        badge.innerText = `${count}×`;
+                        el.appendChild(badge);
+                    }
+                }
+            });
+        }
 
         // ═══════════════════════════════════════════════════════════════
         // SISTEMA DE ROTACIÓN DE ROJOS
@@ -371,6 +547,11 @@
             input.style.boxShadow = 'none';
             historialSecuencia = []; 
             
+            // Reiniciar contador de clicks del usuario
+            contadorClicksUsuario = {};
+            totalClicksUsuario = 0;
+            document.querySelectorAll('.click-badge').forEach(b => b.remove());
+
             recomendacionesPendientes = { fractales: [], inmediatos: [] };
             historialAciertosFractal = [];
             historialAciertosInmediato = [];
@@ -391,6 +572,7 @@
 
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
+            document.getElementById('panel-rojos-ruleta-wrapper').style.display = 'block';
             document.getElementById('resultado-texto').style.display = 'none';
             document.getElementById('panel-historial').innerHTML = '<h4>Historial de Secuencia</h4><div style="color: #888; text-align: center; font-size: 0.9rem;">Ingresa secuencias separadas por coma para ver el historial aquí.</div>';
             limpiarResaltados();
@@ -441,16 +623,19 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // CÁLCULO DE ROJOS CON ROTACIÓN Y SIN FALLBACK FORZADO
+        // CÁLCULO DE ROJOS CON ROTACIÓN, ZONA CALIENTE (CLICKS) Y CILINDRO EUROPEO
         // ═══════════════════════════════════════════════════════════════
         function calcularDosRojos() {
+            const zonaCaliente = obtenerZonaCalienteUsuario();
+
             // ──────── ROJO FRACTAL ────────
             const nuevoRojoF = calcularRojoConRotacion(
                 'fractal',
                 historialAciertosFractal,
                 rojoFractal,
                 ultimoCambioRojoFractal,
-                cooldownFractal
+                cooldownFractal,
+                zonaCaliente
             );
 
             const numAnteriorF = rojoFractal ? rojoFractal.num : null;
@@ -477,7 +662,8 @@
                 historialAciertosInmediato,
                 rojoInmediato,
                 ultimoCambioRojoInmediato,
-                cooldownInmediato
+                cooldownInmediato,
+                zonaCaliente
             );
 
             const numAnteriorI = rojoInmediato ? rojoInmediato.num : null;
@@ -501,7 +687,43 @@
             pintarDosRojos();
         }
 
-        function calcularRojoConRotacion(tipo, historialAciertos, rojoActual, ultimoCambio, cooldowns) {
+        /**
+         * Evalúa candidatos válidos (aciertos confirmados) y aplica prioridad:
+         * 1. Si el número más clickeado o un vecino ±1 (cilindro europeo) está entre las alternativas válidas,
+         *    se confirma y prioriza como Rojo acertado.
+         * 2. También se priorizan los vecinos ±1 del cilindro europeo respecto al rojo saliente al rotar.
+         */
+        function seleccionarConPrioridadZonaCaliente(listaAlternativas, zonaCaliente, rojoSaliente = null) {
+            if (!listaAlternativas || listaAlternativas.length === 0) return null;
+
+            // Paso A: Buscar entre las alternativas válidas si está el número más clickeado exacto
+            if (zonaCaliente) {
+                const matchCentro = listaAlternativas.find(c => c.num === zonaCaliente.centro);
+                if (matchCentro) {
+                    return { ...matchCentro, motivoZona: 'Centro Zona Clicks' };
+                }
+
+                // Paso B: Buscar si está un vecino ±1 (cilindro europeo) del número más clickeado
+                const matchVecinoZona = listaAlternativas.find(c => zonaCaliente.vecinos.includes(c.num));
+                if (matchVecinoZona) {
+                    return { ...matchVecinoZona, motivoZona: `Vecino ±1 de ${zonaCaliente.centro}` };
+                }
+            }
+
+            // Paso C: Si estamos rotando desde un rojo anterior, priorizar sus vecinos ±1 en cilindro europeo
+            if (rojoSaliente) {
+                const vecinosCilindro = obtenerVecinosCilindroEuropeo(rojoSaliente.num);
+                const matchVecinoRotacion = listaAlternativas.find(c => vecinosCilindro.includes(c.num));
+                if (matchVecinoRotacion) {
+                    return { ...matchVecinoRotacion, motivoZona: null };
+                }
+            }
+
+            // Paso D: Devolver la alternativa con mayor puntaje estadístico
+            return { ...listaAlternativas[0], motivoZona: null };
+        }
+
+        function calcularRojoConRotacion(tipo, historialAciertos, rojoActual, ultimoCambio, cooldowns, zonaCaliente) {
             // 1. Filtrar solo últimos VENTANA_ACIERTOS sorteos
             const sorteoMinimo = Math.max(1, sorteosRealizados - VENTANA_ACIERTOS + 1);
             const aciertosRecientes = historialAciertos.filter(a => a.sorteo >= sorteoMinimo);
@@ -512,12 +734,26 @@
                 conteo[a.num] = (conteo[a.num] || 0) + 1;
             });
 
-            // 3. Convertir a array con puntajes
+            // 3. Convertir a array con puntajes + bonificación por Zona Caliente (clicks del usuario)
             let candidatos = Object.keys(conteo).map(num => {
                 const n = parseInt(num);
                 const aciertos = conteo[num];
                 const porcentaje = (aciertos / Math.max(aciertosRecientes.length, 1)) * 100;
-                let puntaje = (aciertos * 10) + porcentaje;
+                const clicks = contadorClicksUsuario[n] || 0;
+                
+                let puntaje = (aciertos * 10) + porcentaje + (clicks * 2);
+
+                // Bonificación por pertenecer a la zona caliente del cilindro europeo (más clickeado o vecino ±1)
+                let enZonaCaliente = false;
+                if (zonaCaliente) {
+                    if (n === zonaCaliente.centro) {
+                        puntaje *= 1.35; // +35% por ser el foco principal de clicks
+                        enZonaCaliente = true;
+                    } else if (zonaCaliente.vecinos.includes(n)) {
+                        puntaje *= 1.20; // +20% por ser vecino ±1 en cilindro europeo
+                        enZonaCaliente = true;
+                    }
+                }
 
                 // Penalización agresiva si es el rojo actual: -30% por sorteo
                 if (rojoActual && rojoActual.num === n) {
@@ -525,13 +761,13 @@
                     puntaje *= Math.pow(FACTOR_PENALIZACION, sorteosComoRojo);
                 }
 
-                return { num: n, aciertos, porcentaje, puntaje };
+                return { num: n, aciertos, porcentaje, puntaje, clicks, enZonaCaliente };
             });
 
             // 4. Excluir cooldown (permanente)
             candidatos = candidatos.filter(c => !cooldowns[c.num]);
 
-            // 5. Ordenar por puntaje
+            // 5. Ordenar por puntaje descendente
             candidatos.sort((a, b) => b.puntaje - a.puntaje);
 
             // 6. REGLA DE ROTACIÓN
@@ -542,33 +778,32 @@
                 if (sorteosComoRojo >= MAX_SORTEOS_SIN_CAMBIO) {
                     const alternativas = candidatos.filter(c => c.num !== rojoActual.num);
                     if (alternativas.length > 0) {
-                        // Priorizar vecino ±1 del rojo actual
-                        const vecinos = alternativas.filter(c => 
-                            Math.abs(c.num - rojoActual.num) === 1
-                        );
-                        if (vecinos.length > 0) {
-                            return vecinos[0];
-                        }
-                        return alternativas[0];
+                        // Busca entre las alternativas válidas a rotar si está el más clickeado o vecino ±1 (cilindro europeo)
+                        return seleccionarConPrioridadZonaCaliente(alternativas, zonaCaliente, rojoActual);
                     }
-                    // ⚠️ SIN ALTERNATIVA: no dar rojo. Mejor esperar.
+                    // ⚠️ SIN ALTERNATIVA VÁLIDA: no dar rojo. Mejor esperar.
                     return null;
                 }
 
                 // REVISIÓN cada ROTACION_FORZADA sorteos (2)
                 if (sorteosComoRojo >= ROTACION_FORZADA && candidatos.length > 0) {
-                    const mejor = candidatos[0];
-                    if (mejor.num !== rojoActual.num && mejor.puntaje > rojoActual.puntaje * 1.1) {
-                        return mejor;
+                    const alternativas = candidatos.filter(c => c.num !== rojoActual.num);
+                    if (alternativas.length > 0) {
+                        const candidatoRotacion = seleccionarConPrioridadZonaCaliente(alternativas, zonaCaliente, rojoActual);
+                        // Si el candidato pertenece a la zona caliente de clicks o supera en >10% el puntaje actual, rota
+                        if (candidatoRotacion && (candidatoRotacion.enZonaCaliente || candidatoRotacion.puntaje > rojoActual.puntaje * 1.1)) {
+                            return candidatoRotacion;
+                        }
                     }
                 }
             }
 
-            // 7. Devolver el mejor candidato (si hay)
+            // 7. Devolver el mejor candidato válido (priorizando zona caliente si existe entre candidatos válidos)
             if (candidatos.length > 0) {
-                return candidatos[0];
+                return seleccionarConPrioridadZonaCaliente(candidatos, zonaCaliente, null);
             }
-            // ⚠️ SIN CANDIDATOS: no dar rojo
+
+            // ⚠️ SIN CANDIDATOS VÁLIDOS: no dar rojo
             return null;
         }
 
@@ -594,16 +829,34 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // PANEL DE ROJOS
+        // PANEL DE ROJOS Y ZONA CALIENTE DE CLICKS
         // ═══════════════════════════════════════════════════════════════
         function actualizarPanelRojos() {
-            const panel = document.getElementById('panel-rojos');
-            if (!panel) return;
+            const paneles = [
+                document.getElementById('panel-rojos'),
+                document.getElementById('panel-rojos-ruleta')
+            ];
 
-            let html = `<h4>🔥 Números Calientes (Sorteos: ${sorteosRealizados})</h4>`;
+            const zonaCaliente = obtenerZonaCalienteUsuario();
+
+            let html = `<h4>🔥 Números Calientes (Sorteos: ${sorteosRealizados} | Clicks: ${totalClicksUsuario})</h4>`;
             
+            // Bloque informativo de Zona Caliente del Usuario según Cilindro Europeo
+            if (zonaCaliente) {
+                const [vIzq, vDer] = zonaCaliente.vecinos;
+                html += `<div class="zona-caliente-box">
+                    🎯 <strong>Zona Caliente (Cilindro Europeo):</strong> 
+                    <span class="tag-zona" title="Vecino -1 cilindro">${vIzq.toString().padStart(2,'0')}</span>
+                    <span class="tag-zona centro" title="Más clickeado (${zonaCaliente.clicksCentro} clicks)">${zonaCaliente.centro.toString().padStart(2,'0')} (${zonaCaliente.clicksCentro}×)</span>
+                    <span class="tag-zona" title="Vecino +1 cilindro">${vDer.toString().padStart(2,'0')}</span>
+                    <div style="font-size:0.73rem;color:#ccc;margin-top:3px;">
+                        Calor sector: <b>${zonaCaliente.calorSector}</b> clicks acumulados en zona
+                    </div>
+                </div>`;
+            }
+
             if (sorteosRealizados < 3) {
-                html += `<p style="color:#aaa;text-align:center;font-size:0.85rem;">
+                html += `<p style="color:#aaa;text-align:center;font-size:0.85rem;margin:6px 0;">
                     Faltan ${3 - sorteosRealizados} sorteo(s) para activar los rojos.
                 </p>`;
             } else {
@@ -630,11 +883,15 @@
                         statusColor = '#ffaa00';
                         statusText = `En revisión (${antiguedad}/${MAX_SORTEOS_SIN_CAMBIO})`;
                     }
+
+                    const badgeZona = rojo.motivoZona 
+                        ? `<span class="badge-prioridad-zona">🔥 ${rojo.motivoZona}</span>` 
+                        : '';
                     
                     return `<div class="rojo-item">
                         <span class="${dotClass}"></span>
                         <div style="flex-grow:1;">
-                            <b>${tipo}:</b> ${rojo.num.toString().padStart(2,'0')}
+                            <b>${tipo}:</b> ${rojo.num.toString().padStart(2,'0')} ${badgeZona}
                             <span style="color:#aaa;font-size:0.75rem;">(${rojo.aciertos} aciertos, ${rojo.porcentaje.toFixed(1)}%)</span>
                             <br><span style="color:${statusColor};font-size:0.75rem;font-weight:bold;">${statusText}</span>
                         </div>
@@ -652,7 +909,6 @@
                         Los rojos volverán cuando se cumplan los parámetros.
                     </div>`;
                 } else if (!rojoFractal || !rojoInmediato) {
-                    // Solo falta uno
                     const faltante = !rojoFractal ? 'Fractal' : 'Inmediato';
                     html += `<div class="mensaje-sin-rojo" style="background:rgba(255,170,0,0.08);font-size:0.75rem;padding:6px;">
                         ⏸️ Sin candidato ${faltante} por ahora.
@@ -678,7 +934,10 @@
                     html += `</div>`;
                 }
             }
-            panel.innerHTML = html;
+
+            paneles.forEach(panel => {
+                if (panel) panel.innerHTML = html;
+            });
         }
 
         function cambiarVista() {
@@ -687,8 +946,10 @@
             document.getElementById('resultado-texto').style.display = 'none';
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
+            document.getElementById('panel-rojos-ruleta-wrapper').style.display = 'block';
             datosGlobales = []; 
             dibujarVistaActual();
+            actualizarBadgesClicksEnRuleta();
             if (rojoFractal || rojoInmediato) pintarDosRojos();
         }
 
@@ -743,7 +1004,13 @@
             inputNum.style.transition = 'box-shadow 0.3s'; inputNum.style.boxShadow = '0 0 15px #ff00cc';
             setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
             
+            // 1. Registrar el click del usuario en el contador y actualizar zona caliente
+            registrarClickUsuario(num);
+
+            // 2. Procesar sorteo y rotación de rojos (usando el contador actualizado)
             procesarSorteoModoSencillo(num);
+
+            // 3. Buscar vecinos en historial y generar las próximas recomendaciones pendientes
             buscarVecinosRuleta();
         }
 
@@ -775,6 +1042,7 @@
 
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
+            document.getElementById('panel-rojos-ruleta-wrapper').style.display = 'block';
             limpiarResaltados();
             let numeroObjetivo = parseInt(primerNumero);
 
@@ -839,8 +1107,14 @@
                     recomendacionesPendientes.inmediatos = inmediatos;
                 }
 
+                // Vecinos físicos en cilindro europeo del número objetivo
+                const vecinosCilindroObj = obtenerVecinosCilindroEuropeo(numeroObjetivo);
+
                 textResult.style.display = 'block';
                 let htmlInfo = `<h3>Análisis para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
+                if (vecinosCilindroObj.length === 2) {
+                    htmlInfo += `<p style="color:#00ffcc; font-size:0.9rem; margin-top:-5px;">🎡 Vecinos Cilindro Europeo (±1): <b>${vecinosCilindroObj[0]}</b> y <b>${vecinosCilindroObj[1]}</b></p>`;
+                }
                 if (inputVal.includes(',')) { htmlInfo += `<p style="color:#ffd700; font-weight:bold;">⚠️ Modo Secuencia: Análisis del primer número en ruleta.</p>`; }
                 htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Se analizaron las últimas <b>${ultimasApariciones.length}</b> apariciones.</p>`;
                 htmlInfo += `<div style="background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:15px; text-align:left; font-size:0.9rem;">`;
@@ -870,6 +1144,7 @@
 
             canvasContainer.style.display = 'flex';
             ruletaContainer.style.display = 'none';
+            document.getElementById('panel-rojos-ruleta-wrapper').style.display = 'none';
             textResult.style.display = 'none';
             
             const numeroPrincipal = numerosBusqueda[numerosBusqueda.length - 1];
@@ -1237,6 +1512,8 @@
         }
 
         window.addEventListener('beforeunload', function() {
+            contadorClicksUsuario = {};
+            totalClicksUsuario = 0;
             recomendacionesPendientes = { fractales: [], inmediatos: [] };
             historialAciertosFractal = [];
             historialAciertosInmediato = [];
