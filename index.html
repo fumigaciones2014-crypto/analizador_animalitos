@@ -108,7 +108,7 @@
         footer a { color: var(--btn-azul-claro); text-decoration: none; font-weight: bold; }
         footer a:hover { text-decoration: underline; }
 
-        /* MODALES */
+        /* MODALES Y OTROS */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
         .modal-content { background-color: #1e1e1e; padding: 20px; border: 2px solid var(--btn-azul-claro); border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; position: relative; }
         .close-btn { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -187,6 +187,7 @@
                 <select id="select-filtro" onchange="aplicarFiltros()">
                     <option value="reciente">Más Recientes</option>
                     <option value="numero">Ordenar por Número</option>
+                    <option value="global">Global (Cruces)</option>
                 </select>
                 <input type="text" id="input-buscar" placeholder="Buscar Animal o Número..." oninput="aplicarFiltros()">
                 <button id="btn-limpiar" class="btn-tool" onclick="limpiarFiltros()">LIMPIAR FILTRO</button>
@@ -231,7 +232,7 @@
         </aside>
     </div>
 
-    <!-- FOOTER -->
+    <!-- FOOTER CON CONTADOR -->
     <footer>
         <div class="footer-info">
             <div id="footer-reloj">📅 Fecha y Hora Actual</div>
@@ -426,22 +427,18 @@
             }
         }
 
-        // --- FUNCIÓN MODIFICADA Y CORREGIDA ---
-        function renderizarTabla(datos, esBusquedaNumero) {
+        // --- RENDERIZADO DE LA TABLA CON LÓGICA DE VECINOS Y GLOBAL ---
+        function renderizarTabla(datosAMostrar, loteriaOrigen) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
             
-            let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
-            
-            // Si es búsqueda por número exacto, mostramos máximo 25. Si es general, mostramos 50.
-            let registrosAMostrar = esBusquedaNumero ? datos.slice(0, 25) : datos.slice(0, 50); 
-            
-            if (registrosAMostrar.length === 0) {
+            if (datosAMostrar.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; color: #888;">No se encontraron resultados.</td></tr>`;
                 return;
             }
 
-            registrosAMostrar.forEach(registro => {
+            datosAMostrar.forEach(item => {
+                const registro = item.data || item; 
                 const tr = document.createElement('tr');
                 const fechaParts = registro.fecha.split('-');
                 let numMostrar = registro.numero.toString().padStart(2, '0');
@@ -449,38 +446,36 @@
 
                 let celdaNumHTML = `<td class="num-verde">${numMostrar}</td>`;
                 
-                if (esBusquedaNumero && registro.numero !== '??') {
-                    // Buscamos el índice exacto en el JSON original de la lotería actual
-                    let indexReal = datosBase.indexOf(registro);
-                    
-                    if (indexReal !== -1) {
-                        // Extraer los 5 vecinos antes y 5 después (en el orden original del JSON)
-                        let inicio = Math.max(0, indexReal - 5);
-                        let fin = Math.min(datosBase.length, indexReal + 6);
-                        let vecinos = datosBase.slice(inicio, fin);
+                if (item.esVecindario) {
+                    // Lógica para mostrar los 5 vecinos antes y después
+                    let cadenaVecinos = [];
+                    item.vecinos.forEach(v => {
+                        let numV = v.numero.toString().padStart(2, '0');
+                        if (v.numero === '??') numV = '??';
                         
-                        let cadenaVecinos = [];
-                        vecinos.forEach(v => {
-                            let numV = v.numero.toString().padStart(2, '0');
-                            if (v.numero === '??') numV = '??';
-                            
-                            if (v === registro) {
-                                cadenaVecinos.push(`<span style="color: #00ff00; font-weight: bold; text-shadow: 0 0 5px rgba(0,255,0,0.6);">[${numV}]</span>`);
-                            } else {
-                                cadenaVecinos.push(`<span style="color: #aaaaaa;">${numV}</span>`);
-                            }
-                        });
-                        
-                        celdaNumHTML = `<td style="font-size: 0.85rem; letter-spacing: 0.5px;">${cadenaVecinos.join(' - ')}</td>`;
-                    }
+                        if (v === registro) {
+                            cadenaVecinos.push(`<span style="color: #00ff00; font-weight: bold; text-shadow: 0 0 5px rgba(0,255,0,0.6);">[${numV}]</span>`);
+                        } else {
+                            cadenaVecinos.push(`<span style="color: #aaaaaa;">${numV}</span>`);
+                        }
+                    });
+                    celdaNumHTML = `<td style="font-size: 0.85rem; letter-spacing: 0.5px;">${cadenaVecinos.join(' - ')}</td>`;
+                }
+
+                // Etiqueta para el modo Global
+                let etiquetaLoteria = "";
+                if (loteriaOrigen === 'global') {
+                    let nombreLot = item.origen === 'lotto' ? 'Lotto' : (item.origen === 'gua' ? 'Guacharo' : 'Guacharito');
+                    let colorLot = item.origen === 'lotto' ? '#29b6f6' : (item.origen === 'gua' ? '#ffc107' : '#ff5722');
+                    etiquetaLoteria = `<br><span style="font-size:0.7rem; color:${colorLot}; font-weight:bold;">(${nombreLot})</span>`;
                 }
 
                 tr.innerHTML = `
                     <td>${fechaParts[2]}-${fechaParts[1]}</td>
                     <td>${registro.hora}</td>
-                    <td>${registro.animal || '---'}</td>
+                    <td>${registro.animal || '---'}${etiquetaLoteria}</td>
                     ${celdaNumHTML}
-                    <td><button class="btn-ver" onclick="abrirAnalisis('${registro.numero}', '${registro.hora}')">👁️</button></td>
+                    <td><button class="btn-ver" onclick="abrirAnalisis('${registro.numero}', '${registro.hora}', '${item.origen || loteriaActual}')">👁️</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -489,4 +484,546 @@
         function cambiarLoteria(loteria) {
             loteriaActual = loteria;
             document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('tab-active'); btn.classList.add('tab-inactive'); });
-            document.getElementById(`tab
+            document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.remove('tab-inactive');
+            document.getElementById(`tab-${loteria === 'gua' ? 'guacharo' : loteria === 'mini' ? 'guacharito' : 'lotto'}`).classList.add('tab-active');
+            aplicarFiltros(); 
+        }
+
+        function aplicarFiltros() {
+            let textoBusqueda = document.getElementById('input-buscar').value.trim().toUpperCase();
+            let orden = document.getElementById('select-filtro').value;
+            let esBusquedaNumero = /^\d+$/.test(textoBusqueda);
+
+            // ---------------------------------------------------------
+            // MODO GLOBAL (Cruces entre las 3 loterías)
+            // ---------------------------------------------------------
+            if (orden === 'global') {
+                let resultadosGlobales = [];
+                const loterias = [
+                    { nombre: 'lotto', datos: datosLotto },
+                    { nombre: 'gua', datos: datosGuacharo },
+                    { nombre: 'mini', datos: datosMini }
+                ];
+
+                loterias.forEach(lot => {
+                    for (let i = 0; i < lot.datos.length; i++) {
+                        let reg = lot.datos[i];
+                        let animal = (reg.animal || '').toUpperCase();
+                        let numero = reg.numero.toString();
+                        
+                        if (animal.includes(textoBusqueda) || numero === textoBusqueda || numero.padStart(2, '0') === textoBusqueda) {
+                            let vecinos = lot.datos.slice(Math.max(0, i - 5), Math.min(lot.datos.length, i + 6));
+                            resultadosGlobales.push({ 
+                                data: reg, 
+                                vecinos: vecinos, 
+                                esVecindario: esBusquedaNumero,
+                                origen: lot.nombre 
+                            });
+                        }
+                    }
+                });
+
+                // Ordenar globalmente por fecha/hora (más reciente primero)
+                resultadosGlobales.sort((a, b) => {
+                    let dateA = new Date(a.data.fecha + ' ' + a.data.hora);
+                    let dateB = new Date(b.data.fecha + ' ' + b.data.hora);
+                    return dateB - dateA;
+                });
+
+                renderizarTabla(resultadosGlobales.slice(0, 25), 'global');
+                return;
+            }
+
+            // ---------------------------------------------------------
+            // MODO NORMAL / MÁS RECIENTES / ORDENAR POR NÚMERO
+            // ---------------------------------------------------------
+            let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
+
+            let filtrados = [];
+            for (let i = 0; i < datosBase.length; i++) {
+                let reg = datosBase[i];
+                let animal = (reg.animal || '').toUpperCase();
+                let numero = reg.numero.toString();
+                let numeroConCero = numero.padStart(2, '0');
+                
+                if (animal.includes(textoBusqueda) || numero.includes(textoBusqueda) || numeroConCero.includes(textoBusqueda)) {
+                    if (esBusquedaNumero) {
+                        // Extraer los 5 vecinos si estamos buscando un número
+                        let vecinos = datosBase.slice(Math.max(0, i - 5), Math.min(datosBase.length, i + 6));
+                        filtrados.push({ data: reg, vecinos: vecinos, esVecindario: true, origen: loteriaActual });
+                    } else {
+                        filtrados.push({ data: reg, esVecindario: false, origen: loteriaActual });
+                    }
+                }
+            }
+
+            if (orden === 'numero') {
+                filtrados.sort((a, b) => {
+                    let numA = a.data.numero === '??' ? 999 : parseInt(a.data.numero);
+                    let numB = b.data.numero === '??' ? 999 : parseInt(b.data.numero);
+                    return numA - numB;
+                });
+            } else {
+                // "Más Recientes" - Ordenar de más nuevo a más viejo
+                filtrados.reverse(); 
+            }
+
+            // Si es búsqueda por número, limitar a 25 resultados.
+            let finales = esBusquedaNumero ? filtrados.slice(0, 25) : filtrados.slice(0, 50);
+
+            datosFiltradosActuales = finales;
+            renderizarTabla(finales, loteriaActual);
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('input-buscar').value = '';
+            document.getElementById('select-filtro').value = 'reciente';
+            aplicarFiltros();
+        }
+
+        // ==========================================
+        // FUNCIONES DE ANÁLISIS (OJITO, RADAR, SUERTE)
+        // ==========================================
+        function calcularDiferenciaDias(fecha1, fecha2) {
+            const f1 = new Date(fecha1 + 'T00:00:00');
+            const f2 = new Date(fecha2 + 'T00:00:00');
+            return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+        }
+
+        function analizarNumeroIndividual(datosLoteria, numeroObjetivo) {
+            let historialNumeros = [], fechasHoras = [];
+            datosLoteria.forEach(registro => {
+                let numStr = (registro.numero || '').toString().trim();
+                if (numStr === '??' || isNaN(numStr)) return;
+                let num = parseInt(numStr);
+                let horaStr = registro.hora;
+                let horaParts = horaStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!horaParts) return;
+                let hora = parseInt(horaParts[1]);
+                let minuto = parseInt(horaParts[2]);
+                let ampm = horaParts[3].toUpperCase();
+                if (ampm === 'PM' && hora < 12) hora += 12;
+                if (ampm === 'AM' && hora === 12) hora = 0;
+                let horaDecimal = hora + (minuto / 60);
+                historialNumeros.push(num);
+                fechasHoras.push({ fecha: registro.fecha, horaStr: horaStr, num: num, decimal: horaDecimal });
+            });
+
+            if (historialNumeros.length === 0) return null;
+            let indicesApariciones = [];
+            historialNumeros.forEach((n, i) => { if (n === numeroObjetivo) indicesApariciones.push(i); });
+            if (indicesApariciones.length === 0) {
+                return { num: numeroObjetivo, subidas: 0, bajadas: 0, ciclo: 0, ultima: "No registrado", prediccion: "Sin datos", fecha_estimada: "N/A", dias_retraso: 0, top_atrayentes: [] };
+            }
+
+            let subidas = 0, bajadas = 0;
+            indicesApariciones.forEach(idx => {
+                if (idx > 0) {
+                    if (historialNumeros[idx] > historialNumeros[idx-1]) subidas++;
+                    else if (historialNumeros[idx] < historialNumeros[idx-1]) bajadas++;
+                }
+            });
+
+            let ciclos = [];
+            for (let i = 1; i < indicesApariciones.length; i++) {
+                let dias = calcularDiferenciaDias(fechasHoras[indicesApariciones[i-1]].fecha, fechasHoras[indicesApariciones[i]].fecha);
+                if (dias > 0) ciclos.push(dias);
+            }
+
+            let promedioCiclo = ciclos.length > 0 ? (ciclos.reduce((a, b) => a + b, 0) / ciclos.length) : 0;
+            let ultimaAparicion = fechasHoras[indicesApariciones[indicesApariciones.length - 1]];
+            let ultimaFechaStr = `${ultimaAparicion.fecha} (${ultimaAparicion.horaStr})`;
+            let prediccion = "Neutro";
+            if (subidas > bajadas) prediccion = "MAÑANA";
+            else if (bajadas > subidas) prediccion = "TARDE";
+            let fechaEst = "N/A", diasRetraso = 0;
+            let hoy = new Date();
+            let hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+            if (promedioCiclo > 0 && ultimaFechaStr !== "No registrado") {
+                let fechaBase = new Date(ultimaAparicion.fecha + 'T00:00:00');
+                let fechaEstimadaDate = new Date(fechaBase);
+                fechaEstimadaDate.setDate(fechaEstimadaDate.getDate() + Math.round(promedioCiclo));
+                fechaEst = fechaEstimadaDate.toISOString().split('T')[0];
+                diasRetraso = Math.round((hoySinHora - fechaEstimadaDate) / (1000 * 60 * 60 * 24));
+            }
+
+            let numerosVecinos = [];
+            indicesApariciones.forEach(idx => {
+                if (idx - 1 >= 0) numerosVecinos.push(historialNumeros[idx - 1]);
+                if (idx + 1 < historialNumeros.length) numerosVecinos.push(historialNumeros[idx + 1]);
+            });
+            let conteo = {};
+            numerosVecinos.forEach(n => conteo[n] = (conteo[n] || 0) + 1);
+            let topAtrayentes = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5).map(e => [parseInt(e[0]), e[1]]);
+
+            return {
+                num: numeroObjetivo, subidas, bajadas, ciclo: promedioCiclo.toFixed(1), ultima: ultimaFechaStr,
+                prediccion, fecha_estimada: fechaEst, dias_retraso: diasRetraso, top_atrayentes: topAtrayentes
+            };
+        }
+
+        function generarMultiplesSecuencias(datosLoteria, numeroInicial, cantidadCadenas = 3) {
+            let cadenas = [];
+            let resInicial = analizarNumeroIndividual(datosLoteria, numeroInicial);
+            if (!resInicial || resInicial.top_atrayentes.length === 0) return [[numeroInicial]];
+            let opcionesIniciales = resInicial.top_atrayentes.slice(0, cantidadCadenas).map(at => at[0]);
+            
+            opcionesIniciales.forEach(opcion => {
+                let secuencia = [numeroInicial, opcion];
+                let actual = opcion;
+                while (secuencia.length < 4) {
+                    let res = analizarNumeroIndividual(datosLoteria, actual);
+                    if (!res || res.top_atrayentes.length === 0) break;
+                    let siguiente = null;
+                    for (let [numAt, _] of res.top_atrayentes) {
+                        if (!secuencia.includes(numAt)) { siguiente = numAt; break; }
+                    }
+                    if (siguiente === null) break;
+                    secuencia.push(siguiente);
+                    actual = siguiente;
+                }
+                cadenas.push(secuencia);
+            });
+            if (cadenas.length === 0) cadenas.push([numeroInicial]);
+            return cadenas;
+        }
+
+        function calcularRadarRapido(datosLoteria, numeroObjetivo) {
+            const VENTANA = 5;
+            const nodos = {}; 
+            const adyacentes = {}; 
+
+            for(let i=0; i<100; i++) {
+                nodos[i] = { count: 0, id: i };
+                adyacentes[i] = {}; 
+            }
+
+            let historial = [];
+            datosLoteria.forEach(reg => {
+                if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
+                    historial.push(parseInt(reg.numero));
+                }
+            });
+
+            historial.forEach((num, index) => {
+                if (nodos[num]) nodos[num].count++;
+                for (let i = 1; i <= VENTANA; i++) {
+                    if (index + i < historial.length) {
+                        let nextNum = historial[index + i];
+                        adyacentes[num][nextNum] = (adyacentes[num][nextNum] || 0) + 1;
+                        adyacentes[nextNum][num] = (adyacentes[nextNum][num] || 0) + 1;
+                    }
+                }
+            });
+
+            let recomendadosFractal = [];
+            if (numeroObjetivo !== null && adyacentes[numeroObjetivo]) {
+                let candidatos = [];
+                for (let adj in adyacentes[numeroObjetivo]) {
+                    let numAdj = parseInt(adj);
+                    let fuerzaConexion = adyacentes[numeroObjetivo][numAdj];
+                    let frecuenciaPropia = nodos[numAdj].count;
+                    let puntajeFrio = 100 - frecuenciaPropia; 
+                    let puntaje = puntajeFrio + (fuerzaConexion * 5); 
+                    candidatos.push({ num: numAdj, puntaje: puntaje });
+                }
+                candidatos.sort((a, b) => b.puntaje - a.puntaje);
+                recomendadosFractal = candidatos.slice(0, 4);
+            }
+
+            let recomendadosInmediatos = [];
+            let indicesApariciones = [];
+            historial.forEach((h, i) => { if (h === numeroObjetivo) indicesApariciones.push(i); });
+            
+            if (indicesApariciones.length > 0) {
+                let ultimas = indicesApariciones.slice(-5).reverse();
+                let conteoVecinos = {};
+                ultimas.forEach(idx => {
+                    if (idx - 1 >= 0) { let n = historial[idx - 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx - 2 >= 0) { let n = historial[idx - 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx + 1 < historial.length) { let n = historial[idx + 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                    if (idx + 2 < historial.length) { let n = historial[idx + 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
+                });
+
+                let candidatosInmediatos = [];
+                for (let num in conteoVecinos) {
+                    let count = conteoVecinos[num];
+                    let puntaje = count * 10; 
+                    candidatosInmediatos.push({ num: parseInt(num), puntaje: puntaje });
+                }
+                candidatosInmediatos.sort((a, b) => b.puntaje - a.puntaje);
+                recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
+            }
+
+            return { fractal: recomendadosFractal, inmediatos: recomendadosInmediatos };
+        }
+
+        function renderizarBolitasModal(candidatos, contenedor, claseCss) {
+            if (candidatos.length === 0) return;
+            let sumaPuntajes = candidatos.reduce((acc, curr) => acc + curr.puntaje, 0);
+            const minSize = 40;
+            const maxSize = 80;
+
+            candidatos.forEach((rec, index) => {
+                let porcentaje = (rec.puntaje / sumaPuntajes) * 100;
+                let size = minSize + ((porcentaje / 100) * (maxSize - minSize));
+                if (size < minSize) size = minSize;
+
+                let bolita = document.createElement('div');
+                bolita.className = `bolita-modal ${claseCss}`;
+                bolita.style.width = `${size}px`;
+                bolita.style.height = `${size}px`;
+                bolita.style.fontSize = `${size * 0.35}px`;
+                bolita.innerText = rec.num.toString().padStart(2, '0');
+                
+                let spanPorcentaje = document.createElement('span');
+                spanPorcentaje.className = 'porcentaje-modal';
+                spanPorcentaje.innerText = `${porcentaje.toFixed(1)}%`;
+                bolita.appendChild(spanPorcentaje);
+
+                if (index === 0) {
+                    bolita.style.boxShadow = `0 0 25px ${claseCss === 'bolita-amarilla' ? '#ffcc00' : '#00ffcc'}, inset 0 0 10px #fff`;
+                    bolita.style.border = '3px solid #fff';
+                }
+                contenedor.appendChild(bolita);
+            });
+        }
+
+        function abrirAnalisis(numero, hora, origenAnalisis) {
+            if (numero === '??') return alert("Sorteo sin número registrado.");
+            
+            // Si viene del modo global, usar los datos de ese origen
+            let loteriaParaAnalisis = origenAnalisis || loteriaActual;
+            let datos = loteriaParaAnalisis === 'lotto' ? datosLotto : (loteriaParaAnalisis === 'gua' ? datosGuacharo : datosMini);
+            
+            let numOrig = parseInt(numero);
+            numParaHistorial = numero.toString(); 
+            let resOrig = analizarNumeroIndividual(datos, numOrig);
+            
+            document.getElementById('modal-radar-container').style.display = 'none';
+            document.getElementById('radar-contenido').innerHTML = '';
+
+            if (resOrig.ultima === "No registrado") {
+                document.getElementById('modal-ojo-titulo').innerText = `Análisis para [${numOrig}]`;
+                document.getElementById('modal-ojo-cuerpo').innerHTML = `<p style="color:#ff5555;">Este número no tiene apariciones registradas en el historial actual de esta lotería.</p>`;
+                document.getElementById('btn-ir-analisis').style.display = 'none';
+                document.getElementById('modal-ojo').style.display = 'flex';
+                return;
+            }
+
+            document.getElementById('btn-ir-analisis').style.display = 'block';
+            document.getElementById('modal-ojo-titulo').innerText = `Análisis Rápido para [${numOrig}] - ${hora}`;
+            
+            let html = `<div class="box-modal">
+                <b>Número [${numOrig}]:</b><br>
+                • Flancos: Subidas (${resOrig.subidas}) | Bajadas (${resOrig.bajadas})<br>
+                • Ciclo Promedio: ${resOrig.ciclo} días<br>
+                • Última Salida: ${resOrig.ultima}<br>`;
+            let colorPred = resOrig.prediccion === "MAÑANA" ? "#00ffcc" : (resOrig.prediccion === "TARDE" ? "#ffcc00" : "#ffffff");
+            html += `• Proyección: <span style="color:${colorPred}; font-weight:bold;">${resOrig.prediccion}</span><br>`;
+            if (resOrig.fecha_estimada !== "N/A") {
+                html += `• Estimado para: ${resOrig.fecha_estimada}`;
+                if (resOrig.dias_retraso > 0) html += ` <span style="color:#ff5555;">(Retrasado ${resOrig.dias_retraso} días)</span>`;
+                else if (resOrig.dias_retraso === 0) html += ` <span style="color:#ffff00;">(Para hoy)</span>`;
+            }
+            html += `</div>`;
+
+            let cadenas = generarMultiplesSecuencias(datos, numOrig, 3);
+            html += `<div class="box-modal box-cadena">
+                <b style="color:#ff00cc; font-size: 16px;">🔗 TRIPLE CADENA DE ATRACCIÓN:</b><br><br>`;
+            let colores = ["#00ffcc", "#ffcc00", "#ff6600", "#ff00cc"];
+            cadenas.forEach((sec, i) => {
+                html += `<b>Ruta ${i+1}:</b> `;
+                sec.forEach((n, j) => {
+                    html += `<span class="texto-cadena" style="color:${colores[j%4]};">[${n}]</span>`;
+                    if (j < sec.length - 1) html += ` <span style="color:#888;">➔</span> `;
+                });
+                html += `<br>`;
+            });
+            html += `</div>`;
+
+            document.getElementById('modal-ojo-cuerpo').innerHTML = html;
+
+            let radarResultados = calcularRadarRapido(datos, numOrig);
+            
+            if (radarResultados.fractal.length > 0 || radarResultados.inmediatos.length > 0) {
+                document.getElementById('modal-radar-container').style.display = 'block';
+                let radarHtml = '';
+
+                if (radarResultados.fractal.length > 0) {
+                    radarHtml += `<h4 style="color: #ffcc00; font-size: 0.9rem; margin-bottom: 5px;">Top 4 Fractal (Tendencia)</h4>`;
+                    radarHtml += `<div class="bolitas-grid-modal" id="radar-bolitas-fractal"></div>`;
+                }
+
+                if (radarResultados.inmediatos.length > 0) {
+                    radarHtml += `<h4 style="color: #00ffcc; font-size: 0.9rem; margin-top: 15px; margin-bottom: 5px;">Vecinos Inmediatos (Arrastre)</h4>`;
+                    radarHtml += `<div class="bolitas-grid-modal" id="radar-bolitas-inmediatas"></div>`;
+                }
+
+                document.getElementById('radar-contenido').innerHTML = radarHtml;
+
+                if (radarResultados.fractal.length > 0) {
+                    renderizarBolitasModal(radarResultados.fractal, document.getElementById('radar-bolitas-fractal'), 'bolita-amarilla');
+                }
+                if (radarResultados.inmediatos.length > 0) {
+                    renderizarBolitasModal(radarResultados.inmediatos, document.getElementById('radar-bolitas-inmediatas'), 'bolita-verde');
+                }
+            }
+
+            document.getElementById('modal-ojo').style.display = 'flex';
+        }
+
+        function cerrarModalOjo() {
+            document.getElementById('modal-ojo').style.display = 'none';
+        }
+
+        function irAHistorialAvanzado() {
+            window.location.href = `hist_avanzado.html?numero=${numParaHistorial}`;
+        }
+
+        // ==========================================
+        // LÓGICA DE SUERTE (CON COOKIES) Y FIJACIÓN
+        // ==========================================
+        const TIEMPO_ESPERA_MS = 5 * 60 * 60 * 1000; 
+        let intervaloCronometro = null;
+        let intervaloTextoFijo = null;
+
+        function obtenerCookie(nombre) {
+            let name = nombre + "=";
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for(let i = 0; i <ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') { c = c.substring(1); }
+                if (c.indexOf(name) == 0) { return c.substring(name.length, c.length); }
+            }
+            return "";
+        }
+
+        function guardarCookie(nombre, valor, dias) {
+            let d = new Date();
+            d.setTime(d.getTime() + (dias*24*60*60*1000));
+            let expires = "expires="+ d.toUTCString();
+            document.cookie = nombre + "=" + valor + ";" + expires + ";path=/";
+        }
+
+        function verificarSuerteDisponible() {
+            let ultimoIntento = parseInt(obtenerCookie("jarvis_suerte_time"));
+            let num1 = obtenerCookie("jarvis_suerte_num1");
+            let num2 = obtenerCookie("jarvis_suerte_num2");
+            let btn = document.getElementById('btn-agregar-manual');
+            let cajaFija = document.getElementById('caja-suerte-fija');
+            let textoEsperaFijo = document.getElementById('texto-espera-fijo');
+            
+            if (num1 && num2 && ultimoIntento) {
+                document.getElementById('suerte-fija-1').innerText = num1;
+                document.getElementById('suerte-fija-2').innerText = num2;
+                cajaFija.style.display = 'block';
+            }
+
+            if (ultimoIntento) {
+                let ahora = new Date().getTime();
+                let tiempoTranscurrido = ahora - ultimoIntento;
+                
+                if (tiempoTranscurrido < TIEMPO_ESPERA_MS) {
+                    btn.disabled = true;
+                    let tiempoRestante = TIEMPO_ESPERA_MS - tiempoTranscurrido;
+                    iniciarCronometro(tiempoRestante, btn, textoEsperaFijo);
+                    return;
+                }
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = "🍀 Prueba tu Suerte";
+            cajaFija.style.display = 'none';
+            if(intervaloCronometro) clearInterval(intervaloCronometro);
+            if(intervaloTextoFijo) clearInterval(intervaloTextoFijo);
+        }
+
+        function iniciarCronometro(msRestantes, btn, textoEsperaFijo) {
+            if(intervaloCronometro) clearInterval(intervaloCronometro);
+            if(intervaloTextoFijo) clearInterval(intervaloTextoFijo);
+            
+            function actualizar() {
+                if (msRestantes <= 0) {
+                    clearInterval(intervaloCronometro);
+                    clearInterval(intervaloTextoFijo);
+                    btn.disabled = false;
+                    btn.innerHTML = "🍀 Prueba tu Suerte";
+                    document.getElementById('caja-suerte-fija').style.display = 'none';
+                    return;
+                }
+                
+                let horas = Math.floor(msRestantes / (1000 * 60 * 60));
+                let minutos = Math.floor((msRestantes % (1000 * 60 * 60)) / (1000 * 60));
+                let segundos = Math.floor((msRestantes % (1000 * 60)) / 1000);
+                
+                let hStr = horas.toString().padStart(2, '0');
+                let mStr = minutos.toString().padStart(2, '0');
+                let sStr = segundos.toString().padStart(2, '0');
+                
+                btn.innerHTML = `⏳ Espera ${hStr}:${mStr}:${sStr}`;
+                
+                if (textoEsperaFijo) {
+                    textoEsperaFijo.innerHTML = `Espera ${hStr}:${mStr}:${sStr} para otro`;
+                }
+
+                msRestantes -= 1000;
+            }
+            
+            actualizar();
+            intervaloCronometro = setInterval(actualizar, 1000);
+        }
+
+        function probarSuerte() {
+            let ahora = new Date().getTime();
+            
+            let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
+            let puntajes = {};
+            let limiteMax = loteriaActual === 'lotto' ? 36 : (loteriaActual === 'gua' ? 99 : 75);
+            
+            for(let i=0; i<=limiteMax; i++) {
+                let stats = analizarNumeroIndividual(datosBase, i);
+                if(stats && stats.ultima !== "No registrado") {
+                    let puntaje = (stats.subidas + stats.bajadas) + (parseFloat(stats.ciclo) * 2) + (stats.dias_retraso * 5);
+                    puntajes[i] = puntaje;
+                }
+            }
+
+            let top9 = Object.entries(puntajes)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 9)
+                .map(e => parseInt(e[0]));
+
+            let num1 = top9[Math.floor(Math.random() * top9.length)];
+            let num2 = top9[Math.floor(Math.random() * top9.length)];
+            
+            while (num1 === num2 && top9.length > 1) {
+                num2 = top9[Math.floor(Math.random() * top9.length)];
+            }
+
+            let strNum1 = num1.toString().padStart(2, '0');
+            let strNum2 = num2.toString().padStart(2, '0');
+
+            guardarCookie("jarvis_suerte_time", ahora, 1);
+            guardarCookie("jarvis_suerte_num1", strNum1, 1);
+            guardarCookie("jarvis_suerte_num2", strNum2, 1);
+            
+            document.getElementById('bola-1').innerText = strNum1;
+            document.getElementById('bola-2').innerText = strNum2;
+            document.getElementById('suerte-fija-1').innerText = strNum1;
+            document.getElementById('suerte-fija-2').innerText = strNum2;
+            
+            document.getElementById('modal-suerte').style.display = 'flex';
+            document.getElementById('caja-suerte-fija').style.display = 'block';
+
+            verificarSuerteDisponible();
+        }
+
+        function cerrarModalSuerte() {
+            document.getElementById('modal-suerte').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
