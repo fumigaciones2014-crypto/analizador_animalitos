@@ -101,10 +101,9 @@
         .vecino-repetido { background-color: #ffcc00 !important; color: #000 !important; box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff !important; transform: scale(1.05); z-index: 9; }
 
         /* ═══════════════════════════════════════════════════════════════
-           NUEVOS ESTILOS: DOS NÚMEROS ROJOS INDEPENDIENTES
+           ESTILOS: DOS NÚMEROS ROJOS INDEPENDIENTES
            ═══════════════════════════════════════════════════════════════ */
 
-        /* Rojo Fractal (ganador de amarillos) — rojo sólido con destello amarillo */
         .num-rojo-fractal { 
             background-color: #ff0000 !important; 
             color: #fff !important; 
@@ -115,7 +114,6 @@
             animation: pulsoFractal 1.5s infinite alternate;
         }
 
-        /* Rojo Inmediato (ganador de azules) — rojo con borde punteado cian */
         .num-rojo-inmediato { 
             background-color: #ff0000 !important; 
             color: #fff !important; 
@@ -135,7 +133,6 @@
             to   { box-shadow: 0 0 35px #ff0000, inset 0 0 20px #00ffcc; }
         }
 
-        /* Panel de resumen de rojos */
         .panel-rojos {
             background: rgba(20, 20, 20, 0.95);
             padding: 12px;
@@ -156,7 +153,7 @@
         }
         .rojo-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
             padding: 6px;
             margin-bottom: 5px;
@@ -169,12 +166,14 @@
             background: #ff0000; border: 2px solid #ffcc00;
             box-shadow: 0 0 8px #ff0000;
             flex-shrink: 0;
+            margin-top: 3px;
         }
         .dot-inmediato {
             width: 12px; height: 12px; border-radius: 50%;
             background: #ff0000; border: 2px dashed #00ffcc;
             box-shadow: 0 0 8px #ff0000;
             flex-shrink: 0;
+            margin-top: 3px;
         }
 
         .grid-guacharo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; width: 100%; max-width: 560px; margin: 0 auto; }
@@ -234,7 +233,6 @@
 
     <div class="canvas-container" id="canvas-container">
         <div class="panel-izquierdo">
-            <!-- NUEVO: Panel de dos rojos (se inserta por JS) -->
             <div class="panel-rojos" id="panel-rojos">
                 <h4>🔥 Números Calientes</h4>
                 <p style="color:#aaa;text-align:center;font-size:0.85rem;">Ingresa 3 números para activar.</p>
@@ -316,14 +314,34 @@
         let historialSecuencia = []; 
 
         // ═══════════════════════════════════════════════════════════════
-        // NUEVAS VARIABLES: DOS ROJOS INDEPENDIENTES
+        // SISTEMA DE ROTACIÓN DE ROJOS
         // ═══════════════════════════════════════════════════════════════
         let recomendacionesPendientes = { fractales: [], inmediatos: [] };
-        let aciertosFractal = {};
-        let aciertosInmediato = {};
+        
+        // Historial de aciertos (ventana móvil)
+        let historialAciertosFractal = [];
+        let historialAciertosInmediato = [];
+        
+        // Rojos actuales y su antigüedad
         let rojoFractal = null;
         let rojoInmediato = null;
         let sorteosRealizados = 0;
+        let ultimoCambioRojoFractal = 0;
+        let ultimoCambioRojoInmediato = 0;
+        
+        // Historial de rojos (para trazabilidad)
+        let historialRojosFractal = [];
+        let historialRojosInmediato = [];
+        
+        // Cooldowns (números que no pueden volver a ser rojo hasta cierto sorteo)
+        let cooldownFractal = {};
+        let cooldownInmediato = {};
+
+        // Constantes de rotación
+        const VENTANA_ACIERTOS = 6;
+        const MAX_SORTEOS_SIN_CAMBIO = 6;
+        const ROTACION_FORZADA = 3;
+        const COOLDOWN_SORTEOS = 3;
 
         function toggleSecuencia() {
             modoSecuenciaActivo = !modoSecuenciaActivo;
@@ -347,19 +365,23 @@
             input.style.boxShadow = 'none';
             historialSecuencia = []; 
             
-            // ── NUEVO: reiniciar contadores de rojos ──
+            // Reiniciar TODO el estado de rojos
             recomendacionesPendientes = { fractales: [], inmediatos: [] };
-            aciertosFractal = {};
-            aciertosInmediato = {};
+            historialAciertosFractal = [];
+            historialAciertosInmediato = [];
             rojoFractal = null;
             rojoInmediato = null;
             sorteosRealizados = 0;
+            ultimoCambioRojoFractal = 0;
+            ultimoCambioRojoInmediato = 0;
+            historialRojosFractal = [];
+            historialRojosInmediato = [];
+            cooldownFractal = {};
+            cooldownInmediato = {};
             
-            // Quitar resaltados rojos
             document.querySelectorAll('.num-rojo-fractal, .num-rojo-inmediato')
                     .forEach(el => el.classList.remove('num-rojo-fractal', 'num-rojo-inmediato'));
             
-            // Limpiar panel de rojos
             actualizarPanelRojos();
 
             document.getElementById('canvas-container').style.display = 'none';
@@ -389,8 +411,7 @@
         });
 
         // ═══════════════════════════════════════════════════════════════
-        // NUEVO: PROCESAR SORTEO EN MODO SENCILLO
-        // Verifica aciertos contra recomendaciones del sorteo anterior
+        // PROCESAR SORTEO EN MODO SENCILLO
         // ═══════════════════════════════════════════════════════════════
         function procesarSorteoModoSencillo(numeroIngresado) {
             if (modoSecuenciaActivo) return;
@@ -403,11 +424,11 @@
             if (sorteosRealizados > 1) {
                 const aciertoF = recomendacionesPendientes.fractales.find(r => r.num === n);
                 if (aciertoF) {
-                    aciertosFractal[n] = (aciertosFractal[n] || 0) + 1;
+                    historialAciertosFractal.push({ sorteo: sorteosRealizados, num: n });
                 }
                 const aciertoI = recomendacionesPendientes.inmediatos.find(r => r.num === n);
                 if (aciertoI) {
-                    aciertosInmediato[n] = (aciertosInmediato[n] || 0) + 1;
+                    historialAciertosInmediato.push({ sorteo: sorteosRealizados, num: n });
                 }
             }
 
@@ -415,73 +436,143 @@
             recomendacionesPendientes.fractales = [];
             recomendacionesPendientes.inmediatos = [];
 
-            // PASO 3: Si hay 3+ sorteos, recalcular los dos rojos
+            // PASO 3: Limpiar cooldowns expirados
+            limpiarCooldowns();
+
+            // PASO 4: Calcular rojos si hay 3+ sorteos
             if (sorteosRealizados >= 3) {
                 calcularDosRojos();
             }
 
-            // Actualizar panel visual
             actualizarPanelRojos();
         }
 
+        function limpiarCooldowns() {
+            for (let num in cooldownFractal) {
+                if (cooldownFractal[num] <= sorteosRealizados) delete cooldownFractal[num];
+            }
+            for (let num in cooldownInmediato) {
+                if (cooldownInmediato[num] <= sorteosRealizados) delete cooldownInmediato[num];
+            }
+        }
+
         // ═══════════════════════════════════════════════════════════════
-        // NUEVO: CALCULAR LOS DOS ROJOS CON PONDERACIÓN MATEMÁTICA
+        // CÁLCULO DE ROJOS CON VENTANA MÓVIL Y ROTACIÓN FORZADA
         // ═══════════════════════════════════════════════════════════════
         function calcularDosRojos() {
-            // ──── ROJO FRACTAL (ganador de amarillos) ────
-            const entradasFractal = Object.keys(aciertosFractal).map(num => ({
-                num: parseInt(num),
-                aciertos: aciertosFractal[num]
-            }));
+            // ──────── ROJO FRACTAL ────────
+            const nuevoRojoF = calcularRojoConRotacion(
+                'fractal',
+                historialAciertosFractal,
+                rojoFractal,
+                ultimoCambioRojoFractal,
+                cooldownFractal
+            );
 
-            if (entradasFractal.length > 0) {
-                const totalF = entradasFractal.reduce((s, e) => s + e.aciertos, 0);
-                entradasFractal.forEach(e => {
-                    e.porcentaje = (e.aciertos / totalF) * 100;
-                    // Ponderación: aciertos×10 + porcentaje (desempata por proporción)
-                    e.puntaje = (e.aciertos * 10) + e.porcentaje;
-                });
-                entradasFractal.sort((a, b) => b.puntaje - a.puntaje);
-                const g = entradasFractal[0];
-                rojoFractal = {
-                    num: g.num,
-                    aciertos: g.aciertos,
-                    porcentaje: g.porcentaje,
-                    puntaje: g.puntaje
-                };
-            } else {
-                rojoFractal = null;
+            const numAnteriorF = rojoFractal ? rojoFractal.num : null;
+            if (nuevoRojoF && nuevoRojoF.num !== numAnteriorF) {
+                if (rojoFractal) {
+                    historialRojosFractal.push({
+                        num: rojoFractal.num,
+                        desdeSorteo: ultimoCambioRojoFractal,
+                        hastaSorteo: sorteosRealizados
+                    });
+                    cooldownFractal[rojoFractal.num] = sorteosRealizados + COOLDOWN_SORTEOS;
+                }
+                ultimoCambioRojoFractal = sorteosRealizados;
             }
+            rojoFractal = nuevoRojoF;
 
-            // ──── ROJO INMEDIATO (ganador de azules) ────
-            const entradasInmediato = Object.keys(aciertosInmediato).map(num => ({
-                num: parseInt(num),
-                aciertos: aciertosInmediato[num]
-            }));
+            // ──────── ROJO INMEDIATO ────────
+            const nuevoRojoI = calcularRojoConRotacion(
+                'inmediato',
+                historialAciertosInmediato,
+                rojoInmediato,
+                ultimoCambioRojoInmediato,
+                cooldownInmediato
+            );
 
-            if (entradasInmediato.length > 0) {
-                const totalI = entradasInmediato.reduce((s, e) => s + e.aciertos, 0);
-                entradasInmediato.forEach(e => {
-                    e.porcentaje = (e.aciertos / totalI) * 100;
-                    e.puntaje = (e.aciertos * 10) + e.porcentaje;
-                });
-                entradasInmediato.sort((a, b) => b.puntaje - a.puntaje);
-                const g = entradasInmediato[0];
-                rojoInmediato = {
-                    num: g.num,
-                    aciertos: g.aciertos,
-                    porcentaje: g.porcentaje,
-                    puntaje: g.puntaje
-                };
-            } else {
-                rojoInmediato = null;
+            const numAnteriorI = rojoInmediato ? rojoInmediato.num : null;
+            if (nuevoRojoI && nuevoRojoI.num !== numAnteriorI) {
+                if (rojoInmediato) {
+                    historialRojosInmediato.push({
+                        num: rojoInmediato.num,
+                        desdeSorteo: ultimoCambioRojoInmediato,
+                        hastaSorteo: sorteosRealizados
+                    });
+                    cooldownInmediato[rojoInmediato.num] = sorteosRealizados + COOLDOWN_SORTEOS;
+                }
+                ultimoCambioRojoInmediato = sorteosRealizados;
             }
+            rojoInmediato = nuevoRojoI;
 
             pintarDosRojos();
         }
 
+        function calcularRojoConRotacion(tipo, historialAciertos, rojoActual, ultimoCambio, cooldowns) {
+            // 1. Filtrar solo últimos VENTANA_ACIERTOS sorteos
+            const sorteoMinimo = Math.max(1, sorteosRealizados - VENTANA_ACIERTOS + 1);
+            const aciertosRecientes = historialAciertos.filter(a => a.sorteo >= sorteoMinimo);
+
+            // 2. Agrupar por número
+            const conteo = {};
+            aciertosRecientes.forEach(a => {
+                conteo[a.num] = (conteo[a.num] || 0) + 1;
+            });
+
+            // 3. Convertir a array con puntajes
+            let candidatos = Object.keys(conteo).map(num => {
+                const n = parseInt(num);
+                const aciertos = conteo[num];
+                const porcentaje = (aciertos / Math.max(aciertosRecientes.length, 1)) * 100;
+                let puntaje = (aciertos * 10) + porcentaje;
+
+                // Penalización si es el rojo actual (para forzar rotación)
+                if (rojoActual && rojoActual.num === n) {
+                    const sorteosComoRojo = sorteosRealizados - ultimoCambio;
+                    puntaje *= Math.pow(0.85, sorteosComoRojo);
+                }
+
+                return { num: n, aciertos, porcentaje, puntaje };
+            });
+
+            // 4. Excluir los que están en cooldown
+            candidatos = candidatos.filter(c => !cooldowns[c.num]);
+
+            // 5. Ordenar por puntaje
+            candidatos.sort((a, b) => b.puntaje - a.puntaje);
+
+            // 6. REGLA DE ROTACIÓN FORZADA
+            if (rojoActual) {
+                const sorteosComoRojo = sorteosRealizados - ultimoCambio;
+
+                // Si lleva MAX_SORTEOS_SIN_CAMBIO o más → forzar cambio
+                if (sorteosComoRojo >= MAX_SORTEOS_SIN_CAMBIO) {
+                    const alternativas = candidatos.filter(c => c.num !== rojoActual.num);
+                    if (alternativas.length > 0) {
+                        return alternativas[0];
+                    }
+                    return rojoActual;
+                }
+
+                // Si lleva ROTACION_FORZADA sorteos y hay un candidato con +10% puntaje → rotar
+                if (sorteosComoRojo >= ROTACION_FORZADA && candidatos.length > 0) {
+                    const mejor = candidatos[0];
+                    if (mejor.num !== rojoActual.num && mejor.puntaje > rojoActual.puntaje * 1.1) {
+                        return mejor;
+                    }
+                }
+            }
+
+            // 7. Devolver el mejor candidato
+            if (candidatos.length > 0) {
+                return candidatos[0];
+            }
+            return rojoActual;
+        }
+
         // ═══════════════════════════════════════════════════════════════
-        // NUEVO: PINTAR LOS DOS ROJOS EN LA RULETA
+        // PINTAR LOS DOS ROJOS EN LA RULETA
         // ═══════════════════════════════════════════════════════════════
         function pintarDosRojos() {
             document.querySelectorAll('.num-rojo-fractal, .num-rojo-inmediato')
@@ -505,7 +596,7 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // NUEVO: ACTUALIZAR PANEL DE RESUMEN DE ROJOS
+        // PANEL DE RESUMEN DE ROJOS (con estado de rotación)
         // ═══════════════════════════════════════════════════════════════
         function actualizarPanelRojos() {
             const panel = document.getElementById('panel-rojos');
@@ -518,24 +609,58 @@
                     Faltan ${3 - sorteosRealizados} sorteo(s) para activar los rojos.
                 </p>`;
             } else {
-                if (rojoFractal) {
-                    html += `<div class="rojo-item">
-                        <span class="dot-fractal"></span>
-                        <b>Fractal:</b> ${rojoFractal.num.toString().padStart(2,'0')} 
-                        <span style="color:#aaa;">(${rojoFractal.aciertos} aciertos, ${rojoFractal.porcentaje.toFixed(1)}%)</span>
+                const renderRojo = (rojo, tipo, ultimoCambio, dotClass) => {
+                    if (!rojo) return '';
+                    const antiguedad = sorteosRealizados - ultimoCambio;
+                    const enRiesgo = antiguedad >= ROTACION_FORZADA;
+                    const critico = antiguedad >= MAX_SORTEOS_SIN_CAMBIO - 1;
+                    
+                    let statusColor = '#00c853';
+                    let statusText = `Activo (${antiguedad}/${MAX_SORTEOS_SIN_CAMBIO})`;
+                    if (critico) {
+                        statusColor = '#ff0000';
+                        statusText = `⚠️ ROTARÁ PRONTO (${antiguedad}/${MAX_SORTEOS_SIN_CAMBIO})`;
+                    } else if (enRiesgo) {
+                        statusColor = '#ffaa00';
+                        statusText = `En revisión (${antiguedad}/${MAX_SORTEOS_SIN_CAMBIO})`;
+                    }
+                    
+                    return `<div class="rojo-item">
+                        <span class="${dotClass}"></span>
+                        <div style="flex-grow:1;">
+                            <b>${tipo}:</b> ${rojo.num.toString().padStart(2,'0')}
+                            <span style="color:#aaa;font-size:0.75rem;">(${rojo.aciertos} aciertos, ${rojo.porcentaje.toFixed(1)}%)</span>
+                            <br><span style="color:${statusColor};font-size:0.75rem;font-weight:bold;">${statusText}</span>
+                        </div>
                     </div>`;
-                }
-                if (rojoInmediato) {
-                    html += `<div class="rojo-item">
-                        <span class="dot-inmediato"></span>
-                        <b>Inmediato:</b> ${rojoInmediato.num.toString().padStart(2,'0')} 
-                        <span style="color:#aaa;">(${rojoInmediato.aciertos} aciertos, ${rojoInmediato.porcentaje.toFixed(1)}%)</span>
-                    </div>`;
-                }
+                };
+
+                html += renderRojo(rojoFractal, 'Fractal', ultimoCambioRojoFractal, 'dot-fractal');
+                html += renderRojo(rojoInmediato, 'Inmediato', ultimoCambioRojoInmediato, 'dot-inmediato');
+                
                 if (!rojoFractal && !rojoInmediato) {
                     html += `<p style="color:#888;text-align:center;font-size:0.85rem;">
-                        Aún sin aciertos. Sigue ingresando números.
+                        Aún sin aciertos en la ventana actual.
                     </p>`;
+                }
+                
+                // Mini-historial de rojos anteriores
+                if (historialRojosFractal.length > 0 || historialRojosInmediato.length > 0) {
+                    html += `<div style="border-top:1px dashed #333; margin-top:8px; padding-top:8px;">
+                        <div style="color:#888;font-size:0.75rem;margin-bottom:5px;">Rotaciones recientes:</div>`;
+                    const ultimosF = historialRojosFractal.slice(-3);
+                    const ultimosI = historialRojosInmediato.slice(-3);
+                    if (ultimosF.length > 0) {
+                        html += `<div style="font-size:0.75rem;color:#ffcc00;margin-bottom:3px;">
+                            🟡 ${ultimosF.map(h => `${h.num.toString().padStart(2,'0')} (S${h.desdeSorteo}-${h.hastaSorteo})`).join(' → ')}
+                        </div>`;
+                    }
+                    if (ultimosI.length > 0) {
+                        html += `<div style="font-size:0.75rem;color:#00ffcc;">
+                            🟢 ${ultimosI.map(h => `${h.num.toString().padStart(2,'0')} (S${h.desdeSorteo}-${h.hastaSorteo})`).join(' → ')}
+                        </div>`;
+                    }
+                    html += `</div>`;
                 }
             }
             panel.innerHTML = html;
@@ -549,7 +674,6 @@
             document.getElementById('ruleta-container').style.display = 'flex';
             datosGlobales = []; 
             dibujarVistaActual();
-            // Re-aplicar rojos si existen
             if (rojoFractal || rojoInmediato) pintarDosRojos();
         }
 
@@ -604,10 +728,7 @@
             inputNum.style.transition = 'box-shadow 0.3s'; inputNum.style.boxShadow = '0 0 15px #ff00cc';
             setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
             
-            // PRIMERO: procesar aciertos contra el sorteo anterior
             procesarSorteoModoSencillo(num);
-            
-            // LUEGO: buscar vecinos (guardará nuevas recomendaciones pendientes)
             buscarVecinosRuleta();
         }
 
@@ -615,7 +736,6 @@
             document.querySelectorAll('.casilla').forEach(c => {
                 c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido');
             });
-            // Nota: los rojos se manejan por separado en pintarDosRojos()
         }
 
         function pintarObjetivo(num) {
@@ -643,7 +763,6 @@
             limpiarResaltados();
             let numeroObjetivo = parseInt(primerNumero);
 
-            // Re-aplicar rojos si existen
             if (rojoFractal || rojoInmediato) pintarDosRojos();
 
             try {
@@ -682,11 +801,8 @@
                 let todosVecinosUnicos = [...new Set([...vecinosAntes, ...vecinosDespues])];
                 todosVecinosUnicos.forEach(num => { pintarVecino(num, contadorVecinos[num] > 1); });
 
-                // ═══════════════════════════════════════════════════════════
-                // NUEVO: GUARDAR RECOMENDACIONES PARA EL PRÓXIMO SORTEO
-                // ═══════════════════════════════════════════════════════════
+                // Guardar recomendaciones para el próximo sorteo
                 if (!modoSecuenciaActivo) {
-                    // Amarillos: vecinos repetidos primero, luego únicos
                     const repetidos = Object.entries(contadorVecinos)
                         .filter(([_, c]) => c > 1)
                         .sort((a, b) => b[1] - a[1])
@@ -701,7 +817,6 @@
 
                     recomendacionesPendientes.fractales = [...repetidos, ...unicos];
 
-                    // Azules: 2 vecinos antes + 2 después más recientes
                     const inmediatos = [...new Set([
                         ...vecinosAntes.slice(0, 2),
                         ...vecinosDespues.slice(0, 2)
@@ -1112,11 +1227,17 @@
         // ═══════════════════════════════════════════════════════════════
         window.addEventListener('beforeunload', function() {
             recomendacionesPendientes = { fractales: [], inmediatos: [] };
-            aciertosFractal = {};
-            aciertosInmediato = {};
+            historialAciertosFractal = [];
+            historialAciertosInmediato = [];
             rojoFractal = null;
             rojoInmediato = null;
             sorteosRealizados = 0;
+            ultimoCambioRojoFractal = 0;
+            ultimoCambioRojoInmediato = 0;
+            historialRojosFractal = [];
+            historialRojosInmediato = [];
+            cooldownFractal = {};
+            cooldownInmediato = {};
         });
 
         window.onload = function() {
