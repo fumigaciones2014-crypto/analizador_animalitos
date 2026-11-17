@@ -100,6 +100,9 @@
         .vecino-unico { background-color: #00ffcc !important; color: #000 !important; box-shadow: 0 0 10px #00ffcc; }
         .vecino-repetido { background-color: #ffcc00 !important; color: #000 !important; box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff !important; transform: scale(1.05); z-index: 9; }
 
+        /* NUEVO ESTILO PARA NÚMERO CALIENTE */
+        .num-caliente { background-color: #ff0000 !important; color: #fff !important; box-shadow: 0 0 20px #ff0000, inset 0 0 10px #fff !important; transform: scale(1.15) !important; z-index: 15 !important; border: 3px solid #fff !important; }
+
         .grid-guacharo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; width: 100%; max-width: 560px; margin: 0 auto; }
         .grid-guacharo .casilla { padding: 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
 
@@ -233,6 +236,13 @@
         
         let historialSecuencia = []; 
 
+        // ============================================================
+        // NUEVAS VARIABLES PARA EL CONTADOR EN SEGUNDO PLANO (MODO SENCILLO)
+        // ============================================================
+        let contadorModoSencillo = {}; // Almacena { numero: cantidad }
+        let totalIngresosSencillo = 0; // Contador de cuántos números se han ingresado en modo sencillo
+        let numeroCalienteActual = null; // Número con mayor porcentaje (caliente)
+
         function toggleSecuencia() {
             modoSecuenciaActivo = !modoSecuenciaActivo;
             const btn = document.getElementById('btn-secuencia');
@@ -254,6 +264,12 @@
             input.value = '';
             input.style.boxShadow = 'none';
             historialSecuencia = []; 
+            
+            // Reiniciar contador de modo sencillo
+            contadorModoSencillo = {};
+            totalIngresosSencillo = 0;
+            numeroCalienteActual = null;
+
             document.getElementById('canvas-container').style.display = 'none';
             document.getElementById('ruleta-container').style.display = 'flex';
             document.getElementById('resultado-texto').style.display = 'none';
@@ -263,7 +279,7 @@
         }
 
         // ============================================================
-        // NUEVA LÓGICA DE INPUT: Dispara solo al presionar Coma
+        // LÓGICA DE INPUT: Dispara solo al presionar Coma
         // ============================================================
         document.getElementById('input-numero').addEventListener('input', function(e) {
             if (modoSecuenciaActivo) {
@@ -284,6 +300,62 @@
             }
         });
 
+        // ============================================================
+        // NUEVA FUNCIÓN: Registrar número en modo sencillo (contador en 2do plano)
+        // ============================================================
+        function registrarNumeroModoSencillo(num) {
+            // Solo registramos si NO estamos en modo secuencia (modo sencillo)
+            if (modoSecuenciaActivo) return;
+
+            // Convertir a número si es string
+            let n = parseInt(num);
+            if (isNaN(n)) return;
+
+            // Incrementar contador
+            contadorModoSencillo[n] = (contadorModoSencillo[n] || 0) + 1;
+            totalIngresosSencillo++;
+
+            // Si ya tenemos al menos 3 ingresos, calcular el número caliente
+            if (totalIngresosSencillo >= 3) {
+                let maxNum = null;
+                let maxCant = 0;
+                let sumaTotal = 0;
+
+                for (let key in contadorModoSencillo) {
+                    let cant = contadorModoSencillo[key];
+                    sumaTotal += cant;
+                    if (cant > maxCant) {
+                        maxCant = cant;
+                        maxNum = parseInt(key);
+                    }
+                }
+
+                if (maxNum !== null && sumaTotal > 0) {
+                    let porcentaje = (maxCant / sumaTotal) * 100;
+                    numeroCalienteActual = { num: maxNum, porcentaje: porcentaje, cantidad: maxCant };
+                    
+                    // Resaltar visualmente el número caliente en la ruleta
+                    resaltarNumeroCaliente(maxNum);
+                }
+            }
+        }
+
+        // ============================================================
+        // NUEVA FUNCIÓN: Resaltar el número caliente en la ruleta
+        // ============================================================
+        function resaltarNumeroCaliente(num) {
+            // Primero limpiamos cualquier resaltado previo de caliente
+            document.querySelectorAll('.num-caliente').forEach(el => el.classList.remove('num-caliente'));
+
+            if (num === null) return;
+
+            const id = (vistaActual === 'lotto') ? `casilla-${num}` : `g-casilla-${num}`;
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('num-caliente');
+            }
+        }
+
         function cambiarVista() {
             const sel = document.getElementById('combo-loteria').value;
             vistaActual = (sel === 'mapeo_lotto.json') ? 'lotto' : 'guacharo';
@@ -292,6 +364,10 @@
             document.getElementById('ruleta-container').style.display = 'flex';
             datosGlobales = []; 
             dibujarVistaActual();
+            // Re-aplicar resaltado de número caliente si existe
+            if (numeroCalienteActual) {
+                resaltarNumeroCaliente(numeroCalienteActual.num);
+            }
         }
 
         function dibujarVistaActual() {
@@ -344,12 +420,16 @@
             inputNum.value = num;
             inputNum.style.transition = 'box-shadow 0.3s'; inputNum.style.boxShadow = '0 0 15px #ff00cc';
             setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
+            
+            // Registrar en el contador de modo sencillo
+            registrarNumeroModoSencillo(num);
+            
             buscarVecinosRuleta();
         }
 
         function limpiarResaltados() {
             document.querySelectorAll('.casilla').forEach(c => {
-                c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido');
+                c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido', 'num-caliente');
             });
         }
 
@@ -377,6 +457,11 @@
             document.getElementById('ruleta-container').style.display = 'flex';
             limpiarResaltados();
             let numeroObjetivo = parseInt(primerNumero);
+
+            // Re-aplicar resaltado de número caliente si existe
+            if (numeroCalienteActual) {
+                resaltarNumeroCaliente(numeroCalienteActual.num);
+            }
 
             try {
                 const res = await fetch(loteriaFile);
@@ -820,6 +905,15 @@
                 panelPrediccion.style.display = 'none';
             }
         }
+
+        // ============================================================
+        // LIMPIAR CONTADOR AL SALIR DE LA PÁGINA
+        // ============================================================
+        window.addEventListener('beforeunload', function() {
+            contadorModoSencillo = {};
+            totalIngresosSencillo = 0;
+            numeroCalienteActual = null;
+        });
 
         window.onload = function() {
             vistaActual = 'lotto';
