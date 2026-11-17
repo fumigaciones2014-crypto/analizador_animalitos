@@ -89,8 +89,40 @@
         .b-objetivo { background-color: #ff00cc; color: white;}
         .mensaje-error { color: #ff5555; text-align: center; font-size: 1.1rem; margin-top: 20px;}
 
-        .fila { display: flex; align-items: center; gap: 10px; }
-        .fila-label { width: 80px; text-align: right; font-weight: bold; color: #888; font-size: 0.9rem;}
+        .fila { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            padding: 3px 6px;
+            border-radius: 6px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        /* Enmarcado rojo de zona caliente para las filas predominantes (máx 3) */
+        .fila-zona-caliente {
+            border: 2px solid #ff1744 !important;
+            background: rgba(255, 23, 68, 0.10);
+            box-shadow: 0 0 14px rgba(255, 23, 68, 0.45), inset 0 0 8px rgba(255, 23, 68, 0.2);
+        }
+
+        .fila-label { 
+            width: 80px; 
+            text-align: right; 
+            font-weight: bold; 
+            color: #90a4ae; 
+            font-size: 0.88rem;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        .fila-label.tiene-clicks {
+            color: #00ffcc;
+        }
+        .fila-zona-caliente .fila-label {
+            color: #ff5252 !important;
+            text-shadow: 0 0 6px rgba(255, 23, 68, 0.6);
+        }
+
         .casillas-container { display: flex; gap: 5px; flex-grow: 1;}
         .casilla { background-color: #555; color: white; flex: 1; text-align: center; padding: 15px 5px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; border: 1px solid #333; transition: all 0.3s; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; position: relative; }
         .casilla:hover { background-color: #6d6d6d; transform: translateY(-2px); }
@@ -260,7 +292,7 @@
             .btn-regresar { width: 100%; }
             .controles { flex-direction: column; align-items: stretch; }
             .controles select, .controles input, .btn-buscar, .btn-fractal, .btn-secuencia, .btn-reset { width: 100%; margin-left: 0; margin-top: 5px; }
-            .fila-label { width: 50px; font-size: 0.7rem;}
+            .fila-label { width: 58px; font-size: 0.72rem;}
             .casilla { padding: 10px 2px; font-size: 1rem; }
             .ruleta-container { padding: 10px; gap: 5px;}
             .casillas-container { gap: 3px;}
@@ -474,6 +506,7 @@
             contadorClicksUsuario[n] = (contadorClicksUsuario[n] || 0) + 1;
             totalClicksUsuario++;
             actualizarBadgesClicksEnRuleta();
+            actualizarClicksPorFila();
         }
 
         /**
@@ -495,6 +528,53 @@
                     }
                 }
             });
+        }
+
+        /**
+         * Actualiza el texto izquierdo de cada fila mostrando la cantidad total de clicks en esa fila
+         * (en lugar del texto "fila_X") y enmarca con línea roja de zona caliente las filas que más predominan (máximo 3 filas).
+         */
+        function actualizarClicksPorFila() {
+            if (vistaActual !== 'lotto') return;
+
+            const resumenFilas = FILAS_RULETA_LOTTO.map(fila => {
+                const totalFila = fila.nums.reduce((acc, n) => acc + (contadorClicksUsuario[n] || 0), 0);
+                return { id: fila.id, total: totalFila };
+            });
+
+            // Quitar enmarcado rojo previo en todas las filas
+            document.querySelectorAll('.fila').forEach(el => el.classList.remove('fila-zona-caliente'));
+
+            // Actualizar texto de clicks en cada fila
+            resumenFilas.forEach(item => {
+                const labelEl = document.getElementById(`label-${item.id}`);
+                if (labelEl) {
+                    labelEl.innerText = `${item.total} click`;
+                    if (item.total > 0) {
+                        labelEl.classList.add('tiene-clicks');
+                    } else {
+                        labelEl.classList.remove('tiene-clicks');
+                    }
+                }
+            });
+
+            // Determinar qué filas predominan más (deben tener clicks > 0 y superar el mínimo para destacar, máximo 3 filas)
+            const filasConClicks = resumenFilas.filter(f => f.total > 0);
+            if (filasConClicks.length === 0) return;
+
+            // Ordenar de mayor a menor cantidad de clicks
+            const ordenadas = [...filasConClicks].sort((a, b) => b.total - a.total);
+            const maxClicksFila = ordenadas[0].total;
+            const minClicksFila = Math.min(...resumenFilas.map(f => f.total));
+
+            // Solo enmarcar si realmente hay predominancia respecto al resto
+            if (maxClicksFila > minClicksFila) {
+                const top3Filas = ordenadas.slice(0, 3);
+                top3Filas.forEach(f => {
+                    const rowEl = document.getElementById(`row-${f.id}`);
+                    if (rowEl) rowEl.classList.add('fila-zona-caliente');
+                });
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -551,6 +631,7 @@
             contadorClicksUsuario = {};
             totalClicksUsuario = 0;
             document.querySelectorAll('.click-badge').forEach(b => b.remove());
+            actualizarClicksPorFila();
 
             recomendacionesPendientes = { fractales: [], inmediatos: [] };
             historialAciertosFractal = [];
@@ -950,6 +1031,7 @@
             datosGlobales = []; 
             dibujarVistaActual();
             actualizarBadgesClicksEnRuleta();
+            actualizarClicksPorFila();
             if (rojoFractal || rojoInmediato) pintarDosRojos();
         }
 
@@ -965,8 +1047,17 @@
             const container = document.getElementById('ruleta-container');
             container.innerHTML = '';
             FILAS_RULETA_LOTTO.forEach(fila => {
-                let rowDiv = document.createElement('div'); rowDiv.className = 'fila';
-                let labelDiv = document.createElement('div'); labelDiv.className = 'fila-label'; labelDiv.innerText = fila.id;
+                let rowDiv = document.createElement('div'); 
+                rowDiv.className = 'fila';
+                rowDiv.id = `row-${fila.id}`;
+
+                let labelDiv = document.createElement('div'); 
+                labelDiv.className = 'fila-label'; 
+                labelDiv.id = `label-${fila.id}`;
+                const clicksFila = fila.nums.reduce((acc, n) => acc + (contadorClicksUsuario[n] || 0), 0);
+                labelDiv.innerText = `${clicksFila} click`;
+                if (clicksFila > 0) labelDiv.classList.add('tiene-clicks');
+
                 rowDiv.appendChild(labelDiv);
                 let casillasDiv = document.createElement('div'); casillasDiv.className = 'casillas-container';
                 fila.nums.forEach(num => {
@@ -977,6 +1068,7 @@
                 });
                 rowDiv.appendChild(casillasDiv); container.appendChild(rowDiv);
             });
+            actualizarClicksPorFila();
         }
 
         function dibujarRuletaGuacharo() {
@@ -1004,7 +1096,7 @@
             inputNum.style.transition = 'box-shadow 0.3s'; inputNum.style.boxShadow = '0 0 15px #ff00cc';
             setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
             
-            // 1. Registrar el click del usuario en el contador y actualizar zona caliente
+            // 1. Registrar el click del usuario en el contador, actualizar filas y zona caliente
             registrarClickUsuario(num);
 
             // 2. Procesar sorteo y rotación de rojos (usando el contador actualizado)
