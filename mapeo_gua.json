@@ -15760,5 +15760,11 @@
         "hora": "04:00 PM",
         "animal": "HIPOPOTAMO",
         "numero": "73"
+    },
+    {
+        "fecha": "2026-11-18",
+        "hora": "05:00 PM",
+        "animal": "BISONTE",
+        "numero": "70"
     }
 ]
