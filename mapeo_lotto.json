@@ -16276,5 +16276,11 @@
         "hora": "06:00 PM",
         "animal": "ALACRAN",
         "numero": "04"
+    },
+    {
+        "fecha": "2026-11-18",
+        "hora": "07:00 PM",
+        "animal": "LEON",
+        "numero": "05"
     }
 ]
