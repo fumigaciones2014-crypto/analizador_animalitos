@@ -15832,5 +15832,17 @@
         "hora": "04:00 PM",
         "animal": "GUACHARO",
         "numero": "75"
+    },
+    {
+        "fecha": "2026-11-19",
+        "hora": "05:00 PM",
+        "animal": "CHIVO",
+        "numero": "19"
+    },
+    {
+        "fecha": "2026-11-19",
+        "hora": "06:00 PM",
+        "animal": "PEREZA",
+        "numero": "49"
     }
 ]
