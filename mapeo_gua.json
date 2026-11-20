@@ -15850,5 +15850,11 @@
         "hora": "07:00 PM",
         "animal": "CANGURO",
         "numero": "41"
+    },
+    {
+        "fecha": "2026-11-20",
+        "hora": "08:00 AM",
+        "animal": "ELEFANTE",
+        "numero": "29"
     }
 ]
