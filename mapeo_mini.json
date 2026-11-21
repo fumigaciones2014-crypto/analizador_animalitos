@@ -16450,5 +16450,11 @@
         "hora": "11:00 AM",
         "animal": "CHIVO",
         "numero": "19"
+    },
+    {
+        "fecha": "2026-11-21",
+        "hora": "12:00 PM",
+        "animal": "AGUILA",
+        "numero": "09"
     }
 ]
