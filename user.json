@@ -23,9 +23,10 @@
         "usuario": "admin",
         "password": "admin",
         "dias": "ilimitado"
-    },{
+    },
+    {
         "usuario": "jarvis",
         "password": "user12345678",
         "dias": "7"
-    },
+    }
 ]
