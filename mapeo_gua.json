@@ -15958,5 +15958,11 @@
         "hora": "01:00 PM",
         "animal": "TURPIAL",
         "numero": "74"
+    },
+    {
+        "fecha": "2026-11-21",
+        "hora": "02:00 PM",
+        "animal": "CANGURO",
+        "numero": "41"
     }
 ]
