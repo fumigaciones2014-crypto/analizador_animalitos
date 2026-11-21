@@ -16474,5 +16474,11 @@
         "hora": "03:00 PM",
         "animal": "CABRA",
         "numero": "87"
+    },
+    {
+        "fecha": "2026-11-21",
+        "hora": "04:00 PM",
+        "animal": "CABALLO",
+        "numero": "12"
     }
 ]
