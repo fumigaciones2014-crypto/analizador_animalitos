@@ -15928,5 +15928,11 @@
         "hora": "08:00 AM",
         "animal": "CHIGUIRE",
         "numero": "44"
+    },
+    {
+        "fecha": "2026-11-21",
+        "hora": "09:00 AM",
+        "animal": "LECHUZA",
+        "numero": "39"
     }
 ]
