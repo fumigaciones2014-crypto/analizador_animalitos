@@ -16432,5 +16432,11 @@
         "hora": "08:00 AM",
         "animal": "ARANA",
         "numero": "65"
+    },
+    {
+        "fecha": "2026-11-21",
+        "hora": "09:00 AM",
+        "animal": "MURCIELAGO",
+        "numero": "80"
     }
 ]
