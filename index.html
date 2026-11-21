@@ -39,7 +39,14 @@
             transition: background 0.3s;
         }
         .btn-login:hover { background-color: #81d4fa; }
+        .btn-biometrico {
+            width: 100%; padding: 12px; margin-top: 12px; background-color: #1b5e20; color: #00ffcc;
+            border: 1px solid #00ffcc; border-radius: 4px; font-weight: bold; font-size: 1rem; cursor: pointer;
+            transition: all 0.3s; display: none; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-biometrico:hover { background-color: #2e7d32; box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); }
         .error-msg { color: #ff5555; font-weight: bold; margin-top: 10px; display: none; }
+        .info-bio-msg { color: #00ffcc; font-size: 0.85rem; margin-top: 10px; display: none; }
 
         /* --- RESTO DE ESTILOS --- */
         header { background-color: var(--bg-header); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; }
@@ -77,6 +84,27 @@
         .btn-add-manual:hover { background-color: #388e3c; box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); }
         .btn-add-manual:disabled { background-color: #333; color: #888; cursor: not-allowed; box-shadow: none; }
 
+        /* --- PANTALLA DE SALDO VENCIDO (SIN FUNCIONES NI RESULTADOS) --- */
+        #panel-saldo-vencido {
+            display: none; flex-grow: 1; flex-direction: column; justify-content: center; align-items: center;
+            background-color: #161616; border: 2px solid #ff5555; border-radius: 10px;
+            padding: 30px; text-align: center; margin: 10px; box-shadow: 0 0 25px rgba(255, 85, 85, 0.2);
+        }
+        #panel-saldo-vencido h2 { color: #ff5555; font-size: 1.8rem; margin-bottom: 15px; }
+        #panel-saldo-vencido p { color: #ddd; font-size: 1.1rem; max-width: 520px; line-height: 1.5; margin-bottom: 20px; }
+        .card-pago-vencido {
+            background-color: #222; border: 2px dashed #ffc107; border-radius: 8px;
+            padding: 20px 30px; margin-bottom: 20px;
+        }
+        .card-pago-vencido .dato-pago {
+            font-size: 1.4rem; font-weight: bold; color: #00ffcc; letter-spacing: 1px; margin: 8px 0;
+        }
+        .btn-copiar-pago {
+            background-color: var(--btn-amarillo); color: #000; border: none; padding: 10px 20px;
+            border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.95rem; margin-top: 8px;
+        }
+        .btn-copiar-pago:hover { background-color: #ffd54f; }
+
         /* --- CAJA DE LA SUERTE EN EL SIDEBAR --- */
         #caja-suerte-fija {
             display: none; margin-top: auto; background-color: #1a1a1a;
@@ -93,13 +121,21 @@
         }
         #texto-espera-fijo { color: #ffcc00; font-size: 0.8rem; font-weight: bold; }
 
-        /* FOOTER CON CONTADOR */
+        /* FOOTER CON CONTADOR Y PAGO MOVIL */
         footer { background-color: var(--bg-header); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-top: 2px solid #333; flex-wrap: wrap; gap: 10px; }
-        .footer-info { display: flex; align-items: center; gap: 15px; }
+        .footer-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .contador-suscripcion { 
             background-color: #222; padding: 5px 10px; border-radius: 4px; 
             border: 1px solid #444; font-weight: bold; display: flex; align-items: center; gap: 5px;
         }
+        .pago-movil-bar {
+            background-color: #1e241b; padding: 5px 12px; border-radius: 4px;
+            border: 1px solid #ffc107; color: #fff; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .pago-movil-bar:hover { background-color: #2c3527; }
+        .pago-movil-datos { color: #ffc107; font-weight: bold; letter-spacing: 0.5px; }
         .texto-vip { color: #ffcc00; text-shadow: 0 0 5px #ffcc00; }
         .texto-normal { color: #00ffcc; }
         .texto-peligro { color: #ff5555; animation: parpadeo 1s infinite; }
@@ -146,6 +182,7 @@
             .menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 800; }
             .menu-overlay.active { display: block; }
             footer { flex-direction: column; text-align: center; gap: 10px; }
+            .footer-info { justify-content: center; }
             #caja-suerte-fija { grid-column: 1 / -1; margin-top: 10px; width: 100%; }
         }
     </style>
@@ -156,18 +193,21 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>🔒 JARVIS - ACCESO RESTRINGIDO</h2>
-            <input type="text" id="login-user" placeholder="Usuario" autocomplete="username">
-            <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password">
+            <input type="text" id="login-user" value="jarvis" placeholder="Usuario (default: jarvis)" autocomplete="username">
+            <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') validarLogin()">
             <button class="btn-login" onclick="validarLogin()">INGRESAR</button>
+            <button id="btn-biometrico" class="btn-biometrico" onclick="ingresarConBiometria()">
+                👆 INGRESAR CON BIOMETRÍA
+            </button>
             <div id="login-error" class="error-msg">❌ Usuario o contraseña incorrectos</div>
-            <div id="login-expirado" class="error-msg" style="color: #ffaa00;">⚠️ Tu suscripción ha vencido. ¡Renueva para continuar!</div>
+            <div id="login-bio-info" class="info-bio-msg"></div>
         </div>
     </div>
 
     <!-- HEADER -->
     <header>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="menu-toggle-btn" onclick="toggleMenu()">☰</button>
+            <button id="btn-toggle-menu" class="menu-toggle-btn" onclick="toggleMenu()">☰</button>
         </div>
         <div class="header-title">JARVIS - MULTIANALIZADOR v1.0</div>
         <button class="btn-menu bg-rojo" style="padding: 10px 15px; font-size: 0.8rem;" onclick="cerrarSesion()">SALIR</button>
@@ -175,39 +215,54 @@
 
     <div class="menu-overlay" id="menu-overlay" onclick="toggleMenu()"></div>
 
-    <div class="layout-container">
-        <main>
-            <div class="tabs-container">
-                <button id="tab-lotto" class="tab-btn tab-active" onclick="cambiarLoteria('lotto')">LOTTO ACT</button>
-                <button id="tab-guacharo" class="tab-btn tab-inactive" onclick="cambiarLoteria('gua')">GUACHARO</button>
-                <button id="tab-guacharito" class="tab-btn tab-inactive" onclick="cambiarLoteria('mini')">GUACHARITO</button>
+    <div class="layout-container" id="layout-principal">
+        <main id="main-content">
+            <!-- CONTENIDO ACTIVO (SE OCULTA SI EL SALDO EXPIRA) -->
+            <div id="contenido-activo" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;">
+                <div class="tabs-container">
+                    <button id="tab-lotto" class="tab-btn tab-active" onclick="cambiarLoteria('lotto')">LOTTO ACT</button>
+                    <button id="tab-guacharo" class="tab-btn tab-inactive" onclick="cambiarLoteria('gua')">GUACHARO</button>
+                    <button id="tab-guacharito" class="tab-btn tab-inactive" onclick="cambiarLoteria('mini')">GUACHARITO</button>
+                </div>
+
+                <div class="toolbar">
+                    <select id="select-filtro" onchange="aplicarFiltros()">
+                        <option value="reciente">Más Recientes</option>
+                        <option value="numero">Ordenar por Número</option>
+                        <option value="global">Global (Cruces)</option>
+                    </select>
+                    <input type="text" id="input-buscar" placeholder="Buscar Animal o Número..." oninput="aplicarFiltros()">
+                    <button id="btn-limpiar" class="btn-tool" onclick="limpiarFiltros()">LIMPIAR FILTRO</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>Animal</th>
+                                <th>Num</th>
+                                <th>Ver</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cuerpo"></tbody>
+                    </table>
+                </div>
+                <button id="btn-agregar-manual" class="btn-add-manual" onclick="probarSuerte()">🍀 Prueba tu Suerte</button>
             </div>
 
-            <div class="toolbar">
-                <select id="select-filtro" onchange="aplicarFiltros()">
-                    <option value="reciente">Más Recientes</option>
-                    <option value="numero">Ordenar por Número</option>
-                    <option value="global">Global (Cruces)</option>
-                </select>
-                <input type="text" id="input-buscar" placeholder="Buscar Animal o Número..." oninput="aplicarFiltros()">
-                <button id="btn-limpiar" class="btn-tool" onclick="limpiarFiltros()">LIMPIAR FILTRO</button>
+            <!-- ADVERTENCIA CUANDO EXPIRA LA CUENTA REGRESIVA -->
+            <div id="panel-saldo-vencido">
+                <h2>⚠️ RECARGA DE SALDO REQUERIDA</h2>
+                <p>Tu tiempo de suscripción ha finalizado. Para volver a visualizar los resultados, análisis y herramientas de <b>JARVIS MULTIANALIZADOR</b>, realiza tu recarga por <b>7 días más</b> a través de Pago Móvil:</p>
+                <div class="card-pago-vencido">
+                    <div style="color: #aaa; font-size: 0.9rem;">DATOS PAGO MÓVIL (7 DÍAS MÁS)</div>
+                    <div class="dato-pago">BVC 0412-9562808 16227008</div>
+                    <button class="btn-copiar-pago" onclick="copiarPagoMovil(this)">📋 Copiar Datos Pago Móvil</button>
+                </div>
+                <p style="font-size: 0.9rem; color: #aaa;">Si ya te asignaron una clave nueva, cierra sesión e ingresa con tu nueva clave para reactivar el contador.</p>
             </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Hora</th>
-                            <th>Animal</th>
-                            <th>Num</th>
-                            <th>Ver</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-cuerpo"></tbody>
-                </table>
-            </div>
-            <button id="btn-agregar-manual" class="btn-add-manual" onclick="probarSuerte()">🍀 Prueba tu Suerte</button>
         </main>
 
         <aside class="sidebar-right" id="sidebar-right">
@@ -232,11 +287,15 @@
         </aside>
     </div>
 
-    <!-- FOOTER CON CONTADOR -->
+    <!-- FOOTER CON CONTADOR Y PAGO MOVIL -->
     <footer>
         <div class="footer-info">
             <div id="footer-reloj">📅 Fecha y Hora Actual</div>
             <div id="footer-contador" class="contador-suscripcion" style="display: none;"></div>
+            <div id="footer-pagomovil" class="pago-movil-bar" onclick="copiarPagoMovil(this)" title="Haz clic para copiar los datos">
+                <span>📲 Recarga 7 días más (Pago Móvil):</span>
+                <span class="pago-movil-datos">BVC 0412-9562808 16227008</span>
+            </div>
         </div>
         <a id="footer-link-resultados" href="https://loteriadehoy.com/animalitos/resultados/" target="_blank">RESULTADOS</a>
     </footer>
@@ -275,39 +334,111 @@
         let numParaHistorial = "";
         let datosFiltradosActuales = [];
         let esIlimitado = false;
+        let intervaloSuscripcion = null;
 
         // ==========================================
-        // SISTEMA DE LOGIN Y SUSCRIPCIÓN
+        // UTILIDAD COPIAR PAGO MÓVIL
         // ==========================================
-        window.onload = function() {
-            let sesionGuardada = localStorage.getItem("jarvis_session");
-            
-            if (sesionGuardada) {
-                let sesion = JSON.parse(sesionGuardada);
-                if (verificarExpiracion(sesion)) {
-                    iniciarApp();
-                    mostrarContador(sesion);
-                } else {
-                    localStorage.removeItem("jarvis_session");
-                    document.getElementById('login-overlay').style.display = 'flex';
-                    document.getElementById('login-expirado').style.display = 'block';
-                }
+        function copiarPagoMovil(elemento) {
+            const datos = "BVC 0412-9562808 16227008";
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(datos).then(() => {
+                    const htmlOriginal = elemento.innerHTML;
+                    elemento.innerHTML = `<span style="color:#00ff00; font-weight:bold;">✅ ¡Copiado: ${datos}!</span>`;
+                    setTimeout(() => { elemento.innerHTML = htmlOriginal; }, 2200);
+                });
             } else {
-                document.getElementById('login-overlay').style.display = 'flex';
+                alert("Datos Pago Móvil para recargar 7 días más:\n" + datos);
             }
-        };
+        }
 
-        async function validarLogin() {
-            let user = document.getElementById('login-user').value.trim();
-            let pass = document.getElementById('login-pass').value.trim();
-            let errorDiv = document.getElementById('login-error');
-            let expiradoDiv = document.getElementById('login-expirado');
+        // ==========================================
+        // HASH DE CLAVE PARA INVALIDAR CLAVES OBSOLETAS
+        // ==========================================
+        async function hashClave(texto) {
+            const data = new TextEncoder().encode(String(texto));
+            if (window.crypto && window.crypto.subtle) {
+                const digest = await window.crypto.subtle.digest('SHA-256', data);
+                return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            return btoa(unescape(encodeURIComponent(String(texto))));
+        }
 
+        // ==========================================
+        // SISTEMA BIOMÉTRICO (WebAuthn)
+        // ==========================================
+        function bufferToBase64url(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let str = '';
+            for (const charCode of bytes) str += String.fromCharCode(charCode);
+            return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function base64urlToBuffer(base64url) {
+            const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+            const padLen = (4 - (base64.length % 4)) % 4;
+            const padded = base64 + '='.repeat(padLen);
+            const binary = atob(padded);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return bytes.buffer;
+        }
+
+        async function registrarBiometria(usuario, passHashVigente) {
+            if (!window.PublicKeyCredential || !navigator.credentials) return;
+            const bioGuardada = JSON.parse(localStorage.getItem("jarvis_biometria") || "null");
+
+            // Si ya existe biometría vinculada a esta misma clave vigente, no volver a pedirla
+            if (bioGuardada && bioGuardada.usuario === usuario && bioGuardada.credentialId && bioGuardada.passHash === passHashVigente) {
+                return;
+            }
+
+            try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+                const userId = new TextEncoder().encode(usuario);
+
+                const credential = await navigator.credentials.create({
+                    publicKey: {
+                        challenge: challenge,
+                        rp: { name: "JARVIS MULTIANALIZADOR" },
+                        user: {
+                            id: userId,
+                            name: usuario,
+                            displayName: usuario
+                        },
+                        pubKeyCredParams: [
+                            { type: "public-key", alg: -7 },
+                            { type: "public-key", alg: -257 }
+                        ],
+                        authenticatorSelection: {
+                            authenticatorAttachment: "platform",
+                            userVerification: "required"
+                        },
+                        timeout: 60000
+                    }
+                });
+
+                if (credential) {
+                    localStorage.setItem("jarvis_biometria", JSON.stringify({
+                        usuario: usuario,
+                        credentialId: bufferToBase64url(credential.rawId),
+                        passHash: passHashVigente
+                    }));
+                }
+            } catch (err) {
+                console.warn("Registro biométrico omitido o no soportado en este entorno:", err);
+            }
+        }
+
+        async function ingresarConBiometria() {
+            const bioGuardada = JSON.parse(localStorage.getItem("jarvis_biometria") || "null");
+            const errorDiv = document.getElementById('login-error');
+            const bioInfo = document.getElementById('login-bio-info');
             errorDiv.style.display = 'none';
-            expiradoDiv.style.display = 'none';
 
-            if (!user || !pass) {
-                errorDiv.innerText = "⚠️ Por favor, llena todos los campos.";
+            if (!bioGuardada || !bioGuardada.credentialId) {
+                errorDiv.innerText = "⚠️ Primero ingresa con usuario jarvis y tu contraseña.";
                 errorDiv.style.display = 'block';
                 return;
             }
@@ -315,33 +446,169 @@
             try {
                 const respuesta = await fetch('user.json');
                 const usuarios = await respuesta.json();
+                const usuarioValido = usuarios.find(u => u.usuario === bioGuardada.usuario);
 
+                if (!usuarioValido) {
+                    errorDiv.innerText = "❌ Usuario no encontrado en user.json.";
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                const hashActualEnJson = await hashClave(usuarioValido.password);
+                if (bioGuardada.passHash !== hashActualEnJson) {
+                    errorDiv.innerText = "🔑 La clave fue renovada. Ingresa tu nueva clave para reactivar.";
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                bioInfo.innerText = "🔍 Verificando huella / rostro...";
+                bioInfo.style.display = 'block';
+
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const assertion = await navigator.credentials.get({
+                    publicKey: {
+                        challenge: challenge,
+                        allowCredentials: [{
+                            type: "public-key",
+                            id: base64urlToBuffer(bioGuardada.credentialId)
+                        }],
+                        userVerification: "required",
+                        timeout: 60000
+                    }
+                });
+
+                if (assertion) {
+                    bioInfo.style.display = 'none';
+                    await activarSesionDesdeUsuarioValido(usuarioValido, hashActualEnJson, true);
+                }
+            } catch (err) {
+                bioInfo.style.display = 'none';
+                errorDiv.innerText = "❌ Verificación biométrica cancelada o fallida.";
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function verificarBotonBiometrico() {
+            const bioGuardada = JSON.parse(localStorage.getItem("jarvis_biometria") || "null");
+            const btnBio = document.getElementById('btn-biometrico');
+            if (bioGuardada && bioGuardada.credentialId && window.PublicKeyCredential) {
+                btnBio.style.display = 'flex';
+                btnBio.innerHTML = `👆 INGRESAR CON BIOMETRÍA (${bioGuardada.usuario.toUpperCase()})`;
+            } else {
+                btnBio.style.display = 'none';
+            }
+        }
+
+        // ==========================================
+        // SISTEMA DE LOGIN, SESIÓN Y RENOVACIÓN DE CLAVE
+        // ==========================================
+        window.onload = async function() {
+            document.getElementById('login-user').value = 'jarvis';
+            verificarBotonBiometrico();
+
+            let sesionGuardada = localStorage.getItem("jarvis_session");
+            if (sesionGuardada) {
+                let sesion = JSON.parse(sesionGuardada);
+                try {
+                    const respuesta = await fetch('user.json');
+                    const usuarios = await respuesta.json();
+                    const usuarioValido = usuarios.find(u => u.usuario === sesion.usuario);
+                    const hashActual = usuarioValido ? await hashClave(usuarioValido.password) : "";
+
+                    // Si la clave en user.json cambió, la sesión anterior queda obsoleta y se exige la nueva clave
+                    if (!usuarioValido || sesion.passHash !== hashActual) {
+                        localStorage.removeItem("jarvis_session");
+                        document.getElementById('login-overlay').style.display = 'flex';
+                        const err = document.getElementById('login-error');
+                        err.innerText = "🔑 Tu clave anterior quedó obsoleta. Ingresa tu nueva clave.";
+                        err.style.display = 'block';
+                        return;
+                    }
+
+                    document.getElementById('login-overlay').style.display = 'none';
+                    aplicarEstadoSuscripcion(sesion);
+                    mostrarContador(sesion);
+                } catch (e) {
+                    document.getElementById('login-overlay').style.display = 'flex';
+                }
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+            }
+        };
+
+        async function activarSesionDesdeUsuarioValido(usuarioValido, passHash, desdeBiometria) {
+            const user = usuarioValido.usuario;
+            const dias = usuarioValido.dias;
+            esIlimitado = (dias === "ilimitado");
+            const diasTotales = esIlimitado ? 9999 : parseInt(dias);
+
+            // Clave única por usuario + clave vigente: al cambiar la clave en user.json se crea un ciclo nuevo
+            const claveCiclo = `jarvis_ciclo_${user}_${passHash}`;
+            let cicloGuardado = JSON.parse(localStorage.getItem(claveCiclo) || "null");
+
+            let fechaInicio;
+            if (cicloGuardado && cicloGuardado.diasTotales === diasTotales) {
+                // Misma clave y mismos días: conserva el tiempo transcurrido (si venció, sigue vencido)
+                fechaInicio = cicloGuardado.fechaInicio;
+            } else {
+                // Clave nueva o días actualizados: inicia cuenta regresiva fresca
+                fechaInicio = new Date().getTime();
+            }
+
+            const sesion = {
+                usuario: user,
+                passHash: passHash,
+                fechaInicio: fechaInicio,
+                diasTotales: diasTotales,
+                esIlimitado: esIlimitado
+            };
+
+            localStorage.setItem(claveCiclo, JSON.stringify(sesion));
+            localStorage.setItem("jarvis_session", JSON.stringify(sesion));
+
+            if (!desdeBiometria) {
+                await registrarBiometria(user, passHash);
+            }
+
+            verificarBotonBiometrico();
+            document.getElementById('login-overlay').style.display = 'none';
+            aplicarEstadoSuscripcion(sesion);
+            mostrarContador(sesion);
+        }
+
+        async function validarLogin() {
+            let userInput = document.getElementById('login-user').value.trim();
+            let user = userInput || 'jarvis';
+            document.getElementById('login-user').value = user;
+
+            let pass = document.getElementById('login-pass').value.trim();
+            let errorDiv = document.getElementById('login-error');
+            errorDiv.style.display = 'none';
+
+            if (!pass) {
+                errorDiv.innerText = "⚠️ Por favor, ingresa tu contraseña.";
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const respuesta = await fetch('user.json');
+                const usuarios = await respuesta.json();
                 const usuarioValido = usuarios.find(u => u.usuario === user && u.password === pass);
 
                 if (usuarioValido) {
-                    let dias = usuarioValido.dias;
-                    esIlimitado = (dias === "ilimitado");
-                    let diasTotales = esIlimitado ? 9999 : parseInt(dias);
-
-                    let sesion = {
-                        usuario: user,
-                        fechaInicio: new Date().getTime(),
-                        diasTotales: diasTotales,
-                        esIlimitado: esIlimitado
-                    };
-
-                    localStorage.setItem("jarvis_session", JSON.stringify(sesion));
-                    document.getElementById('login-overlay').style.display = 'none';
-                    iniciarApp();
-                    mostrarContador(sesion);
+                    const passHash = await hashClave(pass);
+                    await activarSesionDesdeUsuarioValido(usuarioValido, passHash, false);
                 } else {
-                    errorDiv.innerText = "❌ Usuario o contraseña incorrectos.";
+                    errorDiv.innerText = "❌ Usuario o contraseña incorrectos (o clave obsoleta).";
                     errorDiv.style.display = 'block';
                     document.getElementById('login-pass').value = '';
                 }
             } catch (error) {
                 console.error("Error cargando user.json:", error);
-                errorDiv.innerText = "⚠️ Error de conexión al validar. Revisa que el user.json esté bien escrito.";
+                errorDiv.innerText = "⚠️ Error de conexión al validar. Revisa que user.json esté bien escrito.";
                 errorDiv.style.display = 'block';
             }
         }
@@ -354,6 +621,37 @@
             return diasTranscurridos < sesion.diasTotales;
         }
 
+        function aplicarEstadoSuscripcion(sesion) {
+            const vigente = verificarExpiracion(sesion);
+            const contenidoActivo = document.getElementById('contenido-activo');
+            const panelVencido = document.getElementById('panel-saldo-vencido');
+            const sidebar = document.getElementById('sidebar-right');
+            const layout = document.getElementById('layout-principal');
+            const btnMenuMovil = document.getElementById('btn-toggle-menu');
+            const linkResultados = document.getElementById('footer-link-resultados');
+
+            if (vigente) {
+                contenidoActivo.style.display = 'flex';
+                panelVencido.style.display = 'none';
+                sidebar.style.display = '';
+                layout.style.gridTemplateColumns = '';
+                btnMenuMovil.style.display = '';
+                linkResultados.style.display = 'inline';
+                iniciarApp();
+            } else {
+                // Permite ingresar pero no muestra resultados, menús ni funciones; solo advertencia de recarga
+                contenidoActivo.style.display = 'none';
+                panelVencido.style.display = 'flex';
+                sidebar.style.display = 'none';
+                layout.style.gridTemplateColumns = '1fr';
+                btnMenuMovil.style.display = 'none';
+                linkResultados.style.display = 'none';
+                document.getElementById('tabla-cuerpo').innerHTML = '';
+                cerrarModalOjo();
+                cerrarModalSuerte();
+            }
+        }
+
         function mostrarContador(sesion) {
             let contadorDiv = document.getElementById('footer-contador');
             contadorDiv.style.display = 'flex';
@@ -363,6 +661,8 @@
                 return;
             }
 
+            if (intervaloSuscripcion) clearInterval(intervaloSuscripcion);
+
             function actualizarContador() {
                 let ahora = new Date().getTime();
                 let transcurrido = ahora - sesion.fechaInicio;
@@ -370,8 +670,9 @@
                 let diasRestantes = sesion.diasTotales - diasTranscurridos;
 
                 if (diasRestantes <= 0) {
-                    contadorDiv.innerHTML = `<span class="texto-peligro">⚠️ SUSCRIPCIÓN VENCIDA</span>`;
-                    setTimeout(() => { cerrarSesion(); }, 3000);
+                    contadorDiv.innerHTML = `<span class="texto-peligro">⚠️ SUSCRIPCIÓN VENCIDA (0d 0h 0m)</span>`;
+                    aplicarEstadoSuscripcion(sesion);
+                    clearInterval(intervaloSuscripcion);
                     return;
                 }
 
@@ -384,7 +685,7 @@
             }
 
             actualizarContador();
-            setInterval(actualizarContador, 60000);
+            intervaloSuscripcion = setInterval(actualizarContador, 30000);
         }
 
         function cerrarSesion() {
@@ -447,7 +748,6 @@
                 let celdaNumHTML = `<td class="num-verde">${numMostrar}</td>`;
                 
                 if (item.esVecindario) {
-                    // Lógica para mostrar los 5 vecinos antes y después
                     let cadenaVecinos = [];
                     item.vecinos.forEach(v => {
                         let numV = v.numero.toString().padStart(2, '0');
@@ -462,7 +762,6 @@
                     celdaNumHTML = `<td style="font-size: 0.85rem; letter-spacing: 0.5px;">${cadenaVecinos.join(' - ')}</td>`;
                 }
 
-                // Etiqueta para el modo Global
                 let etiquetaLoteria = "";
                 if (loteriaOrigen === 'global') {
                     let nombreLot = item.origen === 'lotto' ? 'Lotto' : (item.origen === 'gua' ? 'Guacharo' : 'Guacharito');
@@ -494,9 +793,6 @@
             let orden = document.getElementById('select-filtro').value;
             let esBusquedaNumero = /^\d+$/.test(textoBusqueda);
 
-            // ---------------------------------------------------------
-            // MODO GLOBAL (Cruces entre las 3 loterías)
-            // ---------------------------------------------------------
             if (orden === 'global') {
                 let resultadosGlobales = [];
                 const loterias = [
@@ -523,7 +819,6 @@
                     }
                 });
 
-                // Ordenar globalmente por fecha/hora (más reciente primero)
                 resultadosGlobales.sort((a, b) => {
                     let dateA = new Date(a.data.fecha + ' ' + a.data.hora);
                     let dateB = new Date(b.data.fecha + ' ' + b.data.hora);
@@ -534,9 +829,6 @@
                 return;
             }
 
-            // ---------------------------------------------------------
-            // MODO NORMAL / MÁS RECIENTES / ORDENAR POR NÚMERO
-            // ---------------------------------------------------------
             let datosBase = loteriaActual === 'lotto' ? datosLotto : (loteriaActual === 'gua' ? datosGuacharo : datosMini);
 
             let filtrados = [];
@@ -548,7 +840,6 @@
                 
                 if (animal.includes(textoBusqueda) || numero.includes(textoBusqueda) || numeroConCero.includes(textoBusqueda)) {
                     if (esBusquedaNumero) {
-                        // Extraer los 5 vecinos si estamos buscando un número
                         let vecinos = datosBase.slice(Math.max(0, i - 5), Math.min(datosBase.length, i + 6));
                         filtrados.push({ data: reg, vecinos: vecinos, esVecindario: true, origen: loteriaActual });
                     } else {
@@ -564,11 +855,9 @@
                     return numA - numB;
                 });
             } else {
-                // "Más Recientes" - Ordenar de más nuevo a más viejo
                 filtrados.reverse(); 
             }
 
-            // Si es búsqueda por número, limitar a 25 resultados.
             let finales = esBusquedaNumero ? filtrados.slice(0, 25) : filtrados.slice(0, 50);
 
             datosFiltradosActuales = finales;
@@ -793,7 +1082,6 @@
         function abrirAnalisis(numero, hora, origenAnalisis) {
             if (numero === '??') return alert("Sorteo sin número registrado.");
             
-            // Si viene del modo global, usar los datos de ese origen
             let loteriaParaAnalisis = origenAnalisis || loteriaActual;
             let datos = loteriaParaAnalisis === 'lotto' ? datosLotto : (loteriaParaAnalisis === 'gua' ? datosGuacharo : datosMini);
             
