@@ -16426,5 +16426,11 @@
         "hora": "07:00 PM",
         "animal": "TUCAN",
         "numero": "42"
+    },
+    {
+        "fecha": "2026-11-21",
+        "hora": "08:00 AM",
+        "animal": "ARANA",
+        "numero": "65"
     }
 ]
