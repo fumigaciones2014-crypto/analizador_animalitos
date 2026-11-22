@@ -16540,5 +16540,11 @@
         "hora": "02:00 PM",
         "animal": "PULPO",
         "numero": "52"
+    },
+    {
+        "fecha": "2026-11-22",
+        "hora": "03:00 PM",
+        "animal": "ALACRAN",
+        "numero": "04"
     }
 ]
