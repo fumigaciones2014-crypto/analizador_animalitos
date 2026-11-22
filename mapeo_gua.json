@@ -16000,5 +16000,11 @@
         "hora": "08:00 AM",
         "animal": "ZORRO",
         "numero": "15"
+    },
+    {
+        "fecha": "2026-11-22",
+        "hora": "09:00 AM",
+        "animal": "CANGREJO",
+        "numero": "63"
     }
 ]
