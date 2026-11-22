@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARVIS - Ruleta x N° 2</title>
+    <title>ARVIS - Ruleta x N° 2 (Motor Avanzado Unificado)</title>
     <style>
         body { background-color: #1a1a1a; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; min-height: 100vh; box-sizing: border-box; }
         
@@ -48,6 +48,7 @@
         .bolita-mini { width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-weight: bold; font-size: 0.8rem; position: relative; }
         .bolita-mini.amarilla { background-color: #ffcc00; color: #000; border: 1px solid #fff;}
         .bolita-mini.verde { background-color: #00ffcc; color: #000; border: 1px solid #fff;}
+        .bolita-mini.confluencia { border: 2px solid #ff9100 !important; box-shadow: 0 0 8px #ff9100; }
         
         .acierto { border: 3px solid #ff00cc !important; box-shadow: 0 0 10px #ff00cc; transform: scale(1.1); z-index: 10; }
         .acierto::after { content: '✅'; position: absolute; top: -12px; right: -10px; font-size: 14px; }
@@ -61,6 +62,7 @@
         .leyenda-fractal .highlight-line { color: #ffd700; font-weight: bold; }
         .leyenda-fractal .highlight-red { color: #ff0000; font-weight: bold; }
         .leyenda-fractal .highlight-purple { color: #b388ff; font-weight: bold; }
+        .leyenda-fractal .highlight-orange { color: #ff9100; font-weight: bold; }
         .leyenda-fractal .bullet { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
         .panel-recomendados { background: rgba(20, 20, 20, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #444; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
@@ -71,6 +73,24 @@
         .bolita-recomendada { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ffcc00; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); transition: all 0.3s ease; position: relative; }
         .bolita-inmediata { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #00ffcc; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(0, 255, 204, 0.6); transition: all 0.3s ease; position: relative; }
         
+        .bolita-confluencia {
+            box-shadow: 0 0 22px #ff9100, inset 0 0 10px #fff !important;
+            border: 3px solid #ff9100 !important;
+        }
+        .badge-confluencia {
+            position: absolute;
+            top: -10px;
+            right: -8px;
+            background: #ff9100;
+            color: #000;
+            font-size: 0.62rem;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 4px;
+            border: 1px solid #fff;
+            pointer-events: none;
+        }
+
         .bolita-prediccion { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #ff0000; color: #fff; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); transition: all 0.3s ease; position: relative; }
         .bolita-acierto { display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: #b388ff; color: #000; font-weight: bold; border: 2px solid #fff; box-shadow: 0 0 15px rgba(179, 136, 255, 0.8); transition: all 0.3s ease; position: relative; }
         
@@ -87,6 +107,7 @@
         .b-unico { background-color: #00ffcc; color: #000;}
         .b-repetido { background-color: #ffcc00; color: #000;}
         .b-objetivo { background-color: #ff00cc; color: white;}
+        .b-confluencia { background-color: #ff9100; color: #000; border: 1px solid #fff; }
         .mensaje-error { color: #ff5555; text-align: center; font-size: 1.1rem; margin-top: 20px;}
 
         .fila { 
@@ -146,6 +167,12 @@
         .num-objetivo { background-color: #ff00cc !important; color: white !important; box-shadow: 0 0 15px #ff00cc; transform: scale(1.1); z-index: 10; border: 2px solid #fff !important; }
         .vecino-unico { background-color: #00ffcc !important; color: #000 !important; box-shadow: 0 0 10px #00ffcc; }
         .vecino-repetido { background-color: #ffcc00 !important; color: #000 !important; box-shadow: 0 0 15px #ffcc00; border: 2px solid #fff !important; transform: scale(1.05); z-index: 9; }
+
+        /* Marca visual en ruleta para Confluencia Dual (Fractal + Vecino Local) */
+        .vecino-confluencia {
+            box-shadow: 0 0 18px #ff9100, inset 0 0 8px #ff9100 !important;
+            border: 2px solid #ff9100 !important;
+        }
 
         .num-rojo-fractal { 
             background-color: #ff0000 !important; 
@@ -276,6 +303,27 @@
             line-height: 1.3;
         }
 
+        .desglose-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+            text-align: left;
+            font-size: 0.82rem;
+        }
+        .desglose-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        .desglose-card h5 {
+            margin: 0 0 5px 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 3px;
+        }
+
         .grid-guacharo { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; width: 100%; max-width: 560px; margin: 0 auto; }
         .grid-guacharo .casilla { padding: 0; font-size: 0.85rem; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
 
@@ -300,6 +348,7 @@
             .grid-guacharo .casilla { font-size: 0.65rem; }
             .panel-izquierdo, .panel-derecho { flex-direction: column; }
             .grid-top-10 { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+            .desglose-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -348,13 +397,14 @@
 
             <div class="leyenda-fractal">
                 <h4>Guía de Doble Capa</h4>
-                <p><strong>Centro (Fríos):</strong> Alta presión estadística.</p>
+                <p><strong>Centro (Fríos):</strong> Alta presión estadística + brecha sin salir.</p>
                 <p><strong>Periferia (Calientes):</strong> Números ya gastados.</p>
                 <p><strong>Líneas Verdes:</strong> Atracción histórica.</p>
                 <p><span class="bullet" style="background:#ffd700;"></span> <span class="highlight-line">Línea Gruesa:</span> Secuencia de Búsqueda.</p>
                 <p><span class="bullet" style="background:#ff00cc;"></span> <span class="highlight-magenta">Objetivo:</span> Número analizado.</p>
-                <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal.</p>
-                <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos.</p>
+                <p><span class="bullet" style="background:#ffcc00;"></span> <span class="highlight-yellow">Amarillo:</span> Top 4 Fractal (+Gap).</p>
+                <p><span class="bullet" style="background:#00ffcc;"></span> <span class="highlight-green">Verde:</span> Vecinos Inmediatos (Decaimiento 1/d).</p>
+                <p><span class="bullet" style="background:#ff9100;"></span> <span class="highlight-orange">Borde Naranja:</span> Confluencia Dual (1.25×).</p>
                 <p><span class="bullet" style="background:#b388ff;"></span> <span class="highlight-purple">Morado:</span> Aciertos (Máx 8).</p>
                 <p><span class="bullet" style="background:#ff0000;"></span> <span class="highlight-red">Rojo:</span> Potencial de Salida (Top 10).</p>
             </div>
@@ -430,16 +480,21 @@
         let historialSecuencia = []; 
 
         // ═══════════════════════════════════════════════════════════════
+        // PARÁMETROS DEL MOTOR DE INTELIGENCIA DE VECINOS & ATRACCIÓN
+        // ═══════════════════════════════════════════════════════════════
+        const VENTANA_FRACTAL = 5;              // Ventana de atracción global en grafo
+        const RADIO_VECINOS_LOCALES = 4;        // Ventana local ±4 con decaimiento 1/d (sin diluir señal)
+        const APARICIONES_RECIENTES = 5;        // Últimas 5 salidas del número pivote
+        const PESO_IMPULSOR_PREVIO = 1.15;      // Refuerzo a detonantes previos (-1..-4)
+        const PESO_ARRASTRE_POST = 1.25;        // Mayor peso al arrastre posterior (+1..+4) tras salir el pivote
+        const MULTIPLICADOR_CONFLUENCIA = 1.25; // Bonus 1.25x cuando coincide Fractal Global + Vecino Local
+
+        // ═══════════════════════════════════════════════════════════════
         // CONTADOR DE CLICKS DEL USUARIO & DETECCIÓN DE ZONA CALIENTE
         // ═══════════════════════════════════════════════════════════════
         let contadorClicksUsuario = {}; // { [num]: cantidad }
         let totalClicksUsuario = 0;
 
-        /**
-         * Devuelve los vecinos ±1 de un número según el cilindro europeo.
-         * Ejemplo: vecinosCilindroEuropeo(14) -> [20, 31]
-         * Ejemplo: vecinosCilindroEuropeo(8)  -> [30, 23]
-         */
         function obtenerVecinosCilindroEuropeo(num) {
             const n = parseInt(num);
             const idx = CILINDRO_EUROPEO.indexOf(n);
@@ -450,9 +505,6 @@
             return [vecinoIzq, vecinoDer];
         }
 
-        /**
-         * Verifica si numA y numB son el mismo número o vecinos ±1 en el cilindro europeo.
-         */
         function esMismoOVecinoCilindro(numA, numB) {
             const a = parseInt(numA);
             const b = parseInt(numB);
@@ -461,10 +513,6 @@
             return vecinos.includes(a);
         }
 
-        /**
-         * Obtiene el número más clickeado por el usuario y su zona caliente [vecinoIzq, centro, vecinoDer].
-         * En caso de empate en clicks, prioriza el que también tenga mayor calor de sector (clicks propios + vecinos).
-         */
         function obtenerZonaCalienteUsuario() {
             const keys = Object.keys(contadorClicksUsuario);
             if (keys.length === 0) return null;
@@ -497,9 +545,6 @@
             };
         }
 
-        /**
-         * Registra un click del usuario sobre un número de la ruleta.
-         */
         function registrarClickUsuario(num) {
             const n = parseInt(num);
             if (isNaN(n)) return;
@@ -509,9 +554,6 @@
             actualizarClicksPorFila();
         }
 
-        /**
-         * Muestra discretamente la cantidad de clicks en cada casilla clickeada.
-         */
         function actualizarBadgesClicksEnRuleta() {
             document.querySelectorAll('.click-badge').forEach(b => b.remove());
             Object.keys(contadorClicksUsuario).forEach(k => {
@@ -530,10 +572,6 @@
             });
         }
 
-        /**
-         * Actualiza el texto izquierdo de cada fila mostrando la cantidad total de clicks en esa fila
-         * (en lugar del texto "fila_X") y enmarca con línea roja de zona caliente las filas que más predominan (máximo 3 filas).
-         */
         function actualizarClicksPorFila() {
             if (vistaActual !== 'lotto') return;
 
@@ -542,10 +580,8 @@
                 return { id: fila.id, total: totalFila };
             });
 
-            // Quitar enmarcado rojo previo en todas las filas
             document.querySelectorAll('.fila').forEach(el => el.classList.remove('fila-zona-caliente'));
 
-            // Actualizar texto de clicks en cada fila
             resumenFilas.forEach(item => {
                 const labelEl = document.getElementById(`label-${item.id}`);
                 if (labelEl) {
@@ -558,16 +594,13 @@
                 }
             });
 
-            // Determinar qué filas predominan más (deben tener clicks > 0 y superar el mínimo para destacar, máximo 3 filas)
             const filasConClicks = resumenFilas.filter(f => f.total > 0);
             if (filasConClicks.length === 0) return;
 
-            // Ordenar de mayor a menor cantidad de clicks
             const ordenadas = [...filasConClicks].sort((a, b) => b.total - a.total);
             const maxClicksFila = ordenadas[0].total;
             const minClicksFila = Math.min(...resumenFilas.map(f => f.total));
 
-            // Solo enmarcar si realmente hay predominancia respecto al resto
             if (maxClicksFila > minClicksFila) {
                 const top3Filas = ordenadas.slice(0, 3);
                 top3Filas.forEach(f => {
@@ -578,7 +611,183 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // SISTEMA DE ROTACIÓN DE ROJOS
+        // MOTOR UNIFICADO DE ANÁLISIS:
+        // 1) Decaimiento por distancia (1/d)
+        // 2) Separación Impulsores Previos (-d) vs Arrastre Posterior (+d)
+        // 3) Factor de Brecha / Recencia Real (Gap desde última salida)
+        // 4) Confluencia Dual (Cruce Fractal Global + Vecino Local)
+        // ═══════════════════════════════════════════════════════════════
+        function analizarHistorialUnificado(historialNumeros, numeroObjetivo) {
+            const totalSorteos = historialNumeros.length;
+            const nodos = {};
+            const aristas = {};
+            const adyacentes = {};
+
+            for (let i = 0; i < 100; i++) {
+                nodos[i] = { count: 0, x: 0, y: 0, id: i, ultimoIndice: -1 };
+                adyacentes[i] = {};
+            }
+
+            // 1. Construcción del grafo global + registro de última aparición (para calcular Gap/Recencia)
+            historialNumeros.forEach((num, index) => {
+                if (nodos[num]) {
+                    nodos[num].count++;
+                    nodos[num].ultimoIndice = index;
+                }
+                for (let i = 1; i <= VENTANA_FRACTAL; i++) {
+                    if (index + i < totalSorteos) {
+                        const nextNum = historialNumeros[index + i];
+                        const key = num < nextNum ? `${num}-${nextNum}` : `${nextNum}-${num}`;
+                        aristas[key] = (aristas[key] || 0) + 1;
+                        adyacentes[num][nextNum] = (adyacentes[num][nextNum] || 0) + 1;
+                        adyacentes[nextNum][num] = (adyacentes[nextNum][num] || 0) + 1;
+                    }
+                }
+            });
+
+            // 2. Cálculo de Brecha Actual (Gap: sorteos transcurridos desde última salida)
+            let maxGap = 1;
+            for (let i = 0; i < 100; i++) {
+                const gap = nodos[i].ultimoIndice === -1
+                    ? totalSorteos
+                    : (totalSorteos - 1 - nodos[i].ultimoIndice);
+                nodos[i].gap = gap;
+                if (nodos[i].count > 0 && gap > maxGap) {
+                    maxGap = gap;
+                }
+            }
+
+            // 3. Análisis Local con Decaimiento (1/d) y separación Previos vs Posteriores
+            const indicesApariciones = [];
+            historialNumeros.forEach((h, i) => {
+                if (h === numeroObjetivo) indicesApariciones.push(i);
+            });
+
+            const ultimasApariciones = indicesApariciones.slice(-APARICIONES_RECIENTES).reverse();
+            const vecinosMap = {}; // { [num]: { prevScore, postScore, totalScore, hits, minDist } }
+
+            const registrarVecino = (num, distancia, esPosterior) => {
+                if (!vecinosMap[num]) {
+                    vecinosMap[num] = {
+                        num,
+                        prevScore: 0,
+                        postScore: 0,
+                        totalScore: 0,
+                        hits: 0,
+                        minDist: distancia
+                    };
+                }
+                const pesoBase = 1 / distancia;
+                if (esPosterior) {
+                    const aporte = pesoBase * PESO_ARRASTRE_POST;
+                    vecinosMap[num].postScore += aporte;
+                    vecinosMap[num].totalScore += aporte;
+                } else {
+                    const aporte = pesoBase * PESO_IMPULSOR_PREVIO;
+                    vecinosMap[num].prevScore += aporte;
+                    vecinosMap[num].totalScore += aporte;
+                }
+                vecinosMap[num].hits += 1;
+                if (distancia < vecinosMap[num].minDist) {
+                    vecinosMap[num].minDist = distancia;
+                }
+            };
+
+            ultimasApariciones.forEach(idx => {
+                for (let d = 1; d <= RADIO_VECINOS_LOCALES; d++) {
+                    if (idx - d >= 0) {
+                        registrarVecino(historialNumeros[idx - d], d, false);
+                    }
+                    if (idx + d < totalSorteos) {
+                        registrarVecino(historialNumeros[idx + d], d, true);
+                    }
+                }
+            });
+
+            const listaVecinosLocales = Object.values(vecinosMap)
+                .sort((a, b) => b.totalScore - a.totalScore);
+
+            const topLocalSet = new Set(listaVecinosLocales.slice(0, 6).map(v => v.num));
+
+            // 4. Puntaje Fractal Global + Factor de Recencia (Gap) + Confluencia Dual
+            const candidatosFractal = [];
+            if (adyacentes[numeroObjetivo]) {
+                for (const adj in adyacentes[numeroObjetivo]) {
+                    const numAdj = parseInt(adj);
+                    const fuerzaConexion = adyacentes[numeroObjetivo][numAdj];
+                    const frecuenciaPropia = nodos[numAdj].count;
+                    const gapActual = nodos[numAdj].gap || 0;
+
+                    const bonoRecencia = Math.min((gapActual / Math.max(maxGap, 1)) * 25, 25);
+                    let puntaje = (100 - frecuenciaPropia) + (fuerzaConexion * 5) + bonoRecencia;
+
+                    const tieneConfluencia = topLocalSet.has(numAdj) && fuerzaConexion >= 2;
+                    if (tieneConfluencia) {
+                        puntaje *= MULTIPLICADOR_CONFLUENCIA;
+                    }
+
+                    candidatosFractal.push({
+                        num: numAdj,
+                        puntaje,
+                        fuerzaConexion,
+                        frecuenciaPropia,
+                        gap: gapActual,
+                        confluencia: tieneConfluencia
+                    });
+                }
+            }
+            candidatosFractal.sort((a, b) => b.puntaje - a.puntaje);
+
+            const topFractalSet = new Set(candidatosFractal.slice(0, 6).map(f => f.num));
+
+            const recomendadosInmediatos = listaVecinosLocales.slice(0, 4).map(v => {
+                const esConfluencia = topFractalSet.has(v.num);
+                const puntajeFinal = esConfluencia
+                    ? v.totalScore * 10 * MULTIPLICADOR_CONFLUENCIA
+                    : v.totalScore * 10;
+                return {
+                    num: v.num,
+                    puntaje: puntajeFinal,
+                    prevScore: v.prevScore,
+                    postScore: v.postScore,
+                    hits: v.hits,
+                    gap: nodos[v.num] ? nodos[v.num].gap : 0,
+                    confluencia: esConfluencia,
+                    rol: v.postScore >= v.prevScore ? 'Arrastre (+)' : 'Impulsor (-)'
+                };
+            });
+            recomendadosInmediatos.sort((a, b) => b.puntaje - a.puntaje);
+
+            const topImpulsores = [...listaVecinosLocales]
+                .filter(v => v.prevScore > 0)
+                .sort((a, b) => b.prevScore - a.prevScore)
+                .slice(0, 4);
+
+            const topArrastres = [...listaVecinosLocales]
+                .filter(v => v.postScore > 0)
+                .sort((a, b) => b.postScore - a.postScore)
+                .slice(0, 4);
+
+            const confluenciasDuales = candidatosFractal
+                .filter(c => c.confluencia)
+                .slice(0, 4);
+
+            return {
+                nodos,
+                aristas,
+                adyacentes,
+                ultimasApariciones,
+                recomendadosFractal: candidatosFractal.slice(0, 4),
+                recomendadosInmediatos,
+                listaVecinosLocales,
+                topImpulsores,
+                topArrastres,
+                confluenciasDuales
+            };
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SISTEMA DE ROTACIÓN DE ROJOS (CONSERVADO ÍNTEGRO)
         // ═══════════════════════════════════════════════════════════════
         let recomendacionesPendientes = { fractales: [], inmediatos: [] };
         
@@ -597,9 +806,6 @@
         let cooldownFractal = {};
         let cooldownInmediato = {};
 
-        // ═══════════════════════════════════════════════════════════════
-        // PARÁMETROS DE ROTACIÓN
-        // ═══════════════════════════════════════════════════════════════
         const VENTANA_ACIERTOS = 4;
         const MAX_SORTEOS_SIN_CAMBIO = 3;
         const ROTACION_FORZADA = 2;
@@ -627,7 +833,6 @@
             input.style.boxShadow = 'none';
             historialSecuencia = []; 
             
-            // Reiniciar contador de clicks del usuario
             contadorClicksUsuario = {};
             totalClicksUsuario = 0;
             document.querySelectorAll('.click-badge').forEach(b => b.remove());
@@ -703,13 +908,9 @@
             actualizarPanelRojos();
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // CÁLCULO DE ROJOS CON ROTACIÓN, ZONA CALIENTE (CLICKS) Y CILINDRO EUROPEO
-        // ═══════════════════════════════════════════════════════════════
         function calcularDosRojos() {
             const zonaCaliente = obtenerZonaCalienteUsuario();
 
-            // ──────── ROJO FRACTAL ────────
             const nuevoRojoF = calcularRojoConRotacion(
                 'fractal',
                 historialAciertosFractal,
@@ -737,7 +938,6 @@
             }
             rojoFractal = nuevoRojoF;
 
-            // ──────── ROJO INMEDIATO ────────
             const nuevoRojoI = calcularRojoConRotacion(
                 'inmediato',
                 historialAciertosInmediato,
@@ -768,30 +968,21 @@
             pintarDosRojos();
         }
 
-        /**
-         * Evalúa candidatos válidos (aciertos confirmados) y aplica prioridad:
-         * 1. Si el número más clickeado o un vecino ±1 (cilindro europeo) está entre las alternativas válidas,
-         *    se confirma y prioriza como Rojo acertado.
-         * 2. También se priorizan los vecinos ±1 del cilindro europeo respecto al rojo saliente al rotar.
-         */
         function seleccionarConPrioridadZonaCaliente(listaAlternativas, zonaCaliente, rojoSaliente = null) {
             if (!listaAlternativas || listaAlternativas.length === 0) return null;
 
-            // Paso A: Buscar entre las alternativas válidas si está el número más clickeado exacto
             if (zonaCaliente) {
                 const matchCentro = listaAlternativas.find(c => c.num === zonaCaliente.centro);
                 if (matchCentro) {
                     return { ...matchCentro, motivoZona: 'Centro Zona Clicks' };
                 }
 
-                // Paso B: Buscar si está un vecino ±1 (cilindro europeo) del número más clickeado
                 const matchVecinoZona = listaAlternativas.find(c => zonaCaliente.vecinos.includes(c.num));
                 if (matchVecinoZona) {
                     return { ...matchVecinoZona, motivoZona: `Vecino ±1 de ${zonaCaliente.centro}` };
                 }
             }
 
-            // Paso C: Si estamos rotando desde un rojo anterior, priorizar sus vecinos ±1 en cilindro europeo
             if (rojoSaliente) {
                 const vecinosCilindro = obtenerVecinosCilindroEuropeo(rojoSaliente.num);
                 const matchVecinoRotacion = listaAlternativas.find(c => vecinosCilindro.includes(c.num));
@@ -800,22 +991,18 @@
                 }
             }
 
-            // Paso D: Devolver la alternativa con mayor puntaje estadístico
             return { ...listaAlternativas[0], motivoZona: null };
         }
 
         function calcularRojoConRotacion(tipo, historialAciertos, rojoActual, ultimoCambio, cooldowns, zonaCaliente) {
-            // 1. Filtrar solo últimos VENTANA_ACIERTOS sorteos
             const sorteoMinimo = Math.max(1, sorteosRealizados - VENTANA_ACIERTOS + 1);
             const aciertosRecientes = historialAciertos.filter(a => a.sorteo >= sorteoMinimo);
 
-            // 2. Agrupar por número
             const conteo = {};
             aciertosRecientes.forEach(a => {
                 conteo[a.num] = (conteo[a.num] || 0) + 1;
             });
 
-            // 3. Convertir a array con puntajes + bonificación por Zona Caliente (clicks del usuario)
             let candidatos = Object.keys(conteo).map(num => {
                 const n = parseInt(num);
                 const aciertos = conteo[num];
@@ -824,19 +1011,17 @@
                 
                 let puntaje = (aciertos * 10) + porcentaje + (clicks * 2);
 
-                // Bonificación por pertenecer a la zona caliente del cilindro europeo (más clickeado o vecino ±1)
                 let enZonaCaliente = false;
                 if (zonaCaliente) {
                     if (n === zonaCaliente.centro) {
-                        puntaje *= 1.35; // +35% por ser el foco principal de clicks
+                        puntaje *= 1.35;
                         enZonaCaliente = true;
                     } else if (zonaCaliente.vecinos.includes(n)) {
-                        puntaje *= 1.20; // +20% por ser vecino ±1 en cilindro europeo
+                        puntaje *= 1.20;
                         enZonaCaliente = true;
                     }
                 }
 
-                // Penalización agresiva si es el rojo actual: -30% por sorteo
                 if (rojoActual && rojoActual.num === n) {
                     const sorteosComoRojo = sorteosRealizados - ultimoCambio;
                     puntaje *= Math.pow(FACTOR_PENALIZACION, sorteosComoRojo);
@@ -845,33 +1030,24 @@
                 return { num: n, aciertos, porcentaje, puntaje, clicks, enZonaCaliente };
             });
 
-            // 4. Excluir cooldown (permanente)
             candidatos = candidatos.filter(c => !cooldowns[c.num]);
-
-            // 5. Ordenar por puntaje descendente
             candidatos.sort((a, b) => b.puntaje - a.puntaje);
 
-            // 6. REGLA DE ROTACIÓN
             if (rojoActual) {
                 const sorteosComoRojo = sorteosRealizados - ultimoCambio;
 
-                // ROTACIÓN OBLIGATORIA a los MAX_SORTEOS_SIN_CAMBIO (3)
                 if (sorteosComoRojo >= MAX_SORTEOS_SIN_CAMBIO) {
                     const alternativas = candidatos.filter(c => c.num !== rojoActual.num);
                     if (alternativas.length > 0) {
-                        // Busca entre las alternativas válidas a rotar si está el más clickeado o vecino ±1 (cilindro europeo)
                         return seleccionarConPrioridadZonaCaliente(alternativas, zonaCaliente, rojoActual);
                     }
-                    // ⚠️ SIN ALTERNATIVA VÁLIDA: no dar rojo. Mejor esperar.
                     return null;
                 }
 
-                // REVISIÓN cada ROTACION_FORZADA sorteos (2)
                 if (sorteosComoRojo >= ROTACION_FORZADA && candidatos.length > 0) {
                     const alternativas = candidatos.filter(c => c.num !== rojoActual.num);
                     if (alternativas.length > 0) {
                         const candidatoRotacion = seleccionarConPrioridadZonaCaliente(alternativas, zonaCaliente, rojoActual);
-                        // Si el candidato pertenece a la zona caliente de clicks o supera en >10% el puntaje actual, rota
                         if (candidatoRotacion && (candidatoRotacion.enZonaCaliente || candidatoRotacion.puntaje > rojoActual.puntaje * 1.1)) {
                             return candidatoRotacion;
                         }
@@ -879,12 +1055,10 @@
                 }
             }
 
-            // 7. Devolver el mejor candidato válido (priorizando zona caliente si existe entre candidatos válidos)
             if (candidatos.length > 0) {
                 return seleccionarConPrioridadZonaCaliente(candidatos, zonaCaliente, null);
             }
 
-            // ⚠️ SIN CANDIDATOS VÁLIDOS: no dar rojo
             return null;
         }
 
@@ -909,9 +1083,6 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // PANEL DE ROJOS Y ZONA CALIENTE DE CLICKS
-        // ═══════════════════════════════════════════════════════════════
         function actualizarPanelRojos() {
             const paneles = [
                 document.getElementById('panel-rojos'),
@@ -922,7 +1093,6 @@
 
             let html = `<h4>🔥 Números Calientes (Sorteos: ${sorteosRealizados} | Clicks: ${totalClicksUsuario})</h4>`;
             
-            // Bloque informativo de Zona Caliente del Usuario según Cilindro Europeo
             if (zonaCaliente) {
                 const [vIzq, vDer] = zonaCaliente.vecinos;
                 html += `<div class="zona-caliente-box">
@@ -982,7 +1152,6 @@
                 html += renderRojo(rojoFractal, 'Fractal', ultimoCambioRojoFractal, 'dot-fractal');
                 html += renderRojo(rojoInmediato, 'Inmediato', ultimoCambioRojoInmediato, 'dot-inmediato');
                 
-                // Mensaje si no hay ningún rojo activo
                 if (!rojoFractal && !rojoInmediato) {
                     html += `<div class="mensaje-sin-rojo">
                         ⏸️ Sin candidatos válidos.<br>
@@ -996,7 +1165,6 @@
                     </div>`;
                 }
                 
-                // Mini-historial de rojos anteriores
                 if (historialRojosFractal.length > 0 || historialRojosInmediato.length > 0) {
                     html += `<div style="border-top:1px dashed #333; margin-top:8px; padding-top:8px;">
                         <div style="color:#888;font-size:0.75rem;margin-bottom:5px;">Rotaciones recientes:</div>`;
@@ -1096,19 +1264,14 @@
             inputNum.style.transition = 'box-shadow 0.3s'; inputNum.style.boxShadow = '0 0 15px #ff00cc';
             setTimeout(() => { inputNum.style.boxShadow = 'none'; }, 400);
             
-            // 1. Registrar el click del usuario en el contador, actualizar filas y zona caliente
             registrarClickUsuario(num);
-
-            // 2. Procesar sorteo y rotación de rojos (usando el contador actualizado)
             procesarSorteoModoSencillo(num);
-
-            // 3. Buscar vecinos en historial y generar las próximas recomendaciones pendientes
             buscarVecinosRuleta();
         }
 
         function limpiarResaltados() {
             document.querySelectorAll('.casilla').forEach(c => {
-                c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido');
+                c.classList.remove('num-objetivo', 'vecino-unico', 'vecino-repetido', 'vecino-confluencia');
             });
         }
 
@@ -1117,9 +1280,13 @@
             const el = document.getElementById(id); if (el) el.classList.add('num-objetivo');
         }
 
-        function pintarVecino(num, repetido) {
+        function pintarVecino(num, repetido, esConfluencia = false) {
             const id = (vistaActual === 'lotto') ? `casilla-${num}` : `g-casilla-${num}`;
-            const el = document.getElementById(id); if (el) el.classList.add(repetido ? 'vecino-repetido' : 'vecino-unico');
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add(repetido ? 'vecino-repetido' : 'vecino-unico');
+                if (esConfluencia) el.classList.add('vecino-confluencia');
+            }
         }
 
         async function buscarVecinosRuleta() {
@@ -1141,76 +1308,83 @@
             if (rojoFractal || rojoInmediato) pintarDosRojos();
 
             try {
-                const res = await fetch(loteriaFile);
-                const datos = await res.json(); datosGlobales = datos; 
+                if (datosGlobales.length === 0) {
+                    const res = await fetch(loteriaFile);
+                    datosGlobales = await res.json();
+                }
 
                 let historial = [];
-                datos.forEach((reg) => {
+                let historialNumeros = [];
+                datosGlobales.forEach((reg) => {
                     if (reg.numero !== '??' && !isNaN(reg.numero) && reg.numero !== '') {
-                        historial.push({ num: parseInt(reg.numero), fecha: reg.fecha, hora: reg.hora });
+                        const n = parseInt(reg.numero);
+                        historial.push({ num: n, fecha: reg.fecha, hora: reg.hora });
+                        historialNumeros.push(n);
                     }
                 });
 
-                let indicesApariciones = [];
-                historial.forEach((h, i) => { if (h.num === numeroObjetivo) indicesApariciones.push(i); });
+                const analisis = analizarHistorialUnificado(historialNumeros, numeroObjetivo);
 
-                if (indicesApariciones.length === 0) {
+                if (analisis.ultimasApariciones.length === 0) {
                     textResult.style.display = 'block';
                     textResult.innerHTML = `<p class="mensaje-error">El número ${numeroObjetivo} no tiene apariciones registradas.</p>`;
                     return;
                 }
 
-                let ultimasApariciones = indicesApariciones.slice(-5).reverse();
-                let vecinosAntes = []; let vecinosDespues = []; let contadorVecinos = {};
+                pintarObjetivo(numeroObjetivo);
+                const confluenciasSet = new Set(analisis.confluenciasDuales.map(c => c.num));
 
-                ultimasApariciones.forEach(idx => {
-                    if (idx - 1 >= 0) { let n = historial[idx - 1].num; vecinosAntes.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
-                    if (idx - 2 >= 0) { let n = historial[idx - 2].num; vecinosAntes.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
-                    if (idx - 3 >= 0) { let n = historial[idx - 3].num; vecinosAntes.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
-                    if (idx + 1 < historial.length) { let n = historial[idx + 1].num; vecinosDespues.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
-                    if (idx + 2 < historial.length) { let n = historial[idx + 2].num; vecinosDespues.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
-                    if (idx + 3 < historial.length) { let n = historial[idx + 3].num; vecinosDespues.push(n); contadorVecinos[n] = (contadorVecinos[n] || 0) + 1; }
+                analisis.listaVecinosLocales.forEach(v => {
+                    const esFuerte = v.hits > 1 || v.totalScore >= 1.35;
+                    pintarVecino(v.num, esFuerte, confluenciasSet.has(v.num));
                 });
 
-                pintarObjetivo(numeroObjetivo);
-                let todosVecinosUnicos = [...new Set([...vecinosAntes, ...vecinosDespues])];
-                todosVecinosUnicos.forEach(num => { pintarVecino(num, contadorVecinos[num] > 1); });
-
                 if (!modoSecuenciaActivo) {
-                    const repetidos = Object.entries(contadorVecinos)
-                        .filter(([_, c]) => c > 1)
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 4)
-                        .map(([num]) => ({ num: parseInt(num), base: numeroObjetivo }));
+                    recomendacionesPendientes.fractales = analisis.recomendadosFractal.map(f => ({
+                        num: f.num,
+                        base: numeroObjetivo
+                    }));
 
-                    const unicos = Object.entries(contadorVecinos)
-                        .filter(([_, c]) => c === 1)
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 4 - repetidos.length)
-                        .map(([num]) => ({ num: parseInt(num), base: numeroObjetivo }));
-
-                    recomendacionesPendientes.fractales = [...repetidos, ...unicos];
-
-                    const inmediatos = [...new Set([
-                        ...vecinosAntes.slice(0, 2),
-                        ...vecinosDespues.slice(0, 2)
-                    ])].map(num => ({ num, base: numeroObjetivo }));
-                    
-                    recomendacionesPendientes.inmediatos = inmediatos;
+                    recomendacionesPendientes.inmediatos = analisis.recomendadosInmediatos.map(v => ({
+                        num: v.num,
+                        base: numeroObjetivo
+                    }));
                 }
 
-                // Vecinos físicos en cilindro europeo del número objetivo
                 const vecinosCilindroObj = obtenerVecinosCilindroEuropeo(numeroObjetivo);
 
                 textResult.style.display = 'block';
-                let htmlInfo = `<h3>Análisis para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
+                let htmlInfo = `<h3>Análisis Unificado para el Número <span class="badge-info b-objetivo">${numeroObjetivo}</span></h3>`;
                 if (vecinosCilindroObj.length === 2) {
                     htmlInfo += `<p style="color:#00ffcc; font-size:0.9rem; margin-top:-5px;">🎡 Vecinos Cilindro Europeo (±1): <b>${vecinosCilindroObj[0]}</b> y <b>${vecinosCilindroObj[1]}</b></p>`;
                 }
                 if (inputVal.includes(',')) { htmlInfo += `<p style="color:#ffd700; font-weight:bold;">⚠️ Modo Secuencia: Análisis del primer número en ruleta.</p>`; }
-                htmlInfo += `<p style="margin-bottom: 10px; color:#aaa;">Se analizaron las últimas <b>${ultimasApariciones.length}</b> apariciones.</p>`;
-                htmlInfo += `<div style="background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:15px; text-align:left; font-size:0.9rem;">`;
-                ultimasApariciones.forEach((idx, i) => { htmlInfo += `<b>Aparición ${i+1}:</b> ${historial[idx].fecha} (${historial[idx].hora})<br>`; });
+
+                if (analisis.confluenciasDuales.length > 0) {
+                    htmlInfo += `<div style="margin:8px 0;">
+                        <span style="color:#ff9100;font-weight:bold;font-size:0.85rem;">⚡ Confluencia Dual (Fractal + Local 1.25×):</span><br>
+                        ${analisis.confluenciasDuales.map(c => `<span class="badge-info b-confluencia">${c.num.toString().padStart(2,'0')} <small>(Gap:${c.gap})</small></span>`).join('')}
+                    </div>`;
+                }
+
+                htmlInfo += `<div class="desglose-grid">
+                    <div class="desglose-card">
+                        <h5 style="color:#00ffcc;">⬅ Impulsores Previos (-1..-4)</h5>
+                        ${analisis.topImpulsores.length > 0
+                            ? analisis.topImpulsores.map(v => `<div><b>${v.num.toString().padStart(2,'0')}</b> <span style="color:#aaa;">(pts: ${v.prevScore.toFixed(2)} | dist mín: ${v.minDist})</span></div>`).join('')
+                            : '<span style="color:#777;">Sin datos previos</span>'}
+                    </div>
+                    <div class="desglose-card">
+                        <h5 style="color:#ffcc00;">➡ Arrastre Posterior (+1..+4)</h5>
+                        ${analisis.topArrastres.length > 0
+                            ? analisis.topArrastres.map(v => `<div><b>${v.num.toString().padStart(2,'0')}</b> <span style="color:#aaa;">(pts: ${v.postScore.toFixed(2)} | dist mín: ${v.minDist})</span></div>`).join('')
+                            : '<span style="color:#777;">Sin datos posteriores</span>'}
+                    </div>
+                </div>`;
+
+                htmlInfo += `<p style="margin: 10px 0 6px; color:#aaa; font-size:0.85rem;">Últimas <b>${analisis.ultimasApariciones.length}</b> apariciones registradas:</p>`;
+                htmlInfo += `<div style="background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:5px; text-align:left; font-size:0.85rem;">`;
+                analisis.ultimasApariciones.forEach((idx, i) => { htmlInfo += `<b>Aparición ${i+1}:</b> ${historial[idx].fecha} (${historial[idx].hora})<br>`; });
                 htmlInfo += `</div>`;
                 textResult.innerHTML = htmlInfo;
 
@@ -1259,56 +1433,8 @@
 
                 if (historialDatos.length === 0) { throw new Error("No hay datos válidos."); }
 
-                const VENTANA = 5;
-                const nodos = {}; const aristas = {}; const adyacentes = {}; 
-                for(let i=0; i<100; i++) { nodos[i] = { count: 0, x: 0, y: 0, id: i }; adyacentes[i] = {}; }
-
-                historialDatos.forEach((num, index) => {
-                    if (nodos[num]) nodos[num].count++;
-                    for (let i = 1; i <= VENTANA; i++) {
-                        if (index + i < historialDatos.length) {
-                            let nextNum = historialDatos[index + i];
-                            let key = num < nextNum ? `${num}-${nextNum}` : `${nextNum}-${num}`;
-                            aristas[key] = (aristas[key] || 0) + 1;
-                            adyacentes[num][nextNum] = (adyacentes[num][nextNum] || 0) + 1;
-                            adyacentes[nextNum][num] = (adyacentes[nextNum][num] || 0) + 1;
-                        }
-                    }
-                });
-
-                let recomendadosFractal = []; let recomendadosInmediatos = [];
-                
-                if (adyacentes[numeroPrincipal]) {
-                    let candidatos = [];
-                    for (let adj in adyacentes[numeroPrincipal]) {
-                        let numAdj = parseInt(adj);
-                        let fuerzaConexion = adyacentes[numeroPrincipal][numAdj];
-                        let frecuenciaPropia = nodos[numAdj].count;
-                        let puntaje = (100 - frecuenciaPropia) + (fuerzaConexion * 5); 
-                        candidatos.push({ num: numAdj, puntaje: puntaje });
-                    }
-                    candidatos.sort((a, b) => b.puntaje - a.puntaje);
-                    recomendadosFractal = candidatos.slice(0, 4);
-                }
-
-                let indicesApariciones = [];
-                historialDatos.forEach((h, i) => { if (h === numeroPrincipal) indicesApariciones.push(i); });
-                if (indicesApariciones.length > 0) {
-                    let ultimas = indicesApariciones.slice(-5).reverse();
-                    let conteoVecinos = {};
-                    ultimas.forEach(idx => {
-                        if (idx - 1 >= 0) { let n = historialDatos[idx - 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                        if (idx - 2 >= 0) { let n = historialDatos[idx - 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                        if (idx - 3 >= 0) { let n = historialDatos[idx - 3]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                        if (idx + 1 < historialDatos.length) { let n = historialDatos[idx + 1]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                        if (idx + 2 < historialDatos.length) { let n = historialDatos[idx + 2]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                        if (idx + 3 < historialDatos.length) { let n = historialDatos[idx + 3]; conteoVecinos[n] = (conteoVecinos[n] || 0) + 1; }
-                    });
-                    let candidatosInmediatos = [];
-                    for (let num in conteoVecinos) { candidatosInmediatos.push({ num: parseInt(num), puntaje: conteoVecinos[num] * 10 }); }
-                    candidatosInmediatos.sort((a, b) => b.puntaje - a.puntaje);
-                    recomendadosInmediatos = candidatosInmediatos.slice(0, 4);
-                }
+                const analisis = analizarHistorialUnificado(historialDatos, numeroPrincipal);
+                const { nodos, aristas, recomendadosFractal, recomendadosInmediatos } = analisis;
 
                 actualizarPanelIzquierdo(numeroPrincipal, recomendadosFractal, recomendadosInmediatos);
                 actualizarHistorialYFuerza(numeroPrincipal, recomendadosFractal, recomendadosInmediatos, numerosBusqueda);
@@ -1355,8 +1481,11 @@
 
                 numerosOrdenados.forEach(nodo => {
                     let size = 15 + (nodo.count / 5); 
-                    let isFractal = recomendadosFractal.some(r => r.num === nodo.id);
-                    let isInmediato = recomendadosInmediatos.some(r => r.num === nodo.id);
+                    let recF = recomendadosFractal.find(r => r.num === nodo.id);
+                    let recI = recomendadosInmediatos.find(r => r.num === nodo.id);
+                    let isFractal = !!recF;
+                    let isInmediato = !!recI;
+                    let isConfluencia = (recF && recF.confluencia) || (recI && recI.confluencia);
                     let isBusqueda = numerosBusqueda.includes(nodo.id);
 
                     ctx.beginPath(); ctx.arc(nodo.x, nodo.y, size, 0, 2 * Math.PI);
@@ -1364,9 +1493,13 @@
                     if (isBusqueda) {
                         ctx.fillStyle = `rgba(255, 0, 204, 0.9)`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 3;
                     } else if (isFractal) {
-                        ctx.fillStyle = `#ffcc00`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
+                        ctx.fillStyle = `#ffcc00`;
+                        ctx.strokeStyle = isConfluencia ? `#ff9100` : `#fff`;
+                        ctx.lineWidth = isConfluencia ? 3.5 : 2;
                     } else if (isInmediato) {
-                        ctx.fillStyle = `#00ffcc`; ctx.strokeStyle = `#fff`; ctx.lineWidth = 2;
+                        ctx.fillStyle = `#00ffcc`;
+                        ctx.strokeStyle = isConfluencia ? `#ff9100` : `#fff`;
+                        ctx.lineWidth = isConfluencia ? 3.5 : 2;
                     } else {
                         let intensity = Math.min(nodo.count * 5, 255);
                         ctx.fillStyle = nodo.count === 0 ? 'rgba(30, 30, 30, 0.8)' : `rgba(50, 50, 50, 0.8)`;
@@ -1418,15 +1551,28 @@
                     let porcentaje = (rec.puntaje / suma) * 100;
                     let size = 35 + ((porcentaje / 100) * 40); 
                     let bolita = document.createElement('div');
-                    bolita.className = claseCss;
+                    bolita.className = claseCss + (rec.confluencia ? ' bolita-confluencia' : '');
                     bolita.style.width = `${size}px`; bolita.style.height = `${size}px`;
                     bolita.style.fontSize = `${size * 0.35}px`;
                     bolita.innerText = rec.num.toString().padStart(2, '0');
+
+                    if (rec.rol) {
+                        bolita.title = `${rec.rol} | Gap: ${rec.gap} sorteos${rec.confluencia ? ' | Confluencia Dual 1.25x' : ''}`;
+                    } else if (rec.gap !== undefined) {
+                        bolita.title = `Conexiones: ${rec.fuerzaConexion} | Gap: ${rec.gap} sorteos${rec.confluencia ? ' | Confluencia Dual 1.25x' : ''}`;
+                    }
+
+                    if (rec.confluencia) {
+                        let badgeConf = document.createElement('span');
+                        badgeConf.className = 'badge-confluencia';
+                        badgeConf.innerText = '⚡';
+                        bolita.appendChild(badgeConf);
+                    }
                     
                     let span = document.createElement('span'); span.className = 'porcentaje';
                     span.innerText = `${porcentaje.toFixed(1)}%`; bolita.appendChild(span);
 
-                    if (index === 0) {
+                    if (index === 0 && !rec.confluencia) {
                         bolita.style.boxShadow = `0 0 25px ${claseCss === 'bolita-recomendada' ? '#ffcc00' : '#00ffcc'}, inset 0 0 10px #fff`;
                         bolita.style.border = '3px solid #fff';
                     }
@@ -1488,14 +1634,16 @@
                 html += `<div class="bolitas-grid-historial">`;
                 item.fractales.forEach(f => {
                     let isAcierto = aciertosFractalH.includes(f.num) ? 'acierto' : '';
-                    html += `<div class="bolita-mini amarilla ${isAcierto}" title="Top Fractal">${f.num.toString().padStart(2, '0')}</div>`;
+                    let isConf = f.confluencia ? 'confluencia' : '';
+                    html += `<div class="bolita-mini amarilla ${isAcierto} ${isConf}" title="Top Fractal">${f.num.toString().padStart(2, '0')}</div>`;
                 });
                 html += `</div>`;
 
                 html += `<div class="bolitas-grid-historial">`;
                 item.inmediatos.forEach(v => {
                     let isAcierto = aciertosInmediatosH.includes(v.num) ? 'acierto' : '';
-                    html += `<div class="bolita-mini verde ${isAcierto}" title="Inmediato">${v.num.toString().padStart(2, '0')}</div>`;
+                    let isConf = v.confluencia ? 'confluencia' : '';
+                    html += `<div class="bolita-mini verde ${isAcierto} ${isConf}" title="Inmediato">${v.num.toString().padStart(2, '0')}</div>`;
                 });
                 html += `</div>`;
 
