@@ -263,7 +263,7 @@
             <div id="login-error" class="error-msg">❌ Usuario o contraseña incorrectos</div>
             <div id="login-bio-info" class="info-bio-msg"></div>
             <div class="login-whatsapp-box">
-                <div>¿Necesitas renovar tu suscripción?</div>
+                <div>¿Necesitas renovar tu suscripción o recargar días?</div>
                 <a class="login-whatsapp-link" href="https://wa.me/584129562808?text=Hola%2C%20quiero%20renovar%20mi%20acceso%20a%20JARVIS" target="_blank">
                     📲 WhatsApp: 0412-9562808
                 </a>
@@ -321,17 +321,17 @@
 
             <!-- ADVERTENCIA CUANDO EXPIRA LA CUENTA REGRESIVA -->
             <div id="panel-saldo-vencido">
-                <h2>⚠️ RECARGA DE SALDO REQUERIDA</h2>
-                <p>Tu tiempo de suscripción ha finalizado. Para volver a visualizar los resultados, análisis y herramientas de <b>JARVIS MULTIANALIZADOR</b>, realiza tu recarga por <b>7 días más</b> a través de Pago Móvil:</p>
+                <h2>⚠️ TIEMPO CADUCADO — RECARGA DE DÍAS REQUERIDA</h2>
+                <p>Tu tiempo de acceso ha caducado y tu huella biométrica guardada fue eliminada por vencimiento. Para volver a ver el contenido de <b>JARVIS MULTIANALIZADOR</b>, recarga días por Pago Móvil y solicita tu nueva clave:</p>
                 <div class="card-pago-vencido">
                     <div style="color: #aaa; font-size: 0.9rem;">CONTACTO WHATSAPP / PAGO MÓVIL</div>
                     <div class="dato-pago">📲 0412-9562808</div>
                     <div class="acciones-pago-vencido">
-                        <a class="btn-whatsapp-directo" href="https://wa.me/584129562808?text=Hola%2C%20quiero%20renovar%207%20d%C3%ADas%20m%C3%A1s%20en%20JARVIS" target="_blank">💬 Escribir al WhatsApp</a>
+                        <a class="btn-whatsapp-directo" href="https://wa.me/584129562808?text=Hola%2C%20mi%20tiempo%20caduc%C3%B3%20y%20quiero%20recargar%20d%C3%ADas%20en%20JARVIS" target="_blank">💬 Escribir al WhatsApp para Recargar</a>
                         <button class="btn-copiar-pago" onclick="copiarPagoMovil(this)">📋 Copiar Datos Pago Móvil</button>
                     </div>
                 </div>
-                <p style="font-size: 0.9rem; color: #aaa;">Si ya te asignaron una clave nueva, cierra sesión e ingresa con tu nueva clave para reactivar el contador.</p>
+                <p style="font-size: 0.9rem; color: #aaa;">Al renovar tu clave con días habilitados, inicia sesión con esa clave y volverá a quedar activa la entrada biométrica.</p>
             </div>
         </main>
 
@@ -363,15 +363,34 @@
             <div id="footer-reloj">📅 Fecha y Hora Actual</div>
             <div id="footer-contador" class="contador-suscripcion" style="display: none;"></div>
             <div id="footer-pagomovil" class="pago-movil-bar" onclick="copiarPagoMovil(this)" title="Haz clic para copiar los datos">
-                <span>📲 Renovar 7 días más (Pago Móvil):</span>
+                <span>📲 Renovar / Recargar días (Pago Móvil):</span>
                 <div style="display: flex; align-items: center; gap: 8px; justify-content: center; flex-wrap: wrap;">
                     <span class="pago-movil-datos">WhatsApp: 0412-9562808</span>
-                    <a class="btn-wa-mini" href="https://wa.me/584129562808?text=Hola%2C%20quiero%20renovar%207%20d%C3%ADas%20m%C3%A1s%20en%20JARVIS" target="_blank" onclick="event.stopPropagation()">💬 Chat</a>
+                    <a class="btn-wa-mini" href="https://wa.me/584129562808?text=Hola%2C%20quiero%20recargar%20d%C3%ADas%20en%20JARVIS" target="_blank" onclick="event.stopPropagation()">💬 Chat</a>
                 </div>
             </div>
         </div>
         <a id="footer-link-resultados" href="https://loteriadehoy.com/animalitos/resultados/" target="_blank">RESULTADOS</a>
     </footer>
+
+    <!-- MODAL ADVERTENCIA DE TIEMPO CADUCADO -->
+    <div id="modal-caducado" class="modal" style="z-index: 2500;">
+        <div class="modal-content" style="border-color: #ff5555; max-width: 440px; text-align: center;">
+            <span class="close-btn" onclick="cerrarModalCaducado()">&times;</span>
+            <h2 style="color: #ff5555; margin-bottom: 12px;">⏰ ¡Tiempo Caducado!</h2>
+            <p style="color: #ddd; line-height: 1.5; margin-bottom: 14px;">
+                Tu periodo activo ha finalizado. Por seguridad, <b>no se permite ver contenido</b> y <b>se ha olvidado tu huella biométrica</b> para esta sesión vencida.
+            </p>
+            <p style="color: #ffc107; font-weight: bold; margin-bottom: 16px;">
+                👉 Recarga días por Pago Móvil y solicita tu nueva clave para continuar.
+            </p>
+            <div class="acciones-pago-vencido">
+                <a class="btn-whatsapp-directo" href="https://wa.me/584129562808?text=Hola%2C%20se%20caduc%C3%B3%20mi%20tiempo%20en%20JARVIS%20y%20quiero%20recargar%20d%C3%ADas" target="_blank">📲 Recargar Días por WhatsApp</a>
+                <button class="btn-copiar-pago" onclick="copiarPagoMovil(this)">📋 Copiar Datos Pago Móvil</button>
+                <button class="btn-ir-historial" style="background-color: #424242; margin-top: 4px;" onclick="cerrarModalCaducado()">Entendido</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL OJITO -->
     <div id="modal-ojo" class="modal">
@@ -408,6 +427,7 @@
         let datosFiltradosActuales = [];
         let esIlimitado = false;
         let intervaloSuscripcion = null;
+        let avisoCaducadoMostrado = false;
 
         // ==========================================
         // UTILIDAD COPIAR PAGO MÓVIL
@@ -421,12 +441,22 @@
                     setTimeout(() => { elemento.innerHTML = htmlOriginal; }, 2200);
                 });
             } else {
-                alert("Datos Pago Móvil para recargar 7 días más:\n" + datos);
+                alert("Datos Pago Móvil para recargar días:\n" + datos);
             }
         }
 
+        function mostrarModalCaducado() {
+            if (avisoCaducadoMostrado) return;
+            avisoCaducadoMostrado = true;
+            document.getElementById('modal-caducado').style.display = 'flex';
+        }
+
+        function cerrarModalCaducado() {
+            document.getElementById('modal-caducado').style.display = 'none';
+        }
+
         // ==========================================
-        // HASH DE CLAVE PARA INVALIDAR CLAVES OBSOLETAS
+        // HASH DE CLAVE PARA VALIDAR CLAVES VIGENTES
         // ==========================================
         async function hashClave(texto) {
             const data = new TextEncoder().encode(String(texto));
@@ -457,10 +487,23 @@
             return bytes.buffer;
         }
 
+        function olvidarBiometria(motivoMensaje) {
+            localStorage.removeItem("jarvis_biometria");
+            verificarBotonBiometrico();
+            if (motivoMensaje) {
+                const errorDiv = document.getElementById('login-error');
+                if (errorDiv) {
+                    errorDiv.innerText = motivoMensaje;
+                    errorDiv.style.display = 'block';
+                }
+            }
+        }
+
         async function registrarBiometria(usuario, passHashVigente) {
             if (!window.PublicKeyCredential || !navigator.credentials) return;
             const bioGuardada = JSON.parse(localStorage.getItem("jarvis_biometria") || "null");
 
+            // Si ya existe vinculada exactamente a este usuario y clave vigente, se conserva
             if (bioGuardada && bioGuardada.usuario === usuario && bioGuardada.credentialId && bioGuardada.passHash === passHashVigente) {
                 return;
             }
@@ -468,7 +511,7 @@
             try {
                 const challenge = new Uint8Array(32);
                 window.crypto.getRandomValues(challenge);
-                const userId = new TextEncoder().encode(usuario);
+                const userId = new TextEncoder().encode(`${usuario}_${passHashVigente.slice(0, 12)}`);
 
                 const credential = await navigator.credentials.create({
                     publicKey: {
@@ -510,27 +553,39 @@
             errorDiv.style.display = 'none';
 
             if (!bioGuardada || !bioGuardada.credentialId) {
-                errorDiv.innerText = "⚠️ Primero ingresa con usuario jarvis y tu contraseña.";
+                errorDiv.innerText = "⚠️ Primero inicia sesión con tu usuario y clave vigente para habilitar la biometría.";
                 errorDiv.style.display = 'block';
                 return;
             }
 
             try {
-                const respuesta = await fetch('user.json');
+                const respuesta = await fetch('user.json', { cache: 'no-store' });
                 const usuarios = await respuesta.json();
                 const usuarioValido = usuarios.find(u => u.usuario === bioGuardada.usuario);
 
                 if (!usuarioValido) {
-                    errorDiv.innerText = "❌ Usuario no encontrado en user.json.";
-                    errorDiv.style.display = 'block';
+                    olvidarBiometria("❌ Usuario no encontrado. Inicia sesión con tu clave vigente.");
                     return;
                 }
 
                 const hashActualEnJson = await hashClave(usuarioValido.password);
                 if (bioGuardada.passHash !== hashActualEnJson) {
-                    errorDiv.innerText = "🔑 La clave fue renovada. Ingresa tu nueva clave para reactivar.";
-                    errorDiv.style.display = 'block';
+                    olvidarBiometria("🔑 La clave cambió. Ingresa tu nueva clave con días habilitados para reactivar la huella.");
                     return;
+                }
+
+                const diasVal = usuarioValido.dias;
+                const ilimitadoVal = (diasVal === "ilimitado");
+                const diasTotalesVal = ilimitadoVal ? 9999 : parseInt(diasVal);
+                const claveCiclo = `jarvis_ciclo_${usuarioValido.usuario}_${hashActualEnJson}`;
+                const cicloGuardado = JSON.parse(localStorage.getItem(claveCiclo) || "null");
+
+                if (cicloGuardado && !ilimitadoVal) {
+                    const transcurrido = (new Date().getTime() - cicloGuardado.fechaInicio) / (1000 * 60 * 60 * 24);
+                    if (transcurrido >= diasTotalesVal) {
+                        olvidarBiometria("⚠️ Tu tiempo caducó. Huella olvidada; recarga días e ingresa con tu nueva clave.");
+                        return;
+                    }
                 }
 
                 bioInfo.innerText = "🔍 Verificando huella / rostro...";
@@ -584,18 +639,32 @@
             if (sesionGuardada) {
                 let sesion = JSON.parse(sesionGuardada);
                 try {
-                    const respuesta = await fetch('user.json');
+                    const respuesta = await fetch('user.json', { cache: 'no-store' });
                     const usuarios = await respuesta.json();
                     const usuarioValido = usuarios.find(u => u.usuario === sesion.usuario);
                     const hashActual = usuarioValido ? await hashClave(usuarioValido.password) : "";
 
                     if (!usuarioValido || sesion.passHash !== hashActual) {
                         localStorage.removeItem("jarvis_session");
-                        document.getElementById('login-overlay').style.display = 'flex';
-                        const err = document.getElementById('login-error');
-                        err.innerText = "🔑 Tu clave anterior quedó obsoleta. Ingresa tu nueva clave.";
-                        err.style.display = 'block';
+                        const bioGuardada = JSON.parse(localStorage.getItem("jarvis_biometria") || "null");
+                        if (bioGuardada && bioGuardada.passHash !== hashActual) {
+                            olvidarBiometria("🔑 Tu clave anterior quedó obsoleta y se borró la huella anterior. Ingresa tu nueva clave.");
+                        } else {
+                            document.getElementById('login-overlay').style.display = 'flex';
+                            const err = document.getElementById('login-error');
+                            err.innerText = "🔑 Tu clave anterior quedó obsoleta. Ingresa tu nueva clave.";
+                            err.style.display = 'block';
+                        }
                         return;
+                    }
+
+                    // Sincronizar días habilitados si se renovaron en user.json
+                    const diasActuales = usuarioValido.dias === "ilimitado" ? 9999 : parseInt(usuarioValido.dias);
+                    if (diasActuales > sesion.diasTotales || usuarioValido.dias === "ilimitado") {
+                        sesion.diasTotales = diasActuales;
+                        sesion.esIlimitado = (usuarioValido.dias === "ilimitado");
+                        localStorage.setItem("jarvis_session", JSON.stringify(sesion));
+                        localStorage.setItem(`jarvis_ciclo_${sesion.usuario}_${hashActual}`, JSON.stringify(sesion));
                     }
 
                     document.getElementById('login-overlay').style.display = 'none';
@@ -622,6 +691,7 @@
             if (cicloGuardado && cicloGuardado.diasTotales === diasTotales) {
                 fechaInicio = cicloGuardado.fechaInicio;
             } else {
+                // Nueva clave o días extras renovados: arranca nuevo ciclo vigente
                 fechaInicio = new Date().getTime();
             }
 
@@ -633,12 +703,25 @@
                 esIlimitado: esIlimitado
             };
 
+            const vigente = verificarExpiracion(sesion);
+            if (!vigente) {
+                // Si existe una sesión con días vencidos, olvidar huella biométrica y bloquear contenido
+                olvidarBiometria("⚠️ Esta sesión tiene días vencidos. Se olvidó la huella biométrica; recarga días e ingresa una clave con días habilitados.");
+                localStorage.setItem(claveCiclo, JSON.stringify(sesion));
+                localStorage.setItem("jarvis_session", JSON.stringify(sesion));
+                document.getElementById('login-overlay').style.display = 'none';
+                aplicarEstadoSuscripcion(sesion);
+                mostrarContador(sesion);
+                return;
+            }
+
+            avisoCaducadoMostrado = false;
             localStorage.setItem(claveCiclo, JSON.stringify(sesion));
             localStorage.setItem("jarvis_session", JSON.stringify(sesion));
 
-            if (!desdeBiometria) {
-                await registrarBiometria(user, passHash);
-            }
+            // Después de sesión iniciada exitosa con días habilitados (o nueva clave con días extras),
+            // registrar/mantener huella biométrica para permitir siempre la entrada biométrica mientras esté vigente.
+            await registrarBiometria(user, passHash);
 
             verificarBotonBiometrico();
             document.getElementById('login-overlay').style.display = 'none';
@@ -662,7 +745,7 @@
             }
 
             try {
-                const respuesta = await fetch('user.json');
+                const respuesta = await fetch('user.json', { cache: 'no-store' });
                 const usuarios = await respuesta.json();
                 const usuarioValido = usuarios.find(u => u.usuario === user && u.password === pass);
 
@@ -682,6 +765,7 @@
         }
 
         function verificarExpiracion(sesion) {
+            if (!sesion) return false;
             if (sesion.esIlimitado) return true;
             let ahora = new Date().getTime();
             let transcurrido = ahora - sesion.fechaInicio;
@@ -705,8 +789,11 @@
                 layout.style.gridTemplateColumns = '';
                 btnMenuMovil.style.display = '';
                 linkResultados.style.display = 'inline';
+                cerrarModalCaducado();
                 iniciarApp();
             } else {
+                // Si existe una sesión con días vencidos, olvidar huella biométrica y bloquear todo contenido
+                olvidarBiometria(null);
                 contenidoActivo.style.display = 'none';
                 panelVencido.style.display = 'flex';
                 sidebar.style.display = 'none';
@@ -716,6 +803,7 @@
                 document.getElementById('tabla-cuerpo').innerHTML = '';
                 cerrarModalOjo();
                 cerrarModalSuerte();
+                mostrarModalCaducado();
             }
         }
 
@@ -737,7 +825,7 @@
                 let diasRestantes = sesion.diasTotales - diasTranscurridos;
 
                 if (diasRestantes <= 0) {
-                    contadorDiv.innerHTML = `<span class="texto-peligro">⚠️ SUSCRIPCIÓN VENCIDA (0d 0h 0m)</span>`;
+                    contadorDiv.innerHTML = `<span class="texto-peligro">⚠️ TIEMPO CADUCADO (0d 0h 0m)</span>`;
                     aplicarEstadoSuscripcion(sesion);
                     clearInterval(intervaloSuscripcion);
                     return;
