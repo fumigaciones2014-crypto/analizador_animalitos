@@ -16504,5 +16504,11 @@
         "hora": "08:00 AM",
         "animal": "MARIPOSA",
         "numero": "43"
+    },
+    {
+        "fecha": "2026-11-22",
+        "hora": "09:00 AM",
+        "animal": "CARNERO",
+        "numero": "01"
     }
 ]
