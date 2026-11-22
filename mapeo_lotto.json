@@ -16522,5 +16522,23 @@
         "hora": "11:00 AM",
         "animal": "CAIMAN",
         "numero": "30"
+    },
+    {
+        "fecha": "2026-11-22",
+        "hora": "12:00 PM",
+        "animal": "CARNERO",
+        "numero": "01"
+    },
+    {
+        "fecha": "2026-11-22",
+        "hora": "01:00 PM",
+        "animal": "ZORRO",
+        "numero": "15"
+    },
+    {
+        "fecha": "2026-11-22",
+        "hora": "02:00 PM",
+        "animal": "ELEFANTE",
+        "numero": "29"
     }
 ]
