@@ -16132,5 +16132,11 @@
         "hora": "06:00 PM",
         "animal": "CACHICAMO",
         "numero": "62"
+    },
+    {
+        "fecha": "2026-11-23",
+        "hora": "07:00 PM",
+        "animal": "AVISPA",
+        "numero": "40"
     }
 ]
