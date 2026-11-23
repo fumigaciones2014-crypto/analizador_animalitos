@@ -16066,5 +16066,11 @@
         "hora": "07:00 PM",
         "animal": "PANTERA",
         "numero": "59"
+    },
+    {
+        "fecha": "2026-11-23",
+        "hora": "08:00 AM",
+        "animal": "TORO",
+        "numero": "02"
     }
 ]
