@@ -16702,5 +16702,11 @@
         "hora": "05:00 PM",
         "animal": "OSO",
         "numero": "16"
+    },
+    {
+        "fecha": "2026-11-24",
+        "hora": "06:00 PM",
+        "animal": "PATO",
+        "numero": "57"
     }
 ]
