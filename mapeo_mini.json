@@ -16780,5 +16780,11 @@
         "hora": "06:00 PM",
         "animal": "MARIPOSA",
         "numero": "43"
+    },
+    {
+        "fecha": "2026-11-25",
+        "hora": "07:00 PM",
+        "animal": "TIGRE",
+        "numero": "10"
     }
 ]
