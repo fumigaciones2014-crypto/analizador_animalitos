@@ -16786,5 +16786,11 @@
         "hora": "07:00 PM",
         "animal": "JIRAFA",
         "numero": "35"
+    },
+    {
+        "fecha": "2026-11-26",
+        "hora": "08:00 AM",
+        "animal": "CABALLO",
+        "numero": "12"
     }
 ]
