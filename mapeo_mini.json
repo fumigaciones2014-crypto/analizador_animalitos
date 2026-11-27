@@ -16918,5 +16918,11 @@
         "hora": "05:00 PM",
         "animal": "CANARIO",
         "numero": "50"
+    },
+    {
+        "fecha": "2026-11-27",
+        "hora": "06:00 PM",
+        "animal": "CHIVO",
+        "numero": "19"
     }
 ]

@@ -16420,5 +16420,11 @@
         "hora": "06:00 PM",
         "animal": "OSO HORMIGUERO",
         "numero": "55"
+    },
+    {
+        "fecha": "2026-11-27",
+        "hora": "07:00 PM",
+        "animal": "CHIVO",
+        "numero": "19"
     }
 ]
