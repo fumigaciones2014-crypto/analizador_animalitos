@@ -16930,5 +16930,11 @@
         "hora": "08:00 AM",
         "animal": "ARDILLA",
         "numero": "32"
+    },
+    {
+        "fecha": "2026-11-28",
+        "hora": "09:00 AM",
+        "animal": "RINOCERONTE",
+        "numero": "76"
     }
 ]
