@@ -16948,5 +16948,11 @@
         "hora": "10:00 AM",
         "animal": "CARNERO",
         "numero": "01"
+    },
+    {
+        "fecha": "2026-11-28",
+        "hora": "11:00 AM",
+        "animal": "BURRO",
+        "numero": "18"
     }
 ]
